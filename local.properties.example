@@ -1,0 +1,21 @@
+# ============================================================
+# MediCase Clínico - Plantilla de configuración local
+# 1. Copia este archivo y renómbralo a "local.properties"
+# 2. Rellena tus claves reales (NUNCA subas local.properties a Git)
+# ============================================================
+
+# Ruta del Android SDK
+sdk.dir=/ruta/a/tu/Android/Sdk
+
+# --- Google Maps SDK for Android ---
+MAPS_API_KEY=
+
+# --- Firebase ---
+FIREBASE_PROJECT_ID=
+FIREBASE_API_KEY=
+FIREBASE_APP_ID=
+
+# --- Estuche BLE MediCase ---
+BLE_SERVICE_UUID=
+BLE_TEMPERATURE_CHAR_UUID=
+BLE_BATTERY_CHAR_UUID=
