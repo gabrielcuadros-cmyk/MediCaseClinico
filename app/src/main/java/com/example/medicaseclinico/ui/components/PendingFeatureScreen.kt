@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,15 +17,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.medicaseclinico.R
 
-/**
- * Marcador de navegación para módulos aún no implementados.
- * No muestra datos: solo informa que la sección está en desarrollo,
- * para que la navegación sea funcional sin contenido simulado.
- */
 @Composable
 fun PendingFeatureScreen(
     @StringRes titleRes: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    @StringRes actionLabelRes: Int? = null,
+    onAction: (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier
@@ -44,5 +43,14 @@ fun PendingFeatureScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp)
         )
+        if (actionLabelRes != null && onAction != null) {
+            Button(
+                onClick = onAction,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.padding(top = 24.dp)
+            ) {
+                Text(text = stringResource(actionLabelRes))
+            }
+        }
     }
 }

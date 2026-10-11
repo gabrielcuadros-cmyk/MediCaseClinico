@@ -20,7 +20,8 @@ enum class TopLevelDestination(
     companion object {
         val START = HOME
 
+        /** Resuelve la pestaña activa, incluidas las pantallas secundarias. */
         fun fromRoute(route: String?): TopLevelDestination? =
-            entries.firstOrNull { it.route == route }
+            entries.firstOrNull { it.route == route } ?: SecondaryRoutes.parentOf(route)
     }
 }

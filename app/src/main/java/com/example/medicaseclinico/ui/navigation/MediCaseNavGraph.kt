@@ -6,8 +6,10 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.medicaseclinico.R
 import com.example.medicaseclinico.ui.components.PendingFeatureScreen
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardRoute
+import com.example.medicaseclinico.ui.screens.notifications.NotificationSettingsRoute
 
 /**
  * Grafo de navegación principal de MediCase Clínico.
@@ -38,7 +40,14 @@ fun MediCaseNavGraph(
             PendingFeatureScreen(titleRes = TopLevelDestination.ALERTS.labelRes)
         }
         composable(TopLevelDestination.SECURITY.route) {
-            PendingFeatureScreen(titleRes = TopLevelDestination.SECURITY.labelRes)
+            PendingFeatureScreen(
+                titleRes = TopLevelDestination.SECURITY.labelRes,
+                actionLabelRes = R.string.open_notification_settings,
+                onAction = { navController.navigate(SecondaryRoutes.NOTIFICATION_SETTINGS) }
+            )
+        }
+        composable(SecondaryRoutes.NOTIFICATION_SETTINGS) {
+            NotificationSettingsRoute(onBack = { navController.popBackStack() })
         }
     }
 }

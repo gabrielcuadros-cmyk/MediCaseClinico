@@ -22,9 +22,12 @@
     <string name="ble_status_disconnected">Desconectado</string>
     <string name="ble_status_content_description">Estado Bluetooth del estuche: %1$s</string>
 
-    <!-- Estados genéricos -->
+    <!-- Estados genéricos y acciones comunes -->
     <string name="state_loading_default">Cargando…</string>
     <string name="action_retry">Reintentar</string>
+    <string name="action_back">Volver</string>
+    <string name="action_accept">Aceptar</string>
+    <string name="action_cancel">Cancelar</string>
 
     <!-- Dashboard: carga y vacío -->
     <string name="dashboard_loading">Sincronizando datos del estuche…</string>
@@ -97,4 +100,28 @@
     <string name="notif_battery_text">Batería al %1$d%%. Conecta el MediCase al cargador: la refrigeración podría fallar.</string>
     <string name="notif_connection_title">Estuche desconectado</string>
     <string name="notif_connection_text">Se perdió la conexión Bluetooth con tu MediCase. Acércalo al teléfono.</string>
+
+    <!-- Pantalla de Notificaciones -->
+    <string name="settings_save_error">No se pudo guardar el ajuste. Inténtalo de nuevo.</string>
+    <string name="open_notification_settings">Configurar notificaciones</string>
+    <string name="notif_settings_title">Notificaciones</string>
+    <string name="notif_settings_subtitle">Gestiona alertas críticas de MediCase.</string>
+    <string name="notif_section_case_alerts">ALERTAS DEL ESTUCHE</string>
+    <string name="notif_section_sound">SONIDO Y ALERTAS</string>
+    <string name="notif_section_dnd">MODO NO MOLESTAR</string>
+    <string name="notif_tone_title">Tono de Alerta</string>
+    <string name="notif_tone_description">Elige el sonido de las alertas de temperatura en los ajustes del sistema.</string>
+    <string name="notif_vibration_title">Vibración</string>
+    <string name="notif_vibration_description">Configura la vibración en estados críticos desde los ajustes del sistema.</string>
+    <string name="notif_silence_title">Silenciar temporalmente</string>
+    <string name="notif_silence_description">No alertar excepto emergencias de temperatura.</string>
+    <string name="notif_quiet_hours_title">Horario programado</string>
+    <string name="notif_quiet_hours_description">Silencia todo salvo temperatura dentro de este horario. Toca las horas para cambiarlas.</string>
+    <string name="notif_quiet_start">Inicio del horario</string>
+    <string name="notif_quiet_end">Fin del horario</string>
+    <string name="notif_blocked_title">Notificaciones bloqueadas</string>
+    <string name="notif_blocked_message">Android tiene bloqueadas las notificaciones de MediCase. Sin ellas no recibirás alertas de tu insulina.</string>
+    <string name="notif_blocked_action">Activar notificaciones</string>
+    <string name="notif_settings_error_title">No se pudieron cargar los ajustes</string>
+    <string name="notif_settings_error_message">Vuelve a abrir esta pantalla. Mientras tanto, las alertas usan la configuración de fábrica.</string>
 </resources>
