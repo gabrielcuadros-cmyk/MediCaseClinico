@@ -80,6 +80,14 @@
     <string name="issue_action_search_again">Buscar de nuevo</string>
     <string name="issue_action_reconnect">Reconectar</string>
 
+    <!-- Historial Térmico: gráfica de estabilidad -->
+    <string name="history_chart_title">GRÁFICA DE ESTABILIDAD (%1$.0f-%2$.0f°C)</string>
+    <string name="history_chart_max_safe">Máx Seguro %1$.0f°C</string>
+    <string name="history_chart_min_safe">Mín Seguro %1$.0f°C</string>
+    <string name="history_chart_now">Ahora</string>
+    <string name="history_chart_empty">Sin lecturas en este rango</string>
+    <string name="history_chart_description">Gráfica de estabilidad. Temperatura entre %1$s y %2$s, media de %3$s. %4$.0f%% del tiempo dentro del rango seguro.</string>
+
     <!-- Canales de notificación (visibles en Ajustes del sistema) -->
     <string name="channel_group_name">Alertas del estuche</string>
     <string name="channel_temperature_name">Alerta de Temperatura</string>
