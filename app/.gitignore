@@ -1,0 +1,2 @@
+# Salida de compilación del módulo app (el resto de reglas vive en el .gitignore raíz)
+/build

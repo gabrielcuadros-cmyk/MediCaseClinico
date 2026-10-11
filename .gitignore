@@ -1,15 +1,57 @@
+# ============================================================
+#  MediCase Clínico - .gitignore raíz
+#  Protege builds, configuración local y credenciales
+# ============================================================
+
+# --- Builds y artefactos de compilación ---
+build/
+.gradle/
+.kotlin/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+out/
+gen/
+bin/
+
+# --- Configuración local de Android Studio / IntelliJ ---
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.iws
+*.ipr
+.navigation/
+.cxx/
+.externalNativeBuild/
+
+# --- CREDENCIALES Y API KEYS (CRÍTICO) ---
+# Contiene sdk.dir + MAPS_API_KEY + claves Firebase
 local.properties
+secrets.properties
+# Configuración de Firebase (contiene API key del proyecto)
+google-services.json
+GoogleService-Info.plist
+# Variables de entorno
+.env
+*.env
+
+# --- Firmas y keystores de release ---
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# --- Logs y temporales ---
+*.log
+*.tmp
+*.hprof
+
+# --- Room: esquemas exportados SÍ se versionan ---
+# (no ignorar app/schemas/ para mantener historial de migraciones)
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db
+desktop.ini
