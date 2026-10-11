@@ -1,4 +1,4 @@
-package com.example.medicaseclinico.ui.screens.dashboard.components
+package com.example.medicaseclinico.ui.screens.dashboard
 
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
@@ -29,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,9 +46,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.data.ble.BlePermissions
+import com.example.medicaseclinico.data.notification.NotificationPermission
 import com.example.medicaseclinico.domain.model.DeviceIssue
-import com.example.medicaseclinico.ui.screens.dashboard.DashboardUiState
-import com.example.medicaseclinico.ui.screens.dashboard.DashboardViewModel
+import com.example.medicaseclinico.ui.screens.dashboard.components.BatteryCard
+import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardEmptyContent
+import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardErrorContent
+import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardLoadingContent
+import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardTopBar
+import com.example.medicaseclinico.ui.screens.dashboard.components.DeviceIssueBanner
+import com.example.medicaseclinico.ui.screens.dashboard.components.TemperatureCard
 
 @Composable
 fun DashboardRoute(
@@ -84,6 +91,26 @@ fun DashboardRoute(
     LifecycleResumeEffect(Unit) {
         viewModel.onScreenResumed()
         onPauseOrDispose { }
+    }
+
+    // ------------------------------------------------------------------
+    //  Permiso de notificaciones (Android 13+)
+    // ------------------------------------------------------------------
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+
+    var notificationPermissionAsked by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(deviceIssue) {
+        val blePermissionsPending = deviceIssue == DeviceIssue.PERMISSIONS_MISSING
+        if (!notificationPermissionAsked &&
+            !blePermissionsPending &&
+            NotificationPermission.shouldRequest(context)
+        ) {
+            notificationPermissionAsked = true
+            notificationPermissionLauncher.launch(NotificationPermission.PERMISSION)
+        }
     }
 
     DashboardScreen(
@@ -234,6 +261,6 @@ private fun Context.openSettings(action: String) {
     try {
         startActivity(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     } catch (e: Exception) {
-        // Ignorado si no hay pantalla de ajustes
+        // Ignorado si la pantalla de ajustes no existe
     }
 }
