@@ -12,15 +12,20 @@ import androidx.core.content.ContextCompat
 import com.example.medicaseclinico.MainActivity
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.alert.AlertPublisher
+import com.example.medicaseclinico.domain.model.AlertType
+import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.model.TemperatureStatus
+import java.time.Instant
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 
 /**
  * Publica las alertas de MediCase como notificaciones del sistema,
- * aplicando antirrebote para no saturar al usuario.
+ * aplicando antirrebote para no saturar al usuario y respetando las preferencias guardadas.
  */
 class SystemAlertPublisher(
     context: Context,
+    private val preferencesProvider: () -> NotificationPreferences,
     private val clock: () -> Long = System::currentTimeMillis
 ) : AlertPublisher {
     private val appContext = context.applicationContext
@@ -137,6 +142,7 @@ class SystemAlertPublisher(
         ongoing: Boolean
     ) {
         if (!canPostNotifications()) return
+        if (!preferencesProvider().allows(channel.toAlertType(), currentMinuteOfDay())) return
 
         val notification = NotificationCompat.Builder(appContext, channel.id)
             .setSmallIcon(R.drawable.ic_notification_medicase)
@@ -185,6 +191,20 @@ class SystemAlertPublisher(
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
+    }
+
+    /** Hora local del teléfono en minutos desde la medianoche. */
+    private fun currentMinuteOfDay(): Int {
+        val time = Instant.ofEpochMilli(clock()).atZone(ZoneId.systemDefault()).toLocalTime()
+        return time.hour * 60 + time.minute
+    }
+
+    private fun AlertChannel.toAlertType(): AlertType = when (this) {
+        AlertChannel.TEMPERATURE -> AlertType.TEMPERATURE
+        AlertChannel.BATTERY -> AlertType.BATTERY
+        AlertChannel.CONNECTION -> AlertType.CONNECTION
+        AlertChannel.GEOFENCE -> AlertType.GEOFENCE
+        AlertChannel.SECURITY -> AlertType.SECURITY
     }
 
     private companion object {
