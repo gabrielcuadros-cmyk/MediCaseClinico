@@ -5,6 +5,7 @@ import com.example.medicaseclinico.domain.model.HistoryEvent
 import com.example.medicaseclinico.domain.model.TemperatureExcursion
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
+import java.util.concurrent.TimeUnit
 
 /**
  * Deduce la "Línea de eventos" del Historial Térmico a partir de las lecturas.
@@ -13,6 +14,11 @@ import com.example.medicaseclinico.domain.model.TemperatureStatus
  * que una excursión de varios minutos (muestreada cada 10 s) aparezca como
  * una alerta con su pico y no como decenas de filas repetidas.
  *
+ * Antirrebote: si la temperatura vuelve al rango menos de [mergeGapMs] y sale
+ * otra vez en el mismo sentido, sigue siendo el mismo episodio. Una insulina
+ * que oscila alrededor de 8 °C es un único problema clínico, no diez alertas.
+ * Alta y baja nunca se unen entre sí porque son riesgos distintos.
+ *
  * La batería usa histéresis, igual que las notificaciones: tras avisar, no
  * vuelve a avisar hasta que el nivel se recupera por encima de
  * [batteryRearmPercent]. Evita eventos duplicados cuando el nivel oscila
@@ -20,7 +26,8 @@ import com.example.medicaseclinico.domain.model.TemperatureStatus
  */
 class DetectTemperatureEventsUseCase(
     private val lowBatteryPercent: Int = BatteryThresholds.LOW_PERCENT,
-    private val batteryRearmPercent: Int = BatteryThresholds.REARM_PERCENT
+    private val batteryRearmPercent: Int = BatteryThresholds.REARM_PERCENT,
+    private val mergeGapMs: Long = DEFAULT_MERGE_GAP_MS
 ) {
     /**
      * @return eventos del más reciente al más antiguo (orden de la línea de
@@ -45,24 +52,20 @@ class DetectTemperatureEventsUseCase(
             val direction = excursionOf(reading.temperatureCelsius)
             val current = open
 
-            if (current != null && direction == current.direction) {
-                current.extend(reading)
-                continue
-            }
-            if (current != null) {
-                events += current.toAlert(isClosed = true)
-                if (direction == null) {
-                    events += HistoryEvent.TemperatureNormalized(
-                        timestamp = reading.timestamp,
-                        celsius = reading.temperatureCelsius,
-                        recoveredFrom = current.direction
-                    )
+            when {
+                current == null ->
+                    open = direction?.let { OpenExcursion(direction = it, first = reading) }
+                direction == null -> current.markReturn(reading)
+                direction == current.direction && current.canAbsorb(reading, mergeGapMs) ->
+                    current.extend(reading)
+                else -> {
+                    events += current.toEvents(isSuperseded = true)
+                    open = OpenExcursion(direction = direction, first = reading)
                 }
             }
-            open = direction?.let { OpenExcursion(direction = it, first = reading) }
         }
 
-        open?.let { events += it.toAlert(isClosed = false) }
+        open?.let { events += it.toEvents(isSuperseded = false) }
         return events
     }
 
@@ -101,7 +104,22 @@ class DetectTemperatureEventsUseCase(
         private var lastTimestamp = first.timestamp
         private var peakCelsius = first.temperatureCelsius
 
+        /** Primera lectura en rango tras la última fuera de rango, si la hay. */
+        private var returnReading: TemperatureReading? = null
+
+        fun markReturn(reading: TemperatureReading) {
+            if (returnReading == null) returnReading = reading
+        }
+
+        /**
+         * true si [reading] continúa este episodio: o nunca se volvió al
+         * rango, o el regreso duró menos que [mergeGapMs] (rebote en el límite).
+         */
+        fun canAbsorb(reading: TemperatureReading, mergeGapMs: Long): Boolean =
+            returnReading == null || reading.timestamp - lastTimestamp < mergeGapMs
+
         fun extend(reading: TemperatureReading) {
+            returnReading = null
             lastTimestamp = reading.timestamp
             peakCelsius = when (direction) {
                 TemperatureExcursion.HIGH -> maxOf(peakCelsius, reading.temperatureCelsius)
@@ -109,11 +127,31 @@ class DetectTemperatureEventsUseCase(
             }
         }
 
-        fun toAlert(isClosed: Boolean) = HistoryEvent.TemperatureAlert(
-            timestamp = startTimestamp,
-            direction = direction,
-            peakCelsius = peakCelsius,
-            endTimestamp = lastTimestamp.takeIf { isClosed }
-        )
+        /**
+         * @param isSuperseded true si otro episodio empieza después de este;
+         * si no, la alerta solo se cierra cuando hubo regreso al rango.
+         */
+        fun toEvents(isSuperseded: Boolean): List<HistoryEvent> {
+            val returned = returnReading
+            val alert = HistoryEvent.TemperatureAlert(
+                timestamp = startTimestamp,
+                direction = direction,
+                peakCelsius = peakCelsius,
+                endTimestamp = lastTimestamp.takeIf { isSuperseded || returned != null }
+            )
+            val normalized = returned?.let {
+                HistoryEvent.TemperatureNormalized(
+                    timestamp = it.timestamp,
+                    celsius = it.temperatureCelsius,
+                    recoveredFrom = direction
+                )
+            }
+            return listOfNotNull(alert, normalized)
+        }
+    }
+
+    companion object {
+        /** Regreso al rango más corto que esto se considera un rebote en el límite. */
+        val DEFAULT_MERGE_GAP_MS: Long = TimeUnit.MINUTES.toMillis(5)
     }
 }

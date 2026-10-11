@@ -108,6 +108,74 @@ class DetectTemperatureEventsUseCaseTest {
     }
 
     @Test
+    fun `rebotes en el limite se unen en un solo episodio con una normalizacion`() {
+        val readings = listOf(
+            reading(8.2f, 0),
+            reading(7.9f, 1),
+            reading(8.3f, 2),
+            reading(7.9f, 3),
+            reading(8.6f, 4),
+            reading(6.0f, 5),
+            reading(6.0f, 20)
+        )
+
+        val events = useCase(readings)
+
+        assertEquals(2, events.size)
+        val alert = events[1] as HistoryEvent.TemperatureAlert
+        assertEquals(0L, alert.timestamp)
+        assertEquals(4 * minute, alert.endTimestamp)
+        assertEquals(8.6f, alert.peakCelsius, delta)
+        val normalized = events[0] as HistoryEvent.TemperatureNormalized
+        assertEquals(5 * minute, normalized.timestamp)
+    }
+
+    @Test
+    fun `el episodio unido conserva el pico mas alto aunque sea del primer tramo`() {
+        val readings = listOf(reading(9.5f, 0), reading(6.0f, 1), reading(8.2f, 2), reading(6.0f, 3))
+
+        val alert = useCase(readings).filterIsInstance<HistoryEvent.TemperatureAlert>().single()
+
+        assertEquals(9.5f, alert.peakCelsius, delta)
+        assertEquals(2 * minute, alert.endTimestamp)
+    }
+
+    @Test
+    fun `rebote en temperatura baja conserva el minimo como pico`() {
+        val readings = listOf(reading(1.8f, 0), reading(2.2f, 1), reading(1.1f, 3), reading(1.6f, 4))
+
+        val alert = useCase(readings).single() as HistoryEvent.TemperatureAlert
+
+        assertEquals(TemperatureExcursion.LOW, alert.direction)
+        assertEquals(1.1f, alert.peakCelsius, delta)
+        assertNull(alert.endTimestamp)
+    }
+
+    @Test
+    fun `alertas separadas por cinco minutos o mas en rango son episodios distintos`() {
+        val readings = listOf(reading(8.5f, 0), reading(6.0f, 1), reading(9.0f, 5), reading(6.0f, 6))
+
+        val events = useCase(readings)
+
+        val alerts = events.filterIsInstance<HistoryEvent.TemperatureAlert>()
+        assertEquals(listOf(9.0f, 8.5f), alerts.map { it.peakCelsius })
+        val normalizations = events.filterIsInstance<HistoryEvent.TemperatureNormalized>()
+        assertEquals(listOf(6 * minute, 1 * minute), normalizations.map { it.timestamp })
+    }
+
+    @Test
+    fun `alta y baja no se unen aunque esten a menos de cinco minutos`() {
+        val readings = listOf(reading(9.0f, 0), reading(4.0f, 1), reading(1.0f, 2))
+
+        val events = useCase(readings)
+
+        assertEquals(3, events.size)
+        assertEquals(TemperatureExcursion.LOW, (events[0] as HistoryEvent.TemperatureAlert).direction)
+        assertEquals(TemperatureExcursion.HIGH, (events[1] as HistoryEvent.TemperatureNormalized).recoveredFrom)
+        assertEquals(TemperatureExcursion.HIGH, (events[2] as HistoryEvent.TemperatureAlert).direction)
+    }
+
+    @Test
     fun `lecturas desordenadas se procesan en orden cronologico`() {
         val readings = listOf(reading(4.0f, 3), reading(8.5f, 1), reading(4.0f, 0), reading(9.0f, 2))
 
