@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MediCase Clínico</string>
 
@@ -39,4 +40,14 @@
     <string name="error_network_message">No se pudo sincronizar con la nube. Tus lecturas locales siguen guardadas en el teléfono.</string>
     <string name="error_unknown_title">Algo salió mal</string>
     <string name="error_unknown_message">Ocurrió un error inesperado. Reintenta en unos segundos.</string>
+
+    <!-- Dashboard: tarjeta de temperatura -->
+    <string name="temperature_card_title">Temperatura de Insulina</string>
+    <string name="temperature_value">%1$.1f°C</string>
+    <string name="temperature_optimal_range">Rango óptimo: %1$.0f°C - %2$.0f°C</string>
+    <string name="temperature_status_safe">SEGURO</string>
+    <string name="temperature_status_warning">PRECAUCIÓN</string>
+    <string name="temperature_status_critical">CRÍTICO</string>
+    <string name="temperature_not_live">Última lectura guardada · estuche sin conexión</string>
+    <string name="temperature_card_content_description">Temperatura de la insulina: %1$s. Estado: %2$s.</string>
 </resources>
