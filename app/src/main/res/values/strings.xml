@@ -10,4 +10,14 @@
 
     <!-- Módulos pendientes -->
     <string name="pending_feature_message">Este módulo está en desarrollo y estará disponible en una próxima versión.</string>
+
+    <!-- Dashboard: cabecera -->
+    <string name="dashboard_title">MediCase Clínico</string>
+    <string name="dashboard_greeting">Hola, %1$s</string>
+
+    <!-- Estado Bluetooth del estuche -->
+    <string name="ble_status_connected">Conectado</string>
+    <string name="ble_status_connecting">Conectando…</string>
+    <string name="ble_status_disconnected">Desconectado</string>
+    <string name="ble_status_content_description">Estado Bluetooth del estuche: %1$s</string>
 </resources>
