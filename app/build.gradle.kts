@@ -91,10 +91,10 @@ dependencies {
     // --- Navegación ---
     implementation(libs.androidx.navigation.compose)
 
-    // --- Room (2.7.0-alpha13 compatible con KSP2) ---
-    implementation("androidx.room:room-runtime:2.7.0-alpha13")
-    implementation("androidx.room:room-ktx:2.7.0-alpha13")
-    ksp("androidx.room:room-compiler:2.7.0-alpha13")
+    // --- Room (misma versión que el plugin androidx.room, vía Version Catalog) ---
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     // --- Corrutinas ---
     implementation(libs.kotlinx.coroutines.android)
