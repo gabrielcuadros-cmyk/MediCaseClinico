@@ -5,8 +5,6 @@
     <!-- ============================================================
          BLE: comunicación con el estuche MediCase
          ============================================================ -->
-    <!-- El estuche usa Bluetooth Low Energy. required="false": la app se instala
-         también en dispositivos/emuladores sin BLE y muestra un error controlado. -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="false" />
@@ -19,19 +17,19 @@
         android:name="android.permission.BLUETOOTH_ADMIN"
         android:maxSdkVersion="30" />
 
-    <!-- Android 12+ (API 31): permisos de "Dispositivos cercanos".
-         neverForLocation: declaramos que el escaneo BLE NO se usa para
-         ubicar al usuario, así Android no exige ubicación para escanear. -->
+    <!-- Android 12+ (API 31): permisos de "Dispositivos cercanos" -->
     <uses-permission
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation"
         tools:targetApi="s" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
-    <!-- Ubicación precisa: en API ≤ 30 es obligatoria para escanear BLE, y en
-         todas las versiones la usará el módulo de Mapa y Geocercas. -->
+    <!-- Ubicación precisa para BLE y Mapa/Geocercas -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Android 13+ (API 33): permiso para mostrar notificaciones de alerta -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".MediCaseApplication"

@@ -58,4 +58,35 @@
     <string name="battery_low_hint">Batería baja: conecta el cargador</string>
     <string name="battery_content_description">Batería del estuche: %1$s</string>
     <string name="dashboard_last_sync">Última lectura recibida vía Bluetooth %1$s</string>
+
+    <!-- Avisos del estuche BLE -->
+    <string name="issue_permissions_title">Permiso de dispositivos cercanos necesario</string>
+    <string name="issue_permissions_message">MediCase necesita este permiso para encontrar tu estuche y leer la temperatura de tu insulina.</string>
+    <string name="issue_permissions_denied_message">El permiso fue denegado. Actívalo en Ajustes → Permisos → Dispositivos cercanos.</string>
+    <string name="issue_bluetooth_off_title">Bluetooth desactivado</string>
+    <string name="issue_bluetooth_off_message">Activa el Bluetooth para recibir la temperatura y la batería del estuche en tiempo real.</string>
+    <string name="issue_not_found_title">No se encontró tu estuche</string>
+    <string name="issue_not_found_message">Comprueba que el estuche esté encendido y a menos de 10 metros del teléfono.</string>
+    <string name="issue_connection_lost_title">Se perdió la conexión con el estuche</string>
+    <string name="issue_connection_lost_message">Se agotaron los reintentos automáticos. Acerca el estuche al teléfono e intenta reconectar.</string>
+    <string name="issue_not_supported_title">Bluetooth LE no disponible</string>
+    <string name="issue_not_supported_message">Este dispositivo no admite Bluetooth de bajo consumo. Puedes consultar el historial guardado, pero no recibir lecturas en vivo.</string>
+    <string name="issue_action_grant_permissions">Conceder permisos</string>
+    <string name="issue_action_open_settings">Abrir ajustes</string>
+    <string name="issue_action_enable_bluetooth">Activar Bluetooth</string>
+    <string name="issue_action_search_again">Buscar de nuevo</string>
+    <string name="issue_action_reconnect">Reconectar</string>
+
+    <!-- Canales de notificación (visibles en Ajustes del sistema) -->
+    <string name="channel_group_name">Alertas del estuche</string>
+    <string name="channel_temperature_name">Alerta de Temperatura</string>
+    <string name="channel_temperature_description">Aviso inmediato si la insulina sale del rango óptimo (2 °C – 8 °C).</string>
+    <string name="channel_battery_name">Batería Baja</string>
+    <string name="channel_battery_description">Notifica cuando el estuche baja del 20 % para asegurar el enfriamiento.</string>
+    <string name="channel_connection_name">Desconexión de Estuche</string>
+    <string name="channel_connection_description">Aviso si se pierde la conexión Bluetooth con el estuche.</string>
+    <string name="channel_geofence_name">Geocerca de Seguridad</string>
+    <string name="channel_geofence_description">Alerta al entrar o salir de las zonas configuradas.</string>
+    <string name="channel_security_name">Acceso No Autorizado</string>
+    <string name="channel_security_description">Notifica intentos fallidos de contraseña de 4 dígitos.</string>
 </resources>
