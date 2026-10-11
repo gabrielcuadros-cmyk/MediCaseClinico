@@ -61,6 +61,37 @@ sealed interface TemperatureHistoryUiState {
 }
 
 /**
+ * Estado de "Exportar Reporte Médico (PDF)".
+ *
+ * Va separado de [TemperatureHistoryUiState] porque el historial se refresca
+ * solo cada pocos segundos: si viajaran juntos, un refresco podría borrar el
+ * aviso de que el reporte ya está listo o de que falló.
+ */
+@Immutable
+sealed interface ReportExportState {
+    /** No hay ninguna exportación en curso. */
+    data object Idle : ReportExportState
+
+    /** Se está generando el PDF: el botón muestra progreso y no se puede repetir. */
+    data object Exporting : ReportExportState
+
+    /** El PDF está listo en [uri]; la pantalla debe abrir el menú de compartir. */
+    data class Ready(val uri: String) : ReportExportState
+
+    /** No se pudo generar o compartir el PDF; [reason] decide el mensaje. */
+    data class Failed(val reason: ReportExportError) : ReportExportState
+}
+
+/** Motivo del fallo, como tipo y no como texto, para traducirlo en la UI. */
+enum class ReportExportError {
+    /** No se pudo escribir el archivo PDF. */
+    GENERATION,
+
+    /** El PDF existe pero ninguna app del teléfono puede recibirlo. */
+    NO_SHARE_APP
+}
+
+/**
  * Última temperatura registrada, ya clasificada, para la tarjeta
  * "Temperatura actual" y su chip de estado.
  *

@@ -9,10 +9,12 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
 import com.example.medicaseclinico.domain.model.HistoryEvent
 import com.example.medicaseclinico.domain.model.HistoryRange
+import com.example.medicaseclinico.domain.model.MedicalReport
 import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStats
 import com.example.medicaseclinico.domain.model.TemperatureStatus
+import com.example.medicaseclinico.domain.repository.MedicalReportExporter
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
 import com.example.medicaseclinico.domain.usecase.CalculateTemperatureStatsUseCase
 import com.example.medicaseclinico.domain.usecase.DetectTemperatureEventsUseCase
@@ -24,6 +26,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
@@ -34,6 +37,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -53,6 +57,7 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 class TemperatureHistoryViewModel(
     private val temperatureRepository: TemperatureRepository,
+    private val reportExporter: MedicalReportExporter,
     private val calculateStats: CalculateTemperatureStatsUseCase,
     private val detectEvents: DetectTemperatureEventsUseCase,
     private val clock: () -> Long = System::currentTimeMillis,
@@ -73,6 +78,9 @@ class TemperatureHistoryViewModel(
                 initialValue = TemperatureHistoryUiState.Loading(HistoryRange.DEFAULT)
             )
 
+    private val _exportState = MutableStateFlow<ReportExportState>(ReportExportState.Idle)
+    val exportState: StateFlow<ReportExportState> = _exportState.asStateFlow()
+
     /** El usuario tocó una pestaña del selector 24h / 7 días / 30 días. */
     fun onRangeSelected(range: HistoryRange) {
         selectedRange.value = range
@@ -81,6 +89,45 @@ class TemperatureHistoryViewModel(
     /** Vuelve a consultar el mismo rango tras un error. */
     fun retry() {
         retryTrigger.update { it + 1 }
+    }
+
+    /**
+     * Genera el PDF con lo que el usuario tiene en pantalla en ese momento.
+     * Sin lecturas no hay nada que reportar, y mientras se genera uno no se
+     * lanza otro aunque se toque el botón varias veces.
+     */
+    fun exportReport() {
+        val state = uiState.value as? TemperatureHistoryUiState.Success ?: return
+        if (_exportState.value is ReportExportState.Exporting) return
+
+        _exportState.value = ReportExportState.Exporting
+        viewModelScope.launch {
+            val report = MedicalReport(
+                range = state.selectedRange,
+                rangeStart = state.rangeStart,
+                rangeEnd = state.rangeEnd,
+                generatedAt = clock(),
+                currentCelsius = state.current.celsius,
+                currentReadingAt = state.current.timestamp,
+                stats = state.stats,
+                buckets = state.buckets,
+                events = state.events
+            )
+            _exportState.value = reportExporter.export(report).fold(
+                onSuccess = { uri -> ReportExportState.Ready(uri) },
+                onFailure = { ReportExportState.Failed(ReportExportError.GENERATION) }
+            )
+        }
+    }
+
+    /** El menú de compartir se abrió, o el usuario ya vio el aviso de error. */
+    fun onExportHandled() {
+        _exportState.value = ReportExportState.Idle
+    }
+
+    /** El PDF se generó pero el teléfono no tiene con qué compartirlo. */
+    fun onShareFailed() {
+        _exportState.value = ReportExportState.Failed(ReportExportError.NO_SHARE_APP)
     }
 
     private fun observeHistory(range: HistoryRange): Flow<TemperatureHistoryUiState> {
@@ -169,6 +216,7 @@ class TemperatureHistoryViewModel(
                 val application = checkNotNull(this[APPLICATION_KEY]) as MediCaseApplication
                 TemperatureHistoryViewModel(
                     temperatureRepository = application.container.temperatureRepository,
+                    reportExporter = application.container.medicalReportExporter,
                     calculateStats = CalculateTemperatureStatsUseCase(),
                     detectEvents = DetectTemperatureEventsUseCase()
                 )

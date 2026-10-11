@@ -1,27 +1,47 @@
 package com.example.medicaseclinico.ui.screens.history
 
+import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeviceThermostat
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.UploadFile
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -48,6 +68,7 @@ import com.example.medicaseclinico.ui.theme.MediCaseTheme
 
 private val ScreenPadding = 16.dp
 private val SectionSpacing = 16.dp
+private const val PDF_MIME_TYPE = "application/pdf"
 
 /**
  * Entrada de la pestaña Temp: conecta el ViewModel con la pantalla sin estado.
@@ -58,15 +79,55 @@ fun TemperatureHistoryRoute(
     modifier: Modifier = Modifier,
     viewModel: TemperatureHistoryViewModel = viewModel(factory = TemperatureHistoryViewModel.Factory)
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val exportState by viewModel.exportState.collectAsStateWithLifecycle()
+    val shareTitle = stringResource(R.string.history_share_title)
+
+    // Abrir el menú de compartir es un efecto de una sola vez: se confirma al
+    // ViewModel para que una rotación de pantalla no lo vuelva a lanzar.
+    LaunchedEffect(exportState) {
+        val ready = exportState as? ReportExportState.Ready ?: return@LaunchedEffect
+        if (context.shareReport(uri = ready.uri, chooserTitle = shareTitle)) {
+            viewModel.onExportHandled()
+        } else {
+            viewModel.onShareFailed()
+        }
+    }
 
     TemperatureHistoryScreen(
         uiState = uiState,
+        exportState = exportState,
         onBack = onBack,
         onRangeSelected = viewModel::onRangeSelected,
         onRetry = viewModel::retry,
+        onExportReport = viewModel::exportReport,
+        onExportErrorShown = viewModel::onExportHandled,
         modifier = modifier
     )
+}
+
+/**
+ * Abre el menú de compartir de Android con el PDF. Protegido: si ninguna app
+ * puede recibirlo o se rechaza el permiso de lectura, devuelve false en lugar
+ * de cerrar la app.
+ */
+private fun Context.shareReport(uri: String, chooserTitle: String): Boolean {
+    val reportUri = Uri.parse(uri)
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = PDF_MIME_TYPE
+        putExtra(Intent.EXTRA_STREAM, reportUri)
+        clipData = ClipData.newRawUri(null, reportUri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    return try {
+        startActivity(Intent.createChooser(sendIntent, chooserTitle))
+        true
+    } catch (e: ActivityNotFoundException) {
+        false
+    } catch (e: SecurityException) {
+        false
+    }
 }
 
 /**
@@ -80,15 +141,34 @@ fun TemperatureHistoryRoute(
 @Composable
 fun TemperatureHistoryScreen(
     uiState: TemperatureHistoryUiState,
+    exportState: ReportExportState,
     onBack: () -> Unit,
     onRangeSelected: (HistoryRange) -> Unit,
     onRetry: () -> Unit,
+    onExportReport: () -> Unit,
+    onExportErrorShown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val exportFailure = exportState as? ReportExportState.Failed
+    val exportErrorMessage = when (exportFailure?.reason) {
+        ReportExportError.GENERATION -> stringResource(R.string.history_export_error)
+        ReportExportError.NO_SHARE_APP -> stringResource(R.string.history_share_error)
+        null -> null
+    }
+
+    LaunchedEffect(exportErrorMessage) {
+        if (exportErrorMessage != null) {
+            snackbarHostState.showSnackbar(exportErrorMessage)
+            onExportErrorShown()
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -164,7 +244,9 @@ fun TemperatureHistoryScreen(
             is TemperatureHistoryUiState.Success ->
                 HistoryContent(
                     uiState = uiState,
+                    isExporting = exportState is ReportExportState.Exporting,
                     onRangeSelected = onRangeSelected,
+                    onExportReport = onExportReport,
                     modifier = contentModifier
                 )
         }
@@ -199,7 +281,9 @@ private fun HistoryMessageLayout(
 @Composable
 private fun HistoryContent(
     uiState: TemperatureHistoryUiState.Success,
+    isExporting: Boolean,
     onRangeSelected: (HistoryRange) -> Unit,
+    onExportReport: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -254,6 +338,58 @@ private fun HistoryContent(
                 )
             }
         }
+        item {
+            Spacer(modifier = Modifier.height(20.dp))
+            ExportReportButton(isExporting = isExporting, onClick = onExportReport)
+        }
+    }
+}
+
+/**
+ * Botón "Exportar Reporte Médico (PDF)" del diseño: ancho, azul claro, con
+ * ícono. Mientras se genera el PDF se desactiva y muestra el progreso, para
+ * que el usuario sepa que su toque se registró y no lo repita.
+ */
+@Composable
+private fun ExportReportButton(
+    isExporting: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        enabled = !isExporting,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.primary,
+            disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            disabledContentColor = MaterialTheme.colorScheme.primary
+        )
+    ) {
+        if (isExporting) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 2.dp
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Outlined.UploadFile,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(
+                if (isExporting) R.string.history_export_in_progress else R.string.history_export_report
+            ),
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
@@ -329,14 +465,20 @@ private fun previewSuccessState(): TemperatureHistoryUiState.Success {
 }
 
 @Composable
-private fun HistoryScreenPreview(uiState: TemperatureHistoryUiState) {
+private fun HistoryScreenPreview(
+    uiState: TemperatureHistoryUiState,
+    exportState: ReportExportState = ReportExportState.Idle
+) {
     MediCaseTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
             TemperatureHistoryScreen(
                 uiState = uiState,
+                exportState = exportState,
                 onBack = {},
                 onRangeSelected = {},
-                onRetry = {}
+                onRetry = {},
+                onExportReport = {},
+                onExportErrorShown = {}
             )
         }
     }
@@ -366,4 +508,10 @@ private fun TemperatureHistoryErrorPreview() {
 @Composable
 private fun TemperatureHistorySuccessPreview() {
     HistoryScreenPreview(previewSuccessState())
+}
+
+@Preview(showBackground = true, name = "Historial - Generando reporte")
+@Composable
+private fun TemperatureHistoryExportingPreview() {
+    HistoryScreenPreview(previewSuccessState(), exportState = ReportExportState.Exporting)
 }
