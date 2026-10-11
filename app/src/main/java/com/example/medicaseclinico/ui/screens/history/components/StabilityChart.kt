@@ -37,6 +37,8 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.domain.chart.StabilityChartModel
+import com.example.medicaseclinico.domain.chart.buildStabilityChartModel
 import com.example.medicaseclinico.domain.model.HistoryRange
 import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureStats

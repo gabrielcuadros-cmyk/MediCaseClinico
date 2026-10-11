@@ -1,4 +1,4 @@
-package com.example.medicaseclinico.ui.screens.history.components
+package com.example.medicaseclinico.domain.chart
 
 import com.example.medicaseclinico.domain.model.TemperatureBucket
 import org.junit.Assert.assertEquals

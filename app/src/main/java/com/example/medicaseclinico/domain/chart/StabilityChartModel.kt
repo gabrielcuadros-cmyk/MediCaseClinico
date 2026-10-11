@@ -1,11 +1,13 @@
-package com.example.medicaseclinico.ui.screens.history.components
+package com.example.medicaseclinico.domain.chart
 
 import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 
 /**
  * Geometría de la gráfica de estabilidad, independiente de píxeles y de
- * Compose para poder probarla con tests JVM.
+ * Compose. Vive en el dominio porque la comparten la pantalla y el Reporte
+ * Médico (PDF): ambos deben dibujar exactamente la misma gráfica. Además
+ * permite probarla con tests JVM.
  *
  * @param minCelsius temperatura del borde inferior de la gráfica.
  * @param maxCelsius temperatura del borde superior.
@@ -13,7 +15,7 @@ import com.example.medicaseclinico.domain.model.TemperatureStatus
  * intervalos para no dibujar una línea sobre tiempo sin lecturas.
  * @param excursions intervalos con algún valor fuera del rango seguro.
  */
-internal data class StabilityChartModel(
+data class StabilityChartModel(
     val minCelsius: Float,
     val maxCelsius: Float,
     val segments: List<List<ChartPoint>>,
@@ -28,10 +30,10 @@ internal data class StabilityChartModel(
 }
 
 /** Punto de la línea: [xFraction] va de 0 (inicio del rango) a 1 (ahora). */
-internal data class ChartPoint(val xFraction: Float, val celsius: Float)
+data class ChartPoint(val xFraction: Float, val celsius: Float)
 
 /** Extremos reales de un intervalo que salió del rango seguro. */
-internal data class ChartExcursion(
+data class ChartExcursion(
     val xFraction: Float,
     val minCelsius: Float,
     val maxCelsius: Float
@@ -48,7 +50,7 @@ private const val PEAK_MARGIN_CELSIUS = 0.5f
  * solo si hay picos, de modo que una insulina estable se ve igual que en el
  * diseño y un pico nunca queda cortado.
  */
-internal fun buildStabilityChartModel(
+fun buildStabilityChartModel(
     buckets: List<TemperatureBucket>,
     bucketMs: Long,
     rangeStart: Long,
