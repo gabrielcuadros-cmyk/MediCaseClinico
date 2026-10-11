@@ -126,6 +126,35 @@
     <string name="history_chart_empty">Sin lecturas en este rango</string>
     <string name="history_chart_description">Gráfica de estabilidad. Temperatura entre %1$s y %2$s, media de %3$s. %4$.0f%% del tiempo dentro del rango seguro.</string>
 
+    <!-- Historial Térmico: exportar reporte -->
+    <string name="history_export_report">Exportar Reporte Médico (PDF)</string>
+    <string name="history_export_in_progress">Generando reporte…</string>
+    <string name="history_export_error">No se pudo generar el reporte. Inténtalo de nuevo.</string>
+    <string name="history_share_title">Compartir reporte médico</string>
+    <string name="history_share_error">No se encontró ninguna app para compartir el PDF.</string>
+
+    <!-- Reporte Médico (contenido del PDF) -->
+    <string name="report_title">Reporte Médico de Temperatura</string>
+    <string name="report_generated_at">Generado el %1$s</string>
+    <string name="report_period">Periodo: %1$s — %2$s (%3$s)</string>
+    <string name="report_section_summary">RESUMEN</string>
+    <string name="report_label_current">Temperatura actual</string>
+    <string name="report_value_current">%1$s (lectura del %2$s)</string>
+    <string name="report_label_min">Temperatura mínima</string>
+    <string name="report_label_max">Temperatura máxima</string>
+    <string name="report_label_average">Temperatura media</string>
+    <string name="report_label_time_in_range">Tiempo en rango seguro</string>
+    <string name="report_value_percent">%1$.1f%%</string>
+    <string name="report_label_monitored">Tiempo vigilado</string>
+    <string name="report_value_duration">%1$d h %2$d min</string>
+    <string name="report_label_samples">Lecturas registradas</string>
+    <string name="report_label_safe_range">Rango seguro de referencia</string>
+    <string name="report_value_safe_range">%1$.0f°C – %2$.0f°C</string>
+    <string name="report_events_empty">Sin alertas ni eventos en este periodo.</string>
+    <string name="report_event_heading">%1$s — %2$s</string>
+    <string name="report_footer">Registro generado automáticamente por la app MediCase Clínico a partir de las lecturas del estuche. No constituye un diagnóstico médico.</string>
+    <string name="report_page">Página %1$d</string>
+
     <!-- Canales de notificación (visibles en Ajustes del sistema) -->
     <string name="channel_group_name">Alertas del estuche</string>
     <string name="channel_temperature_name">Alerta de Temperatura</string>

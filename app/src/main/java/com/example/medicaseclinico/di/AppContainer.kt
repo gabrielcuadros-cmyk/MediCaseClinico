@@ -5,11 +5,13 @@ import com.example.medicaseclinico.data.ble.AndroidCaseDeviceRepository
 import com.example.medicaseclinico.data.local.AppDatabase
 import com.example.medicaseclinico.data.notification.SystemAlertPublisher
 import com.example.medicaseclinico.data.preferences.DataStoreNotificationPreferencesRepository
+import com.example.medicaseclinico.data.report.PdfMedicalReportExporter
 import com.example.medicaseclinico.data.repository.TemperatureRepositoryImpl
 import com.example.medicaseclinico.data.sync.CaseTelemetrySynchronizer
 import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
+import com.example.medicaseclinico.domain.repository.MedicalReportExporter
 import com.example.medicaseclinico.domain.repository.NotificationPreferencesRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +33,10 @@ class AppContainer(context: Context) {
 
     val temperatureRepository: TemperatureRepository by lazy {
         TemperatureRepositoryImpl(database.temperatureDao())
+    }
+
+    val medicalReportExporter: MedicalReportExporter by lazy {
+        PdfMedicalReportExporter(context = appContext)
     }
 
     val caseDeviceRepository: CaseDeviceRepository by lazy {

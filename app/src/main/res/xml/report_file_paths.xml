@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Única carpeta que FileProvider puede compartir: los reportes PDF en la caché de la app. -->
+<paths>
+    <cache-path
+        name="reports"
+        path="reports/" />
+</paths>
