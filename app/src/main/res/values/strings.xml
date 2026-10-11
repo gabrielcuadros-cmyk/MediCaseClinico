@@ -20,4 +20,23 @@
     <string name="ble_status_connecting">Conectando…</string>
     <string name="ble_status_disconnected">Desconectado</string>
     <string name="ble_status_content_description">Estado Bluetooth del estuche: %1$s</string>
+
+    <!-- Estados genéricos -->
+    <string name="state_loading_default">Cargando…</string>
+    <string name="action_retry">Reintentar</string>
+
+    <!-- Dashboard: carga y vacío -->
+    <string name="dashboard_loading">Sincronizando datos del estuche…</string>
+    <string name="dashboard_empty_title">Aún no hay lecturas registradas</string>
+    <string name="dashboard_empty_message">Enciende tu estuche MediCase y mantenlo cerca del teléfono con Bluetooth activado. La temperatura de tu insulina aparecerá aquí en cuanto llegue la primera lectura.</string>
+
+    <!-- Dashboard: errores -->
+    <string name="error_database_title">No se pudo leer el historial</string>
+    <string name="error_database_message">Hubo un problema al acceder a los datos guardados en el teléfono. Reintenta; si persiste, reinicia la aplicación.</string>
+    <string name="error_bluetooth_title">Sin acceso al Bluetooth</string>
+    <string name="error_bluetooth_message">Activa el Bluetooth y concede los permisos de dispositivos cercanos para comunicarte con tu estuche.</string>
+    <string name="error_network_title">Sin conexión a internet</string>
+    <string name="error_network_message">No se pudo sincronizar con la nube. Tus lecturas locales siguen guardadas en el teléfono.</string>
+    <string name="error_unknown_title">Algo salió mal</string>
+    <string name="error_unknown_message">Ocurrió un error inesperado. Reintenta en unos segundos.</string>
 </resources>
