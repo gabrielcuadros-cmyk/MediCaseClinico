@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">MediCase Clínico</string>
+
+    <!-- Navegación inferior (5 destinos del diseño) -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_temperature">Temp</string>
+    <string name="nav_map">Mapa</string>
+    <string name="nav_alerts">Alertas</string>
+    <string name="nav_security">Seguridad</string>
+
+    <!-- Módulos pendientes -->
+    <string name="pending_feature_message">Este módulo está en desarrollo y estará disponible en una próxima versión.</string>
+</resources>
