@@ -89,4 +89,12 @@
     <string name="channel_geofence_description">Alerta al entrar o salir de las zonas configuradas.</string>
     <string name="channel_security_name">Acceso No Autorizado</string>
     <string name="channel_security_description">Notifica intentos fallidos de contraseña de 4 dígitos.</string>
+
+    <!-- Contenido de las notificaciones -->
+    <string name="notif_temperature_title">Temperatura fuera de rango</string>
+    <string name="notif_temperature_text">Tu insulina está a %1$s, fuera del rango seguro (%2$.0f °C – %3$.0f °C). Revisa el estuche.</string>
+    <string name="notif_battery_title">Batería baja del estuche</string>
+    <string name="notif_battery_text">Batería al %1$d%%. Conecta el MediCase al cargador: la refrigeración podría fallar.</string>
+    <string name="notif_connection_title">Estuche desconectado</string>
+    <string name="notif_connection_text">Se perdió la conexión Bluetooth con tu MediCase. Acércalo al teléfono.</string>
 </resources>
