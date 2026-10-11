@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
 import com.example.medicaseclinico.domain.model.ConnectionStatus
+import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
@@ -49,9 +50,24 @@ class DashboardViewModel(
                 initialValue = DashboardUiState.Loading()
             )
 
+    /** Motivo actual por el que no hay enlace con el estuche (o null). */
+    val deviceIssue: StateFlow<DeviceIssue?> = deviceRepository.deviceIssue
+
     fun retry() {
         deviceRepository.startMonitoring()
         retryTrigger.update { it + 1 }
+    }
+
+    /** Reanuda el monitoreo tras resolver un permiso o encender el BT. */
+    fun onBlePrerequisiteResolved() {
+        deviceRepository.startMonitoring()
+    }
+
+    /** Re-verifica requisitos cuando la pantalla regresa al primer plano. */
+    fun onScreenResumed() {
+        if (deviceRepository.deviceIssue.value?.isUserActionable == true) {
+            deviceRepository.startMonitoring()
+        }
     }
 
     private fun observeDashboard(): Flow<DashboardUiState> =
