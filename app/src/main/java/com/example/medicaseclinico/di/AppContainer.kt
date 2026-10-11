@@ -6,10 +6,12 @@ import com.example.medicaseclinico.data.local.AppDatabase
 import com.example.medicaseclinico.data.notification.SystemAlertPublisher
 import com.example.medicaseclinico.data.preferences.DataStoreNotificationPreferencesRepository
 import com.example.medicaseclinico.data.report.PdfMedicalReportExporter
+import com.example.medicaseclinico.data.repository.AlertEventRepositoryImpl
 import com.example.medicaseclinico.data.repository.TemperatureRepositoryImpl
 import com.example.medicaseclinico.data.sync.CaseTelemetrySynchronizer
 import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.model.NotificationPreferences
+import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
 import com.example.medicaseclinico.domain.repository.MedicalReportExporter
 import com.example.medicaseclinico.domain.repository.NotificationPreferencesRepository
@@ -33,6 +35,10 @@ class AppContainer(context: Context) {
 
     val temperatureRepository: TemperatureRepository by lazy {
         TemperatureRepositoryImpl(database.temperatureDao())
+    }
+
+    val alertEventRepository: AlertEventRepository by lazy {
+        AlertEventRepositoryImpl(dao = database.alertEventDao())
     }
 
     val medicalReportExporter: MedicalReportExporter by lazy {
