@@ -80,6 +80,44 @@
     <string name="issue_action_search_again">Buscar de nuevo</string>
     <string name="issue_action_reconnect">Reconectar</string>
 
+    <!-- Historial Térmico: pantalla -->
+    <string name="history_title">Historial Térmico</string>
+    <string name="history_subtitle">Estadísticas continuas del enfriador de insulina.</string>
+    <string name="history_loading">Cargando el historial térmico…</string>
+    <string name="history_empty_title">Sin lecturas en este rango</string>
+    <string name="history_empty_message">Mantén el estuche encendido y cerca del teléfono, o elige un rango más amplio.</string>
+    <string name="history_error_title">No se pudo cargar el historial</string>
+    <string name="history_error_message">Hubo un problema al leer las lecturas guardadas en el teléfono.</string>
+    <string name="history_events_section">LÍNEA DE EVENTOS</string>
+    <string name="history_events_empty">Sin alertas ni eventos en este rango.</string>
+
+    <!-- Historial Térmico: temperatura actual -->
+    <string name="history_current_label">Temperatura actual</string>
+    <string name="history_value_unknown">--</string>
+    <string name="history_current_reading_time">Lectura del %1$s</string>
+    <string name="history_status_safe">RANGO SEGURO</string>
+    <string name="history_status_warning">CERCA DEL LÍMITE</string>
+    <string name="history_status_critical">FUERA DE RANGO</string>
+    <string name="history_current_description">Temperatura actual: %1$s. Estado: %2$s. %3$s.</string>
+    <string name="history_current_unknown_description">Temperatura actual: sin lecturas del estuche.</string>
+
+    <!-- Historial Térmico: selector de rango -->
+    <string name="history_range_24h">Últimas 24h</string>
+    <string name="history_range_7d">7 Días</string>
+    <string name="history_range_30d">30 Días</string>
+
+    <!-- Historial Térmico: línea de eventos -->
+    <string name="history_event_alert_title">Alerta de temperatura</string>
+    <string name="history_event_alert_high">Pico de %1$s por encima del rango seguro</string>
+    <string name="history_event_alert_low">Descenso hasta %1$s por debajo del rango seguro</string>
+    <string name="history_event_alert_ongoing">%1$s · Sigue activa</string>
+    <string name="history_event_normalized_title">Cambio de rango térmico</string>
+    <string name="history_event_normalized_description">Retorno a %1$s dentro del rango seguro</string>
+    <string name="history_event_battery_title">Batería baja del estuche</string>
+    <string name="history_event_battery_description">Nivel al %1$d%%: conecta el cargador</string>
+    <string name="history_event_yesterday">Ayer %1$s</string>
+    <string name="history_event_date_time">%1$s, %2$s</string>
+
     <!-- Historial Térmico: gráfica de estabilidad -->
     <string name="history_chart_title">GRÁFICA DE ESTABILIDAD (%1$.0f-%2$.0f°C)</string>
     <string name="history_chart_max_safe">Máx Seguro %1$.0f°C</string>
