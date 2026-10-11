@@ -34,10 +34,8 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            // Las reglas propias viven en src/main/keepRules/ (AGP las combina solas).
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }
 
