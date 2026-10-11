@@ -9,7 +9,7 @@ import com.example.medicaseclinico.R
  */
 enum class TopLevelDestination(
     val route: String,
-    @param:StringRes val labelRes: Int
+    @get:StringRes val labelRes: Int
 ) {
     HOME(route = "home", labelRes = R.string.nav_home),
     TEMPERATURE(route = "temperature", labelRes = R.string.nav_temperature),
