@@ -1,6 +1,7 @@
 package com.example.medicaseclinico.ui.screens.dashboard
 
 import androidx.compose.runtime.Immutable
+import com.example.medicaseclinico.domain.model.BatteryThresholds
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 
@@ -54,7 +55,7 @@ sealed interface DashboardUiState {
 
         /** true si la batería está por debajo del 20 % (alerta "Batería Baja" del diseño). */
         val isBatteryLow: Boolean
-            get() = batteryLevel != null && batteryLevel < LOW_BATTERY_THRESHOLD
+            get() = batteryLevel != null && batteryLevel < BatteryThresholds.LOW_PERCENT
     }
 
     /** Fallo controlado. La app no crashea: muestra la pantalla de error con reintento. */
@@ -63,11 +64,6 @@ sealed interface DashboardUiState {
         val reason: ErrorReason,
         val canRetry: Boolean = true
     ) : DashboardUiState
-
-    companion object {
-        /** Umbral de batería baja, coincide con el ajuste "Batería Baja (20 %)" del diseño. */
-        const val LOW_BATTERY_THRESHOLD = 20
-    }
 }
 
 /**

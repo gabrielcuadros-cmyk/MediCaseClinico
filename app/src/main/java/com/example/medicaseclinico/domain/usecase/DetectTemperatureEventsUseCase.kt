@@ -1,5 +1,6 @@
 package com.example.medicaseclinico.domain.usecase
 
+import com.example.medicaseclinico.domain.model.BatteryThresholds
 import com.example.medicaseclinico.domain.model.HistoryEvent
 import com.example.medicaseclinico.domain.model.TemperatureExcursion
 import com.example.medicaseclinico.domain.model.TemperatureReading
@@ -18,8 +19,8 @@ import com.example.medicaseclinico.domain.model.TemperatureStatus
  * alrededor del umbral.
  */
 class DetectTemperatureEventsUseCase(
-    private val lowBatteryPercent: Int = DEFAULT_LOW_BATTERY_PERCENT,
-    private val batteryRearmPercent: Int = DEFAULT_BATTERY_REARM_PERCENT
+    private val lowBatteryPercent: Int = BatteryThresholds.LOW_PERCENT,
+    private val batteryRearmPercent: Int = BatteryThresholds.REARM_PERCENT
 ) {
     /**
      * @return eventos del más reciente al más antiguo (orden de la línea de
@@ -114,13 +115,5 @@ class DetectTemperatureEventsUseCase(
             peakCelsius = peakCelsius,
             endTimestamp = lastTimestamp.takeIf { isClosed }
         )
-    }
-
-    companion object {
-        /** Mismo umbral que la alerta "Batería Baja" (avisar al bajar del 20 %). */
-        const val DEFAULT_LOW_BATTERY_PERCENT = 20
-
-        /** Nivel a partir del cual se considera recuperada y se puede volver a avisar. */
-        const val DEFAULT_BATTERY_REARM_PERCENT = 25
     }
 }

@@ -13,6 +13,7 @@ import com.example.medicaseclinico.MainActivity
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.model.AlertType
+import com.example.medicaseclinico.domain.model.BatteryThresholds
 import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import java.time.Instant
@@ -86,7 +87,7 @@ class SystemAlertPublisher(
     @Synchronized
     override fun onBatteryLevel(percent: Int) {
         when {
-            percent < LOW_BATTERY_THRESHOLD && !lowBatteryAlertActive -> {
+            percent < BatteryThresholds.LOW_PERCENT && !lowBatteryAlertActive -> {
                 post(
                     id = NOTIFICATION_ID_BATTERY,
                     channel = AlertChannel.BATTERY,
@@ -97,7 +98,7 @@ class SystemAlertPublisher(
                 )
                 lowBatteryAlertActive = true
             }
-            percent >= BATTERY_REARM_THRESHOLD && lowBatteryAlertActive -> {
+            percent >= BatteryThresholds.REARM_PERCENT && lowBatteryAlertActive -> {
                 notificationManager.cancel(NOTIFICATION_ID_BATTERY)
                 lowBatteryAlertActive = false
             }
@@ -213,8 +214,6 @@ class SystemAlertPublisher(
         const val NOTIFICATION_ID_CONNECTION = 1003
         val TEMPERATURE_REMINDER_MS = TimeUnit.MINUTES.toMillis(15)
         val TEMPERATURE_UPDATE_MS = TimeUnit.SECONDS.toMillis(30)
-        const val LOW_BATTERY_THRESHOLD = 20
-        const val BATTERY_REARM_THRESHOLD = 25
         const val ALERT_COLOR = 0xFFD64535.toInt()
     }
 }
