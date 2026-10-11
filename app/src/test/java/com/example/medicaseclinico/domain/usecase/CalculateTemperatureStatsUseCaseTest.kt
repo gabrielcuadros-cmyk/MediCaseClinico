@@ -1,5 +1,6 @@
 package com.example.medicaseclinico.domain.usecase
 
+import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -17,6 +18,96 @@ class CalculateTemperatureStatsUseCaseTest {
         timestamp = atMinute * minute,
         isAlertTriggered = celsius !in 2f..8f
     )
+
+    private val bucketMs = 2 * minute
+
+    private fun bucket(
+        index: Long,
+        average: Float,
+        min: Float = average,
+        max: Float = average,
+        samples: Int = 12,
+        outOfRange: Int = 0
+    ) = TemperatureBucket(
+        startTimestamp = index * bucketMs,
+        averageCelsius = average,
+        minCelsius = min,
+        maxCelsius = max,
+        sampleCount = samples,
+        outOfRangeCount = outOfRange
+    )
+
+    @Test
+    fun `sin intervalos devuelve null para mostrar el estado vacio`() {
+        val useCase = CalculateTemperatureStatsUseCase()
+        assertNull(useCase.fromBuckets(emptyList(), bucketMs = bucketMs, rangeEnd = 0L))
+    }
+
+    @Test
+    fun `intervalos estables a 4_2 grados estan 100 por ciento en rango`() {
+        val useCase = CalculateTemperatureStatsUseCase()
+        val buckets = listOf(bucket(0, 4.2f), bucket(1, 4.2f), bucket(2, 4.2f))
+
+        val stats = useCase.fromBuckets(buckets, bucketMs = bucketMs, rangeEnd = 3 * bucketMs)!!
+
+        assertEquals(100f, stats.timeInSafeRangePercent, delta)
+        assertEquals(4.2f, stats.averageCelsius, delta)
+        assertEquals(36, stats.sampleCount)
+        assertEquals(3 * bucketMs, stats.monitoredDurationMs)
+    }
+
+    @Test
+    fun `minimo y maximo salen de los extremos del intervalo y no de su media`() {
+        val useCase = CalculateTemperatureStatsUseCase()
+        val buckets = listOf(bucket(0, 5.0f, min = 1.5f, max = 8.4f, outOfRange = 2), bucket(1, 4.0f))
+
+        val stats = useCase.fromBuckets(buckets, bucketMs = bucketMs, rangeEnd = 2 * bucketMs)!!
+
+        assertEquals(1.5f, stats.minCelsius, delta)
+        assertEquals(8.4f, stats.maxCelsius, delta)
+        assertEquals(4.5f, stats.averageCelsius, delta)
+    }
+
+    @Test
+    fun `el tiempo en rango usa la proporcion de lecturas fuera de rango del intervalo`() {
+        val useCase = CalculateTemperatureStatsUseCase()
+        // Primer intervalo: mitad de las lecturas fuera de rango. Segundo: todo en rango.
+        val buckets = listOf(
+            bucket(0, 7.0f, max = 9.0f, samples = 10, outOfRange = 5),
+            bucket(1, 4.0f, samples = 10)
+        )
+
+        val stats = useCase.fromBuckets(buckets, bucketMs = bucketMs, rangeEnd = 2 * bucketMs)!!
+
+        assertEquals(75f, stats.timeInSafeRangePercent, delta)
+    }
+
+    @Test
+    fun `los intervalos sin lecturas no cuentan como tiempo vigilado`() {
+        val useCase = CalculateTemperatureStatsUseCase()
+        // Intervalo seguro y, diez intervalos después, uno totalmente fuera de rango.
+        val buckets = listOf(
+            bucket(0, 4.0f),
+            bucket(10, 9.0f, samples = 12, outOfRange = 12)
+        )
+
+        val stats = useCase.fromBuckets(buckets, bucketMs = bucketMs, rangeEnd = 11 * bucketMs)!!
+
+        assertEquals(2 * bucketMs, stats.monitoredDurationMs)
+        assertEquals(50f, stats.timeInSafeRangePercent, delta)
+    }
+
+    @Test
+    fun `el ultimo intervalo solo pesa hasta el final del rango`() {
+        val useCase = CalculateTemperatureStatsUseCase()
+        val buckets = listOf(bucket(0, 4.0f), bucket(1, 8.0f))
+
+        // El segundo intervalo va por la mitad: pesa la mitad que el primero.
+        val stats = useCase.fromBuckets(buckets, bucketMs = bucketMs, rangeEnd = 3 * minute)!!
+
+        assertEquals(3 * minute, stats.monitoredDurationMs)
+        assertEquals(5.33f, stats.averageCelsius, delta)
+    }
 
     @Test
     fun `sin lecturas devuelve null para mostrar el estado vacio`() {

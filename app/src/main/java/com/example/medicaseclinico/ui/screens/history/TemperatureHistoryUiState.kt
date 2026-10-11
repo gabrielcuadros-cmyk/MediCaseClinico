@@ -3,7 +3,7 @@ package com.example.medicaseclinico.ui.screens.history
 import androidx.compose.runtime.Immutable
 import com.example.medicaseclinico.domain.model.HistoryEvent
 import com.example.medicaseclinico.domain.model.HistoryRange
-import com.example.medicaseclinico.domain.model.TemperatureReading
+import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureStats
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 
@@ -38,7 +38,8 @@ sealed interface TemperatureHistoryUiState {
     /**
      * Hay lecturas reales en el rango.
      *
-     * @param readings lecturas en orden cronológico para la gráfica de estabilidad.
+     * @param buckets lecturas resumidas por intervalos de `selectedRange.bucketMs`,
+     * en orden cronológico, para la gráfica de estabilidad.
      * @param events línea de eventos, del más reciente al más antiguo.
      * @param rangeStart inicio de la ventana mostrada (epoch ms), para el eje de la gráfica.
      * @param rangeEnd fin de la ventana mostrada (epoch ms).
@@ -46,7 +47,7 @@ sealed interface TemperatureHistoryUiState {
     data class Success(
         override val selectedRange: HistoryRange,
         val current: CurrentTemperature,
-        val readings: List<TemperatureReading>,
+        val buckets: List<TemperatureBucket>,
         val stats: TemperatureStats,
         val events: List<HistoryEvent>,
         val rangeStart: Long,

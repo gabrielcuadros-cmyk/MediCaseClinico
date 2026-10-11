@@ -2,6 +2,7 @@ package com.example.medicaseclinico.domain.usecase
 
 import com.example.medicaseclinico.domain.model.BatteryThresholds
 import com.example.medicaseclinico.domain.model.HistoryEvent
+import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureExcursion
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
@@ -42,6 +43,35 @@ class DetectTemperatureEventsUseCase(
 
         val events = detectTemperatureEvents(sorted) + detectBatteryEvents(sorted)
         return events.sortedByDescending { it.timestamp }
+    }
+
+    /**
+     * Mismos eventos a partir de lecturas ya resumidas por intervalos.
+     *
+     * Un intervalo cuenta como fuera de rango si su máximo o su mínimo lo
+     * están, aunque su media sea normal: así un pico breve no desaparece al
+     * promediar. Las horas de los eventos tienen la precisión del intervalo.
+     */
+    fun fromBuckets(buckets: List<TemperatureBucket>): List<HistoryEvent> =
+        invoke(buckets.flatMap { it.toRepresentativeReadings() })
+
+    /**
+     * Convierte el intervalo en las lecturas que lo representan: sus extremos
+     * fuera de rango (alta antes que baja) o, si todo estuvo en rango, su media.
+     */
+    private fun TemperatureBucket.toRepresentativeReadings(): List<TemperatureReading> {
+        val extremes = listOfNotNull(
+            maxCelsius.takeIf { it > TemperatureStatus.MAX_SAFE_CELSIUS },
+            minCelsius.takeIf { it < TemperatureStatus.MIN_SAFE_CELSIUS }
+        )
+        return extremes.ifEmpty { listOf(averageCelsius) }.mapIndexed { index, celsius ->
+            TemperatureReading(
+                temperatureCelsius = celsius,
+                timestamp = startTimestamp,
+                isAlertTriggered = extremes.isNotEmpty(),
+                batteryLevel = lastBatteryLevel.takeIf { index == 0 }
+            )
+        }
     }
 
     private fun detectTemperatureEvents(sorted: List<TemperatureReading>): List<HistoryEvent> {

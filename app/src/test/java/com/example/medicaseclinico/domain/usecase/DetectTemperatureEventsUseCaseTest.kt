@@ -1,6 +1,7 @@
 package com.example.medicaseclinico.domain.usecase
 
 import com.example.medicaseclinico.domain.model.HistoryEvent
+import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureExcursion
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import org.junit.Assert.assertEquals
@@ -21,6 +22,98 @@ class DetectTemperatureEventsUseCaseTest {
         isAlertTriggered = celsius !in 2f..8f,
         batteryLevel = battery
     )
+
+    private val bucketMs = 2 * minute
+
+    private fun bucket(
+        index: Long,
+        average: Float,
+        min: Float = average,
+        max: Float = average,
+        battery: Int? = null
+    ) = TemperatureBucket(
+        startTimestamp = index * bucketMs,
+        averageCelsius = average,
+        minCelsius = min,
+        maxCelsius = max,
+        sampleCount = 12,
+        outOfRangeCount = if (min < 2f || max > 8f) 1 else 0,
+        lastBatteryLevel = battery
+    )
+
+    @Test
+    fun `intervalos estables en rango no generan eventos`() {
+        val buckets = listOf(bucket(0, 4.2f, min = 4.0f, max = 4.4f), bucket(1, 4.3f))
+        assertTrue(useCase.fromBuckets(buckets).isEmpty())
+    }
+
+    @Test
+    fun `un pico breve no se pierde aunque la media del intervalo sea normal`() {
+        val buckets = listOf(bucket(0, 4.2f), bucket(1, 5.0f, max = 8.4f), bucket(2, 4.2f))
+
+        val events = useCase.fromBuckets(buckets)
+
+        val alert = events.filterIsInstance<HistoryEvent.TemperatureAlert>().single()
+        assertEquals(TemperatureExcursion.HIGH, alert.direction)
+        assertEquals(8.4f, alert.peakCelsius, delta)
+        assertEquals(1 * bucketMs, alert.timestamp)
+        val normalized = events.filterIsInstance<HistoryEvent.TemperatureNormalized>().single()
+        assertEquals(2 * bucketMs, normalized.timestamp)
+        assertEquals(4.2f, normalized.celsius, delta)
+    }
+
+    @Test
+    fun `intervalos seguidos fuera de rango son una alerta con el maximo de todos`() {
+        val buckets = listOf(
+            bucket(0, 8.2f, max = 8.5f),
+            bucket(1, 8.8f, max = 9.6f),
+            bucket(2, 8.1f, max = 8.3f)
+        )
+
+        val alert = useCase.fromBuckets(buckets).single() as HistoryEvent.TemperatureAlert
+
+        assertEquals(9.6f, alert.peakCelsius, delta)
+        assertEquals(0L, alert.timestamp)
+        assertNull(alert.endTimestamp)
+    }
+
+    @Test
+    fun `temperatura baja en un intervalo usa su minimo como pico`() {
+        val buckets = listOf(bucket(0, 2.5f, min = 1.2f), bucket(1, 4.0f))
+
+        val alert = useCase.fromBuckets(buckets)
+            .filterIsInstance<HistoryEvent.TemperatureAlert>().single()
+
+        assertEquals(TemperatureExcursion.LOW, alert.direction)
+        assertEquals(1.2f, alert.peakCelsius, delta)
+    }
+
+    @Test
+    fun `un intervalo con maximo alto y minimo bajo genera las dos alertas`() {
+        val buckets = listOf(bucket(0, 5.0f, min = 1.0f, max = 9.0f))
+
+        val alerts = useCase.fromBuckets(buckets).filterIsInstance<HistoryEvent.TemperatureAlert>()
+
+        assertEquals(
+            setOf(TemperatureExcursion.HIGH, TemperatureExcursion.LOW),
+            alerts.map { it.direction }.toSet()
+        )
+    }
+
+    @Test
+    fun `la ultima bateria del intervalo genera el evento de bateria baja una sola vez`() {
+        val buckets = listOf(
+            bucket(0, 4.0f, battery = 40),
+            bucket(1, 4.0f, battery = 18),
+            bucket(2, 4.0f, battery = null),
+            bucket(3, 4.0f, battery = 16)
+        )
+
+        val event = useCase.fromBuckets(buckets).single() as HistoryEvent.BatteryLow
+
+        assertEquals(1 * bucketMs, event.timestamp)
+        assertEquals(18, event.levelPercent)
+    }
 
     @Test
     fun `sin lecturas no hay eventos para mostrar el estado vacio`() {
