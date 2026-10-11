@@ -1,6 +1,8 @@
 package com.example.medicaseclinico.data.mapper
 
+import com.example.medicaseclinico.data.local.entity.TemperatureBucketRow
 import com.example.medicaseclinico.data.local.entity.TemperatureEntity
+import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureReading
 
 /**
@@ -24,3 +26,13 @@ fun TemperatureReading.toEntity(): TemperatureEntity = TemperatureEntity(
 )
 
 fun List<TemperatureEntity>.toDomain(): List<TemperatureReading> = map { it.toDomain() }
+
+fun TemperatureBucketRow.toDomain(): TemperatureBucket = TemperatureBucket(
+    startTimestamp = bucketStart,
+    averageCelsius = averageCelsius,
+    minCelsius = minCelsius,
+    maxCelsius = maxCelsius,
+    sampleCount = sampleCount,
+    outOfRangeCount = outOfRangeCount,
+    lastBatteryLevel = lastBatteryLevel
+)

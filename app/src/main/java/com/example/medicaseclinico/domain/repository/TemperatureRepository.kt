@@ -1,5 +1,6 @@
 package com.example.medicaseclinico.domain.repository
 
+import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import kotlinx.coroutines.flow.Flow
 
@@ -25,6 +26,13 @@ interface TemperatureRepository {
 
     /** Lecturas desde [since] (epoch ms) → gráfica 24h / 7 días / 30 días. */
     fun observeReadingsSince(since: Long): Flow<List<TemperatureReading>>
+
+    /**
+     * Lecturas desde [since] resumidas en intervalos de [bucketMs] ms, en orden
+     * cronológico → Historial Térmico. Evita cargar cientos de miles de
+     * lecturas en los rangos largos sin perder mínimos ni máximos.
+     */
+    fun observeBucketsSince(since: Long, bucketMs: Long): Flow<List<TemperatureBucket>>
 
     /** Lecturas fuera de rango → pantalla de Alertas. */
     fun observeAlertReadings(): Flow<List<TemperatureReading>>

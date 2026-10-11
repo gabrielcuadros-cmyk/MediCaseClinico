@@ -3,7 +3,9 @@ package com.example.medicaseclinico.data.repository
 import com.example.medicaseclinico.data.local.dao.TemperatureDao
 import com.example.medicaseclinico.data.mapper.toDomain
 import com.example.medicaseclinico.data.mapper.toEntity
+import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureReading
+import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +38,16 @@ class TemperatureRepositoryImpl(
     override fun observeReadingsSince(since: Long): Flow<List<TemperatureReading>> =
         dao.observeReadingsSince(since)
             .map { entities -> entities.toDomain() }
+            .flowOn(ioDispatcher)
+
+    override fun observeBucketsSince(since: Long, bucketMs: Long): Flow<List<TemperatureBucket>> =
+        dao.observeBucketsSince(
+            since = since,
+            bucketMs = bucketMs,
+            minSafe = TemperatureStatus.MIN_SAFE_CELSIUS,
+            maxSafe = TemperatureStatus.MAX_SAFE_CELSIUS
+        )
+            .map { rows -> rows.map { it.toDomain() } }
             .flowOn(ioDispatcher)
 
     override fun observeAlertReadings(): Flow<List<TemperatureReading>> =

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.medicaseclinico.data.local.entity.TemperatureBucketRow
 import com.example.medicaseclinico.data.local.entity.TemperatureEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -61,6 +62,59 @@ interface TemperatureDao {
         """
     )
     fun observeReadingsSince(since: Long): Flow<List<TemperatureEntity>>
+
+    /**
+     * Lecturas desde [since] resumidas en intervalos de [bucketMs] milisegundos,
+     * en orden cronológico → Historial Térmico sin cargar cada lectura.
+     *
+     * La batería sale de una subconsulta aparte: SQLite toma `battery_level`
+     * de la fila con el `MAX(timestamp)` del grupo, es decir, la última
+     * batería reportada en el intervalo.
+     *
+     * @param minSafe límite inferior seguro (°C) para contar lecturas fuera de rango.
+     * @param maxSafe límite superior seguro (°C).
+     */
+    @Query(
+        """
+        SELECT
+            agg.bucket * :bucketMs AS bucketStart,
+            agg.averageCelsius AS averageCelsius,
+            agg.minCelsius AS minCelsius,
+            agg.maxCelsius AS maxCelsius,
+            agg.sampleCount AS sampleCount,
+            agg.outOfRangeCount AS outOfRangeCount,
+            bat.battery_level AS lastBatteryLevel
+        FROM (
+            SELECT
+                timestamp / :bucketMs AS bucket,
+                AVG(temperature_celsius) AS averageCelsius,
+                MIN(temperature_celsius) AS minCelsius,
+                MAX(temperature_celsius) AS maxCelsius,
+                COUNT(*) AS sampleCount,
+                SUM(CASE WHEN temperature_celsius < :minSafe OR temperature_celsius > :maxSafe
+                    THEN 1 ELSE 0 END) AS outOfRangeCount
+            FROM temperature_readings
+            WHERE timestamp >= :since
+            GROUP BY timestamp / :bucketMs
+        ) AS agg
+        LEFT JOIN (
+            SELECT
+                timestamp / :bucketMs AS bucket,
+                battery_level,
+                MAX(timestamp) AS lastTimestamp
+            FROM temperature_readings
+            WHERE timestamp >= :since AND battery_level IS NOT NULL
+            GROUP BY timestamp / :bucketMs
+        ) AS bat ON bat.bucket = agg.bucket
+        ORDER BY agg.bucket ASC
+        """
+    )
+    fun observeBucketsSince(
+        since: Long,
+        bucketMs: Long,
+        minSafe: Float,
+        maxSafe: Float
+    ): Flow<List<TemperatureBucketRow>>
 
     /** Solo lecturas que dispararon alerta, más recientes primero → pantalla de Alertas. */
     @Query(
