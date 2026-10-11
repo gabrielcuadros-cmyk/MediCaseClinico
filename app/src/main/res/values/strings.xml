@@ -50,4 +50,12 @@
     <string name="temperature_status_critical">CRÍTICO</string>
     <string name="temperature_not_live">Última lectura guardada · estuche sin conexión</string>
     <string name="temperature_card_content_description">Temperatura de la insulina: %1$s. Estado: %2$s.</string>
+
+    <!-- Dashboard: batería y sincronización -->
+    <string name="battery_card_title">Batería Estuche</string>
+    <string name="battery_value">%1$d%%</string>
+    <string name="battery_unknown">--</string>
+    <string name="battery_low_hint">Batería baja: conecta el cargador</string>
+    <string name="battery_content_description">Batería del estuche: %1$s</string>
+    <string name="dashboard_last_sync">Última lectura recibida vía Bluetooth %1$s</string>
 </resources>

@@ -7,15 +7,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.medicaseclinico.ui.components.PendingFeatureScreen
+import com.example.medicaseclinico.ui.screens.dashboard.DashboardRoute
 
 /**
  * Grafo de navegación principal de MediCase Clínico.
  *
  * Desacoplado: recibe el NavController desde fuera (lo crea la raíz de la app),
  * y cada pantalla solo se registra aquí. Ninguna pantalla importa a otra.
- *
- * Los destinos con PendingFeatureScreen se reemplazarán por sus pantallas
- * reales (el Dashboard en el Commit 21).
  */
 @Composable
 fun MediCaseNavGraph(
@@ -24,11 +22,11 @@ fun MediCaseNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = TopLevelDestination.START.route,
+        startDestination = TopLevelDestination.HOME.route,
         modifier = modifier
     ) {
         composable(TopLevelDestination.HOME.route) {
-            PendingFeatureScreen(titleRes = TopLevelDestination.HOME.labelRes)
+            DashboardRoute()
         }
         composable(TopLevelDestination.TEMPERATURE.route) {
             PendingFeatureScreen(titleRes = TopLevelDestination.TEMPERATURE.labelRes)
@@ -48,8 +46,7 @@ fun MediCaseNavGraph(
 /**
  * Navegación entre pestañas de la barra inferior con el comportamiento
  * estándar de Material:
- *  - popUpTo(inicio) + saveState: no se apilan pestañas infinitamente
- *    al tocarlas una y otra vez.
+ *  - popUpTo(inicio) + saveState: no se apilan pestañas infinitamente.
  *  - launchSingleTop: tocar la pestaña activa no crea otra copia.
  *  - restoreState: al volver a una pestaña, conserva su scroll y estado.
  */
