@@ -10,11 +10,10 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import androidx.core.content.FileProvider
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.common.HistoryEventTextFormatter
 import com.example.medicaseclinico.domain.chart.buildStabilityChartModel
-import com.example.medicaseclinico.domain.model.HistoryEvent
 import com.example.medicaseclinico.domain.model.HistoryRange
 import com.example.medicaseclinico.domain.model.MedicalReport
-import com.example.medicaseclinico.domain.model.TemperatureExcursion
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.MedicalReportExporter
 import kotlinx.coroutines.CoroutineDispatcher
@@ -107,6 +106,7 @@ class PdfMedicalReportExporter(
     // ------------------------------------------------------------------
     private fun drawReport(writer: ReportWriter, report: MedicalReport) {
         val style = ReportStyle()
+        val eventTexts = HistoryEventTextFormatter(appContext.resources)
         val dateTime = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN, Locale.getDefault())
             .withZone(ZoneId.systemDefault())
         fun formatDateTime(timestamp: Long) = dateTime.format(Instant.ofEpochMilli(timestamp))
@@ -213,12 +213,12 @@ class PdfMedicalReportExporter(
                 appContext.getString(
                     R.string.report_event_heading,
                     formatDateTime(event.timestamp),
-                    event.title()
+                    eventTexts.title(event)
                 ),
                 style.bodyBold,
                 spacingAfter = 1f
             )
-            writer.text(event.description(::formatCelsius), style.body, spacingAfter = 7f)
+            writer.text(eventTexts.description(event), style.body, spacingAfter = 7f)
         }
     }
 
@@ -237,36 +237,6 @@ class PdfMedicalReportExporter(
         HistoryRange.LAST_24_HOURS -> R.string.history_range_24h
         HistoryRange.LAST_7_DAYS -> R.string.history_range_7d
         HistoryRange.LAST_30_DAYS -> R.string.history_range_30d
-    }
-
-    private fun HistoryEvent.title(): String = when (this) {
-        is HistoryEvent.TemperatureAlert -> appContext.getString(R.string.history_event_alert_title)
-        is HistoryEvent.TemperatureNormalized ->
-            appContext.getString(R.string.history_event_normalized_title)
-        is HistoryEvent.BatteryLow -> appContext.getString(R.string.history_event_battery_title)
-    }
-
-    private fun HistoryEvent.description(formatCelsius: (Float) -> String): String = when (this) {
-        is HistoryEvent.TemperatureAlert -> {
-            val peak = formatCelsius(peakCelsius)
-            val peakDescription = when (direction) {
-                TemperatureExcursion.HIGH ->
-                    appContext.getString(R.string.history_event_alert_high, peak)
-                TemperatureExcursion.LOW ->
-                    appContext.getString(R.string.history_event_alert_low, peak)
-            }
-            if (endTimestamp == null) {
-                appContext.getString(R.string.history_event_alert_ongoing, peakDescription)
-            } else {
-                peakDescription
-            }
-        }
-        is HistoryEvent.TemperatureNormalized -> appContext.getString(
-            R.string.history_event_normalized_description,
-            formatCelsius(celsius)
-        )
-        is HistoryEvent.BatteryLow ->
-            appContext.getString(R.string.history_event_battery_description, levelPercent)
     }
 
     /** Tipografías del documento. Se crean por reporte: Paint no es seguro entre hilos. */

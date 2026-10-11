@@ -26,12 +26,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.common.HistoryEventTextFormatter
 import com.example.medicaseclinico.domain.model.HistoryEvent
 import com.example.medicaseclinico.domain.model.TemperatureExcursion
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
@@ -129,44 +132,38 @@ private data class TimelineStyle(
     val description: String
 )
 
+/** Ícono y colores son cosa de la pantalla; los textos salen del formateador común. */
 @Composable
 private fun HistoryEvent.timelineStyle(): TimelineStyle {
     val statusColors = MediCaseTheme.statusColors
+    val resources = LocalContext.current.resources
+    // Se relee la configuración para rehacer los textos si cambia el idioma.
+    val configuration = LocalConfiguration.current
+    val texts = remember(resources, configuration) { HistoryEventTextFormatter(resources) }
+    val title = texts.title(this)
+    val description = texts.description(this)
+
     return when (this) {
-        is HistoryEvent.TemperatureAlert -> {
-            val peakText = stringResource(R.string.temperature_value, peakCelsius)
-            val peakDescription = when (direction) {
-                TemperatureExcursion.HIGH -> stringResource(R.string.history_event_alert_high, peakText)
-                TemperatureExcursion.LOW -> stringResource(R.string.history_event_alert_low, peakText)
-            }
-            TimelineStyle(
-                icon = Icons.Outlined.WarningAmber,
-                accent = statusColors.critical,
-                container = statusColors.criticalContainer,
-                title = stringResource(R.string.history_event_alert_title),
-                description = if (endTimestamp == null) {
-                    stringResource(R.string.history_event_alert_ongoing, peakDescription)
-                } else {
-                    peakDescription
-                }
-            )
-        }
+        is HistoryEvent.TemperatureAlert -> TimelineStyle(
+            icon = Icons.Outlined.WarningAmber,
+            accent = statusColors.critical,
+            container = statusColors.criticalContainer,
+            title = title,
+            description = description
+        )
         is HistoryEvent.TemperatureNormalized -> TimelineStyle(
             icon = Icons.Outlined.DeviceThermostat,
             accent = MaterialTheme.colorScheme.primary,
             container = MaterialTheme.colorScheme.primaryContainer,
-            title = stringResource(R.string.history_event_normalized_title),
-            description = stringResource(
-                R.string.history_event_normalized_description,
-                stringResource(R.string.temperature_value, celsius)
-            )
+            title = title,
+            description = description
         )
         is HistoryEvent.BatteryLow -> TimelineStyle(
             icon = Icons.Outlined.BatteryAlert,
             accent = statusColors.warning,
             container = statusColors.warningContainer,
-            title = stringResource(R.string.history_event_battery_title),
-            description = stringResource(R.string.history_event_battery_description, levelPercent)
+            title = title,
+            description = description
         )
     }
 }
