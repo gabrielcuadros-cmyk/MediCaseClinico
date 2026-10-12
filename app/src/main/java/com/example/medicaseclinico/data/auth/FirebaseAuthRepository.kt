@@ -11,8 +11,12 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -36,16 +40,29 @@ class FirebaseAuthRepository(context: Context) : AuthRepository {
         }
     }
 
+    override val isAvailable: Boolean
+        get() = auth != null
+
+    /**
+     * Firebase solo avisa cuando se inicia o cierra sesión, no cuando cambia
+     * el nombre del usuario. Este contador se incrementa al guardarlo para
+     * que [currentUser] vuelva a emitir y el saludo aparezca sin reiniciar.
+     */
+    private val profileChanges = MutableStateFlow(0)
+
     override val currentUser: Flow<AuthUser?>
         get() {
             val auth = auth ?: return flowOf(null)
-            return callbackFlow {
+            val sessionChanges = callbackFlow {
                 // El listener se dispara al registrarse con el usuario actual,
                 // así que quien se suscribe recibe enseguida si hay sesión.
-                val listener = FirebaseAuth.AuthStateListener { trySend(it.currentUser?.toAuthUser()) }
+                val listener = FirebaseAuth.AuthStateListener { trySend(Unit) }
                 auth.addAuthStateListener(listener)
                 awaitClose { auth.removeAuthStateListener(listener) }
             }
+            return combine(sessionChanges, profileChanges) { _, _ ->
+                auth.currentUser?.toAuthUser()
+            }.distinctUntilChanged()
         }
 
     override suspend fun signIn(email: String, password: String): Result<AuthUser> =
@@ -72,6 +89,7 @@ class FirebaseAuthRepository(context: Context) : AuthRepository {
             } catch (e: Exception) {
                 return@authCall user.toAuthUser()
             }
+            profileChanges.update { it + 1 }
             user.toAuthUser().copy(displayName = displayName)
         }
 

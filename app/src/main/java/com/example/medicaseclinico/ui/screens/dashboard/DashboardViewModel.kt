@@ -13,6 +13,7 @@ import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
+import com.example.medicaseclinico.domain.repository.AuthRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
@@ -42,6 +44,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class DashboardViewModel(
     private val temperatureRepository: TemperatureRepository,
     private val deviceRepository: CaseDeviceRepository,
+    authRepository: AuthRepository,
     private val clock: () -> Long = System::currentTimeMillis,
     private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS
 ) : ViewModel() {
@@ -56,6 +59,23 @@ class DashboardViewModel(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
                 initialValue = DashboardUiState.Loading()
+            )
+
+    /**
+     * Nombre del usuario para el saludo "Hola, …", o null si no hay sesión o
+     * la cuenta no tiene nombre: entonces no se saluda, no se inventa uno.
+     */
+    val userName: StateFlow<String?> =
+        authRepository.currentUser
+            .map { it?.displayName }
+            .catch { throwable ->
+                if (throwable is CancellationException) throw throwable
+                emit(null)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                initialValue = null
             )
 
     /** Motivo actual por el que no hay enlace con el estuche (o null). */
@@ -162,7 +182,8 @@ class DashboardViewModel(
                 val application = checkNotNull(this[APPLICATION_KEY]) as MediCaseApplication
                 DashboardViewModel(
                     temperatureRepository = application.container.temperatureRepository,
-                    deviceRepository = application.container.caseDeviceRepository
+                    deviceRepository = application.container.caseDeviceRepository,
+                    authRepository = application.container.authRepository
                 )
             }
         }

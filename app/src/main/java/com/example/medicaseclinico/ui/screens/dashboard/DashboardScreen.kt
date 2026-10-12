@@ -64,6 +64,7 @@ fun DashboardRoute(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val deviceIssue by viewModel.deviceIssue.collectAsStateWithLifecycle()
+    val userName by viewModel.userName.collectAsStateWithLifecycle()
 
     var permissionsPermanentlyDenied by rememberSaveable { mutableStateOf(false) }
 
@@ -116,6 +117,7 @@ fun DashboardRoute(
     DashboardScreen(
         uiState = uiState,
         deviceIssue = deviceIssue,
+        userName = userName,
         permissionsPermanentlyDenied = permissionsPermanentlyDenied,
         onRetry = viewModel::retry,
         onIssueAction = { issue ->
@@ -148,11 +150,14 @@ fun DashboardScreen(
     permissionsPermanentlyDenied: Boolean,
     onRetry: () -> Unit,
     onIssueAction: (DeviceIssue) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    userName: String? = null
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { DashboardTopBar(connectionStatus = uiState.connectionStatus) },
+        topBar = {
+            DashboardTopBar(connectionStatus = uiState.connectionStatus, userName = userName)
+        },
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->

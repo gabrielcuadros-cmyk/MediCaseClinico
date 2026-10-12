@@ -20,11 +20,14 @@ import com.example.medicaseclinico.ui.screens.notifications.NotificationSettings
  *
  * Desacoplado: recibe el NavController desde fuera (lo crea la raíz de la app),
  * y cada pantalla solo se registra aquí. Ninguna pantalla importa a otra.
+ *
+ * @param onSignOut cierra la sesión, o null si esta instalación no usa cuentas.
  */
 @Composable
 fun MediCaseNavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSignOut: (() -> Unit)? = null
 ) {
     NavHost(
         navController = navController,
@@ -57,7 +60,10 @@ fun MediCaseNavGraph(
             PendingFeatureScreen(
                 titleRes = TopLevelDestination.SECURITY.labelRes,
                 actionLabelRes = R.string.open_notification_settings,
-                onAction = { navController.navigate(SecondaryRoutes.NOTIFICATION_SETTINGS) }
+                onAction = { navController.navigate(SecondaryRoutes.NOTIFICATION_SETTINGS) },
+                // Provisional: "Cerrar sesión" irá en la pantalla Seguridad del Estuche.
+                secondaryActionLabelRes = R.string.action_sign_out,
+                onSecondaryAction = onSignOut
             )
         }
         composable(SecondaryRoutes.NOTIFICATION_SETTINGS) {

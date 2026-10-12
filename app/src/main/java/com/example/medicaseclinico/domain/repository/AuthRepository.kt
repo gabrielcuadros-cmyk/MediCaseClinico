@@ -14,6 +14,13 @@ import kotlinx.coroutines.flow.Flow
 interface AuthRepository {
 
     /**
+     * false si esta instalación no tiene servicio de cuentas (se compiló sin
+     * `google-services.json`). La app no exige entonces iniciar sesión: sin
+     * servicio nadie podría entrar y el estuche quedaría sin monitoreo.
+     */
+    val isAvailable: Boolean get() = true
+
+    /**
      * Usuario con sesión iniciada, o null si no hay sesión. Emite el valor
      * actual al suscribirse y de nuevo cada vez que se inicia o cierra sesión.
      */

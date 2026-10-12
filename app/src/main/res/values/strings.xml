@@ -28,6 +28,8 @@
     <string name="action_back">Volver</string>
     <string name="action_accept">Aceptar</string>
     <string name="action_cancel">Cancelar</string>
+    <string name="action_sign_out">Cerrar sesión</string>
+    <string name="session_checking">Comprobando tu sesión…</string>
 
     <!-- Dashboard: carga y vacío -->
     <string name="dashboard_loading">Sincronizando datos del estuche…</string>
