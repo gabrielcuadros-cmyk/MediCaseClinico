@@ -1,88 +1,56 @@
 package com.example.medicaseclinico.ui.screens.auth.components
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MedicalServices
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 
 /**
- * Logotipo de la pantalla de inicio de sesión: maletín médico, la marca
- * "MediCase" en dos tonos y el lema.
+ * Logotipo de MediCase (maletín con la gota de insulina, la marca y el lema)
+ * sobre la tarjeta clara del diseño.
  *
- * Está dibujado con el tema de la app porque el proyecto no tiene el archivo
- * del logotipo del diseño; así al menos sigue los colores y el modo oscuro.
+ * La imagen ya incluye la marca y el lema como dibujo, así que se describe
+ * entera para los lectores de pantalla.
+ *
+ * La tarjeta es siempre clara: el logotipo tiene letras azul oscuro que no se
+ * leerían sobre el fondo del tema oscuro.
+ *
+ * @param logoWidth ancho de la imagen; el alto sale de su proporción.
  */
 @Composable
-fun MediCaseLogo(modifier: Modifier = Modifier) {
-    val brand = stringResource(R.string.auth_logo_description)
+fun MediCaseLogo(
+    modifier: Modifier = Modifier,
+    logoWidth: Dp = 200.dp
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val isDarkTheme = colorScheme.surface.luminance() < 0.5f
 
     Surface(
-        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = brand },
+        modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface
+        color = if (isDarkTheme) colorScheme.inverseSurface else colorScheme.surface
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(72.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Outlined.MedicalServices,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.secondary)) {
-                        append(stringResource(R.string.auth_logo_brand_first))
-                    }
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append(stringResource(R.string.auth_logo_brand_second))
-                    }
-                },
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                text = stringResource(R.string.auth_logo_tagline),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-        }
+        Image(
+            painter = painterResource(R.drawable.logo_medicase),
+            contentDescription = stringResource(R.string.auth_logo_description),
+            contentScale = ContentScale.FillWidth,
+            modifier = Modifier
+                .padding(20.dp)
+                .width(logoWidth)
+        )
     }
 }
 

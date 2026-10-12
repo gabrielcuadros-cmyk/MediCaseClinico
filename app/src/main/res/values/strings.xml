@@ -340,9 +340,6 @@
 
     <!-- Autenticación: elementos comunes de los formularios -->
     <string name="auth_logo_description">MediCase. Tu insulina, siempre en buenas manos.</string>
-    <string name="auth_logo_brand_first">Medi</string>
-    <string name="auth_logo_brand_second">Case</string>
-    <string name="auth_logo_tagline">Tu insulina, siempre en buenas manos</string>
     <string name="auth_email_label">Correo electrónico</string>
     <string name="auth_email_placeholder">correo@ejemplo.com</string>
     <string name="auth_password_label">Contraseña</string>
