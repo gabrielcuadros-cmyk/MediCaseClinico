@@ -100,9 +100,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
 
-    // --- Maps & Location ---
+    // --- Maps ---
     implementation(libs.play.services.maps)
-    implementation(libs.play.services.location)
     implementation(libs.maps.compose)
 
     // --- Firebase ---
