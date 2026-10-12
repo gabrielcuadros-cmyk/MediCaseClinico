@@ -10,6 +10,7 @@ import com.example.medicaseclinico.data.repository.AlertEventRepositoryImpl
 import com.example.medicaseclinico.data.repository.TemperatureRepositoryImpl
 import com.example.medicaseclinico.data.sync.CaseTelemetrySynchronizer
 import com.example.medicaseclinico.domain.alert.AlertPublisher
+import com.example.medicaseclinico.domain.alert.RecordingAlertPublisher
 import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
@@ -61,10 +62,15 @@ class AppContainer(context: Context) {
         )
     }
 
+    /** Cada alerta se guarda en el historial y luego se notifica. */
     val alertPublisher: AlertPublisher by lazy {
-        SystemAlertPublisher(
-            context = appContext,
-            preferencesProvider = { notificationPreferences.value }
+        RecordingAlertPublisher(
+            delegate = SystemAlertPublisher(
+                context = appContext,
+                preferencesProvider = { notificationPreferences.value }
+            ),
+            alertEventRepository = alertEventRepository,
+            scope = applicationScope
         )
     }
 
