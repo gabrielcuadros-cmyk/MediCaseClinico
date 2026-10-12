@@ -16,8 +16,6 @@ secrets = "2.0.1"
 googleServices = "4.4.2"
 navigationCompose = "2.8.3"
 coroutines = "1.9.0"
-playServicesMaps = "19.0.0"
-mapsCompose = "6.2.0"
 firebaseBom = "33.5.1"
 
 [libraries]
@@ -56,10 +54,6 @@ androidx-room-testing = { group = "androidx.room", name = "room-testing", versio
 # --- Corrutinas ---
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
-
-# --- Google Maps ---
-play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
-maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
 
 # --- Firebase ---
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
