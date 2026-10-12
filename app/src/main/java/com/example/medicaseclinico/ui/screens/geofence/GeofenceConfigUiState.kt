@@ -27,7 +27,7 @@ sealed interface GeofenceConfigUiState {
      * @param casePosition posición del estuche (en vivo o última conocida)
      * para dibujar su marcador, o null si no hay ninguna.
      * @param savedZones zonas guardadas, en el orden en que se crearon.
-     * @param message aviso pendiente de mostrar tras intentar guardar.
+     * @param message aviso pendiente de mostrar tras intentar guardar o borrar.
      */
     data class Success(
         val radiusMeters: Int,
@@ -60,5 +60,5 @@ data class SavedZone(
     val isInside: Boolean?
 )
 
-/** Resultado de guardar, para avisar al usuario una sola vez. */
-enum class GeofenceConfigMessage { SAVED, SAVE_FAILED }
+/** Resultado de guardar o borrar, para avisar al usuario una sola vez. */
+enum class GeofenceConfigMessage { SAVED, SAVE_FAILED, DELETED, DELETE_FAILED }

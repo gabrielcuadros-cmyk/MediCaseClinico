@@ -37,7 +37,7 @@ import kotlin.coroutines.cancellation.CancellationException
 /**
  * Prepara la pantalla "Configurar Geocerca": el formulario de la zona nueva
  * (nombre, radio y el centro que el usuario sitúa moviendo el mapa) y la
- * lista de zonas guardadas con su "Dentro" / "Fuera".
+ * lista de zonas guardadas con su "Dentro" / "Fuera", que se pueden borrar.
  *
  * La zona nueva se guarda en Room; el sincronizador la empieza a vigilar
  * solo, sin alertar por la posición que el estuche ya tenía al crearla.
@@ -126,6 +126,20 @@ class GeofenceConfigViewModel(
                         it.copy(isSaving = false, message = GeofenceConfigMessage.SAVE_FAILED)
                     }
                 }
+        }
+    }
+
+    /**
+     * Borra una zona guardada. La pantalla ya pidió confirmación: aquí no se
+     * vuelve a preguntar. El sincronizador deja de vigilarla solo.
+     */
+    fun deleteZone(id: Long) {
+        viewModelScope.launch {
+            val message = geofenceRepository.deleteGeofence(id).fold(
+                onSuccess = { GeofenceConfigMessage.DELETED },
+                onFailure = { GeofenceConfigMessage.DELETE_FAILED }
+            )
+            form.update { it.copy(message = message) }
         }
     }
 

@@ -25,13 +25,16 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -41,6 +44,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -50,6 +54,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -106,6 +111,8 @@ fun GeofenceConfigRoute(
     val message = (uiState as? GeofenceConfigUiState.Success)?.message
     val savedText = stringResource(R.string.geofence_saved_message)
     val failedText = stringResource(R.string.geofence_save_failed)
+    val deletedText = stringResource(R.string.geofence_deleted_message)
+    val deleteFailedText = stringResource(R.string.geofence_delete_failed)
     LaunchedEffect(message) {
         if (message == null) return@LaunchedEffect
         // Se da por mostrado antes de enseñarlo: si no, al girar el teléfono
@@ -116,6 +123,8 @@ fun GeofenceConfigRoute(
                 when (message) {
                     GeofenceConfigMessage.SAVED -> savedText
                     GeofenceConfigMessage.SAVE_FAILED -> failedText
+                    GeofenceConfigMessage.DELETED -> deletedText
+                    GeofenceConfigMessage.DELETE_FAILED -> deleteFailedText
                 }
             )
         }
@@ -130,6 +139,7 @@ fun GeofenceConfigRoute(
         onRadiusChange = viewModel::onRadiusChange,
         onCenterChanged = viewModel::onCenterChanged,
         onSave = viewModel::save,
+        onDeleteZone = viewModel::deleteZone,
         onRetry = viewModel::retry,
         modifier = modifier
     )
@@ -150,6 +160,7 @@ fun GeofenceConfigScreen(
     onRadiusChange: (Int) -> Unit,
     onCenterChanged: (GeoPoint) -> Unit,
     onSave: () -> Unit,
+    onDeleteZone: (Long) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -217,7 +228,8 @@ fun GeofenceConfigScreen(
                         zoneName = zoneName,
                         onNameChange = onNameChange,
                         onRadiusChange = onRadiusChange,
-                        onCenterChanged = onCenterChanged
+                        onCenterChanged = onCenterChanged,
+                        onDeleteZone = onDeleteZone
                     )
 
                 GeofenceConfigUiState.Error ->
@@ -246,8 +258,25 @@ private fun GeofenceConfigContent(
     zoneName: String,
     onNameChange: (String) -> Unit,
     onRadiusChange: (Int) -> Unit,
-    onCenterChanged: (GeoPoint) -> Unit
+    onCenterChanged: (GeoPoint) -> Unit,
+    onDeleteZone: (Long) -> Unit
 ) {
+    // Estado solo visual: la zona por la que se está preguntando. Se guarda
+    // el id para que el diálogo sobreviva a un giro del teléfono.
+    var pendingDeleteId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val pendingDelete = state.savedZones.firstOrNull { it.id == pendingDeleteId }
+
+    if (pendingDelete != null) {
+        DeleteZoneDialog(
+            zoneName = pendingDelete.name,
+            onConfirm = {
+                pendingDeleteId = null
+                onDeleteZone(pendingDelete.id)
+            },
+            onDismiss = { pendingDeleteId = null }
+        )
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         ZonePickerMap(
             state = state,
@@ -265,7 +294,7 @@ private fun GeofenceConfigContent(
         ) {
             ZoneNameField(name = zoneName, onNameChange = onNameChange)
             RadiusSlider(radiusMeters = state.radiusMeters, onRadiusChange = onRadiusChange)
-            SavedZones(zones = state.savedZones)
+            SavedZones(zones = state.savedZones, onDeleteClick = { pendingDeleteId = it.id })
         }
     }
 }
@@ -445,7 +474,10 @@ private fun FieldLabel(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SavedZones(zones: List<SavedZone>) {
+private fun SavedZones(
+    zones: List<SavedZone>,
+    onDeleteClick: (SavedZone) -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = stringResource(R.string.geofence_saved_zones_header),
@@ -459,23 +491,26 @@ private fun SavedZones(zones: List<SavedZone>) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
-            zones.forEach { zone -> SavedZoneCard(zone = zone) }
+            zones.forEach { zone ->
+                SavedZoneCard(zone = zone, onDeleteClick = { onDeleteClick(zone) })
+            }
         }
     }
 }
 
 @Composable
-private fun SavedZoneCard(zone: SavedZone) {
+private fun SavedZoneCard(
+    zone: SavedZone,
+    onDeleteClick: () -> Unit
+) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics(mergeDescendants = true) {},
+        modifier = Modifier.fillMaxWidth(),
         shape = ZoneCardShape,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(start = 14.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -505,8 +540,50 @@ private fun SavedZoneCard(zone: SavedZone) {
                 Spacer(modifier = Modifier.width(12.dp))
                 PresenceChip(isInside = zone.isInside)
             }
+            IconButton(onClick = onDeleteClick) {
+                Icon(
+                    imageVector = Icons.Outlined.DeleteOutline,
+                    contentDescription = stringResource(R.string.geofence_delete_zone, zone.name),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
+}
+
+/**
+ * Borrar una zona deja al estuche sin vigilancia en ese lugar y no se puede
+ * deshacer: se pregunta antes, diciendo qué zona es y qué se pierde.
+ */
+@Composable
+private fun DeleteZoneDialog(
+    zoneName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.geofence_delete_title)) },
+        text = { Text(text = stringResource(R.string.geofence_delete_message, zoneName)) },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text(
+                    text = stringResource(R.string.geofence_delete_confirm),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.action_cancel))
+            }
+        }
+    )
 }
 
 /** "Dentro" / "Fuera": lo dice el texto; el color solo lo acompaña. */
@@ -579,6 +656,7 @@ private fun GeofenceConfigPreview(uiState: GeofenceConfigUiState, zoneName: Stri
                 onRadiusChange = {},
                 onCenterChanged = {},
                 onSave = {},
+                onDeleteZone = {},
                 onRetry = {}
             )
         }

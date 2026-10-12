@@ -318,5 +318,11 @@
     <string name="geofence_save">Guardar Zona de Seguridad</string>
     <string name="geofence_saved_message">Zona de seguridad guardada.</string>
     <string name="geofence_save_failed">No se pudo guardar la zona. Inténtalo de nuevo.</string>
+    <string name="geofence_delete_zone">Borrar la zona %1$s</string>
+    <string name="geofence_delete_title">¿Borrar esta zona?</string>
+    <string name="geofence_delete_message">Dejarás de recibir alertas cuando el estuche salga de «%1$s». Esta acción no se puede deshacer.</string>
+    <string name="geofence_delete_confirm">Borrar</string>
+    <string name="geofence_deleted_message">Zona de seguridad borrada.</string>
+    <string name="geofence_delete_failed">No se pudo borrar la zona. Inténtalo de nuevo.</string>
     <string name="loss_mode_title">Modo Pérdida</string>
 </resources>
