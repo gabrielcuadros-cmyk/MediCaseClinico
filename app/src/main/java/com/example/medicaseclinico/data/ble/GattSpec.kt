@@ -28,6 +28,15 @@ object GattSpec {
     val BATTERY_LEVEL: UUID =
         resolve(BuildConfig.BLE_BATTERY_CHAR_UUID, sigUuid("2a19"))
 
+    /**
+     * Location and Navigation Service (0x1819): GPS del estuche. Opcional,
+     * como la batería: un estuche sin este servicio sigue funcionando.
+     */
+    val LOCATION_AND_NAVIGATION_SERVICE: UUID = sigUuid("1819")
+
+    /** Location and Speed (0x2A67): latitud y longitud en 1e-7 grados, vía Notify. */
+    val LOCATION_AND_SPEED: UUID = sigUuid("2a67")
+
     /** Client Characteristic Configuration Descriptor: activa Notify/Indicate. */
     val CLIENT_CHARACTERISTIC_CONFIG: UUID = sigUuid("2902")
 
