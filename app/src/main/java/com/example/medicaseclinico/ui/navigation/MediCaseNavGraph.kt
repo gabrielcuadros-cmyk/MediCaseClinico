@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.ui.components.PendingFeatureScreen
+import com.example.medicaseclinico.ui.screens.alerts.AlertsRoute
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardRoute
 import com.example.medicaseclinico.ui.screens.history.TemperatureHistoryRoute
 import com.example.medicaseclinico.ui.screens.notifications.NotificationSettingsRoute
@@ -38,7 +39,7 @@ fun MediCaseNavGraph(
             PendingFeatureScreen(titleRes = TopLevelDestination.MAP.labelRes)
         }
         composable(TopLevelDestination.ALERTS.route) {
-            PendingFeatureScreen(titleRes = TopLevelDestination.ALERTS.labelRes)
+            AlertsRoute(onBack = { navController.popBackStack() })
         }
         composable(TopLevelDestination.SECURITY.route) {
             PendingFeatureScreen(

@@ -199,4 +199,60 @@
     <string name="notif_blocked_action">Activar notificaciones</string>
     <string name="notif_settings_error_title">No se pudieron cargar los ajustes</string>
     <string name="notif_settings_error_message">Vuelve a abrir esta pantalla. Mientras tanto, las alertas usan la configuración de fábrica.</string>
+
+    <!-- Alertas de Seguridad: pantalla -->
+    <string name="alerts_title">Alertas de Seguridad</string>
+    <string name="alerts_subtitle">Lista histórica de eventos críticos y de diagnóstico.</string>
+    <string name="alerts_loading">Cargando las alertas…</string>
+    <string name="alerts_error_title">No se pudieron cargar las alertas</string>
+    <string name="alerts_error_message">Hubo un problema al leer las alertas guardadas en el teléfono.</string>
+
+    <!-- Alertas de Seguridad: filtros -->
+    <string name="alerts_filter_all">Todas</string>
+    <string name="alerts_filter_temperature">Temperatura</string>
+    <string name="alerts_filter_location">Ubicación</string>
+    <string name="alerts_filter_security">Seguridad</string>
+
+    <!-- Alertas de Seguridad: estado vacío de cada filtro -->
+    <string name="alerts_empty_all_title">Sin alertas registradas</string>
+    <string name="alerts_empty_all_message">Cuando el estuche emita una alerta de temperatura, batería o conexión, aparecerá aquí.</string>
+    <string name="alerts_empty_temperature_title">Sin alertas de temperatura</string>
+    <string name="alerts_empty_temperature_message">No hay registros de que la insulina haya salido del rango seguro.</string>
+    <string name="alerts_empty_location_title">Sin alertas de ubicación</string>
+    <string name="alerts_empty_location_message">Las salidas de una geocerca de seguridad aparecerán aquí.</string>
+    <string name="alerts_empty_security_title">Sin alertas de seguridad</string>
+    <string name="alerts_empty_security_message">Los intentos de acceso no autorizado al estuche aparecerán aquí.</string>
+
+    <!-- Alertas de Seguridad: tarjetas -->
+    <string name="alerts_temperature_title">Temperatura Fuera de Rango</string>
+    <string name="alerts_temperature_high">Estuche superó la temperatura máxima recomendada. Registrado %1$s.</string>
+    <string name="alerts_temperature_low">Estuche bajó de la temperatura mínima recomendada. Registrado %1$s.</string>
+    <string name="alerts_temperature_unknown">La insulina salió del rango de temperatura recomendado.</string>
+    <string name="alerts_battery_title">Nivel de Batería Bajo</string>
+    <string name="alerts_battery_title_with_level">Nivel de Batería Bajo (%1$d%%)</string>
+    <string name="alerts_battery_description">Conecta el MediCase al cargador. La refrigeración podría fallar.</string>
+    <string name="alerts_connection_title">Desconexión Bluetooth</string>
+    <string name="alerts_connection_description">Pérdida de enlace directo con el móvil.</string>
+    <string name="alerts_geofence_title">Geocerca de Seguridad Violada</string>
+    <string name="alerts_geofence_description">El dispositivo ha salido de la geocerca establecida.</string>
+    <string name="alerts_security_title">Intento de Acceso con Contraseña</string>
+    <string name="alerts_security_description">Bloqueo por intentos fallidos de contraseña de 4 dígitos.</string>
+
+    <!-- Alertas de Seguridad: tiempo relativo -->
+    <string name="alerts_time_now">Ahora</string>
+    <plurals name="alerts_time_minutes">
+        <item quantity="one">Hace %1$d min</item>
+        <item quantity="many">Hace %1$d min</item>
+        <item quantity="other">Hace %1$d min</item>
+    </plurals>
+    <plurals name="alerts_time_hours">
+        <item quantity="one">Hace %1$d hora</item>
+        <item quantity="many">Hace %1$d horas</item>
+        <item quantity="other">Hace %1$d horas</item>
+    </plurals>
+    <plurals name="alerts_time_days">
+        <item quantity="one">Hace %1$d día</item>
+        <item quantity="many">Hace %1$d días</item>
+        <item quantity="other">Hace %1$d días</item>
+    </plurals>
 </resources>
