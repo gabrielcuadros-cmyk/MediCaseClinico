@@ -149,6 +149,108 @@ class AppDatabaseMigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun migrar_de_3_a_4_conserva_lecturas_alertas_y_posiciones() {
+        helper.createDatabase(TEST_DATABASE, 3).use { database ->
+            database.execSQL(
+                "INSERT INTO temperature_readings " +
+                    "(temperature_celsius, timestamp, is_alert_triggered, battery_level) " +
+                    "VALUES (4.2, 1000, 0, 78)"
+            )
+            database.execSQL(
+                "INSERT INTO alert_events (type, timestamp, numeric_value, is_read) " +
+                    "VALUES ('TEMPERATURE', 2000, 8.4, 1)"
+            )
+            database.execSQL(
+                "INSERT INTO case_locations (latitude, longitude, timestamp) " +
+                    "VALUES (-16.3989, -71.5369, 3000)"
+            )
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DATABASE, 4, true, MIGRATION_3_4)
+
+        migrated.query("SELECT temperature_celsius, battery_level FROM temperature_readings").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(4.2f, cursor.getFloat(0), 0.001f)
+            assertEquals(78, cursor.getInt(1))
+            assertEquals(1, cursor.count)
+        }
+        migrated.query("SELECT type, numeric_value, is_read, detail FROM alert_events").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("TEMPERATURE", cursor.getString(0))
+            assertEquals(8.4f, cursor.getFloat(1), 0.001f)
+            assertEquals(1, cursor.getInt(2))
+            assertTrue(cursor.isNull(3))
+            assertEquals(1, cursor.count)
+        }
+        migrated.query("SELECT latitude, longitude, timestamp FROM case_locations").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(-16.3989, cursor.getDouble(0), 0.0000001)
+            assertEquals(-71.5369, cursor.getDouble(1), 0.0000001)
+            assertEquals(3000L, cursor.getLong(2))
+            assertEquals(1, cursor.count)
+        }
+        migrated.query("SELECT COUNT(*) FROM geofences").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+        migrated.close()
+    }
+
+    @Test
+    fun tras_migrar_a_4_se_guardan_una_zona_y_una_alerta_con_detalle() {
+        helper.createDatabase(TEST_DATABASE, 3).close()
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DATABASE, 4, true, MIGRATION_3_4)
+        migrated.execSQL(
+            "INSERT INTO geofences (name, latitude, longitude, radius_meters, is_active) " +
+                "VALUES ('Casa', -16.3989, -71.5369, 150.0, 1)"
+        )
+        migrated.execSQL(
+            "INSERT INTO alert_events (type, timestamp, numeric_value, is_read, detail) " +
+                "VALUES ('GEOFENCE', 4000, NULL, 0, 'Casa')"
+        )
+
+        migrated.query("SELECT name, radius_meters, is_active FROM geofences").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Casa", cursor.getString(0))
+            assertEquals(150.0, cursor.getDouble(1), 0.001)
+            assertEquals(1, cursor.getInt(2))
+        }
+        migrated.query("SELECT type, detail FROM alert_events").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("GEOFENCE", cursor.getString(0))
+            assertEquals("Casa", cursor.getString(1))
+        }
+        migrated.close()
+    }
+
+    @Test
+    fun migrar_de_1_a_4_encadena_todas_las_migraciones_y_conserva_las_lecturas() {
+        helper.createDatabase(TEST_DATABASE, 1).use { database ->
+            database.execSQL(
+                "INSERT INTO temperature_readings " +
+                    "(temperature_celsius, timestamp, is_alert_triggered, battery_level) " +
+                    "VALUES (4.2, 1000, 0, 78)"
+            )
+        }
+
+        val migrated = helper.runMigrationsAndValidate(
+            TEST_DATABASE,
+            4,
+            true,
+            MIGRATION_1_2,
+            MIGRATION_2_3,
+            MIGRATION_3_4
+        )
+
+        migrated.query("SELECT COUNT(*) FROM temperature_readings").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1, cursor.getInt(0))
+        }
+        migrated.close()
+    }
+
     private companion object {
         const val TEST_DATABASE = "migration-test.db"
     }

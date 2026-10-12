@@ -8,6 +8,7 @@ import com.example.medicaseclinico.data.preferences.DataStoreNotificationPrefere
 import com.example.medicaseclinico.data.report.PdfMedicalReportExporter
 import com.example.medicaseclinico.data.repository.AlertEventRepositoryImpl
 import com.example.medicaseclinico.data.repository.CaseLocationRepositoryImpl
+import com.example.medicaseclinico.data.repository.GeofenceRepositoryImpl
 import com.example.medicaseclinico.data.repository.TemperatureRepositoryImpl
 import com.example.medicaseclinico.data.sync.CaseTelemetrySynchronizer
 import com.example.medicaseclinico.domain.alert.AlertPublisher
@@ -16,6 +17,7 @@ import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
 import com.example.medicaseclinico.domain.repository.CaseLocationRepository
+import com.example.medicaseclinico.domain.repository.GeofenceRepository
 import com.example.medicaseclinico.domain.repository.MedicalReportExporter
 import com.example.medicaseclinico.domain.repository.NotificationPreferencesRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
@@ -47,6 +49,10 @@ class AppContainer(context: Context) {
 
     val caseLocationRepository: CaseLocationRepository by lazy {
         CaseLocationRepositoryImpl(dao = database.caseLocationDao())
+    }
+
+    val geofenceRepository: GeofenceRepository by lazy {
+        GeofenceRepositoryImpl(dao = database.geofenceDao())
     }
 
     val medicalReportExporter: MedicalReportExporter by lazy {

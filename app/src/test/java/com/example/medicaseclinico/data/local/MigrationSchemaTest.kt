@@ -81,4 +81,44 @@ class MigrationSchemaTest {
         assertEquals(2, MIGRATION_2_3.startVersion)
         assertEquals(3, MIGRATION_2_3.endVersion)
     }
+
+    // ------------------------------------------------------------------
+    //  Migración 3 → 4
+    // ------------------------------------------------------------------
+    @Test
+    fun `la migracion 3 a 4 crea geofences igual que el esquema exportado`() {
+        val expected = createStatements(version = 4).getValue("geofences")
+
+        assertEquals(expected, listOf(MIGRATION_3_4_CREATE_GEOFENCES))
+    }
+
+    @Test
+    fun `la migracion 3 a 4 anade detail al final de alert_events como en el esquema exportado`() {
+        val version3Table = createStatements(version = 3).getValue("alert_events").first()
+        val version4Table = createStatements(version = 4).getValue("alert_events").first()
+
+        // ALTER TABLE ADD COLUMN siempre agrega la columna al final.
+        val afterAlterTable = version3Table.removeSuffix(")") + ", $MIGRATION_3_4_DETAIL_COLUMN)"
+        assertEquals(version4Table, afterAlterTable)
+    }
+
+    @Test
+    fun `la version 4 solo anade geofences y no toca lecturas ni posiciones`() {
+        val version3 = createStatements(version = 3)
+        val version4 = createStatements(version = 4)
+
+        assertEquals(setOf("geofences"), version4.keys - version3.keys)
+        assertEquals(version3.getValue("temperature_readings"), version4.getValue("temperature_readings"))
+        assertEquals(version3.getValue("case_locations"), version4.getValue("case_locations"))
+        assertEquals(
+            version3.getValue("alert_events").drop(1),
+            version4.getValue("alert_events").drop(1)
+        )
+    }
+
+    @Test
+    fun `la migracion declara las versiones 3 y 4`() {
+        assertEquals(3, MIGRATION_3_4.startVersion)
+        assertEquals(4, MIGRATION_3_4.endVersion)
+    }
 }

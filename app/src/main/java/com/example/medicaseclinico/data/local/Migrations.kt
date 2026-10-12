@@ -51,3 +51,30 @@ val MIGRATION_2_3: Migration = object : Migration(2, 3) {
         MIGRATION_2_3_STATEMENTS.forEach { statement -> db.execSQL(statement) }
     }
 }
+
+/** Sentencia de la migración 3 → 4 que crea la tabla "geofences". */
+internal const val MIGRATION_3_4_CREATE_GEOFENCES: String =
+    "CREATE TABLE IF NOT EXISTS `geofences` (" +
+        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`name` TEXT NOT NULL, " +
+        "`latitude` REAL NOT NULL, " +
+        "`longitude` REAL NOT NULL, " +
+        "`radius_meters` REAL NOT NULL, " +
+        "`is_active` INTEGER NOT NULL)"
+
+/** Definición de la columna que la migración 3 → 4 añade a "alert_events". */
+internal const val MIGRATION_3_4_DETAIL_COLUMN = "`detail` TEXT"
+
+/**
+ * Añade las zonas de seguridad y el dato de texto de las alertas (el nombre
+ * de la zona en las de geocerca).
+ *
+ * La columna se añade con ALTER TABLE: las alertas ya guardadas se conservan
+ * y quedan con el detalle en null, que es justo lo que significa "sin dato".
+ */
+val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(MIGRATION_3_4_CREATE_GEOFENCES)
+        db.execSQL("ALTER TABLE `alert_events` ADD COLUMN $MIGRATION_3_4_DETAIL_COLUMN")
+    }
+}

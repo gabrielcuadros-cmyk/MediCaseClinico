@@ -18,7 +18,8 @@ fun AlertEventEntity.toDomain(): AlertEvent? {
         type = alertType,
         timestamp = timestamp,
         value = numericValue,
-        isRead = isRead
+        isRead = isRead,
+        detail = detail
     )
 }
 
@@ -27,5 +28,6 @@ fun AlertEvent.toEntity(): AlertEventEntity = AlertEventEntity(
     type = type.name,
     timestamp = timestamp,
     numericValue = value,
-    isRead = isRead
+    isRead = isRead,
+    detail = detail
 )

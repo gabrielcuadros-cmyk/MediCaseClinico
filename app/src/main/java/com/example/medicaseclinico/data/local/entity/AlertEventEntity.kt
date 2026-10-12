@@ -39,5 +39,15 @@ data class AlertEventEntity(
 
     /** false hasta que el usuario abre la lista de alertas. */
     @ColumnInfo(name = "is_read")
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+
+    /**
+     * Dato de texto de la alerta; hoy, el nombre de la zona en una alerta de
+     * geocerca. null si el tipo no lo necesita.
+     *
+     * Debe seguir siendo el último campo: la migración 3 → 4 lo añade con
+     * ALTER TABLE, que siempre agrega la columna al final.
+     */
+    @ColumnInfo(name = "detail")
+    val detail: String? = null
 )

@@ -11,11 +11,16 @@ package com.example.medicaseclinico.domain.model
  * °C o batería en %. null si el tipo no lleva valor (p. ej. desconexión).
  * @param isRead false hasta que el usuario abre la lista de alertas; alimenta
  * el contador de la pestaña Alertas.
+ * @param detail dato de texto que acompaña a la alerta: el nombre de la zona en
+ * una alerta de geocerca. Se copia el nombre, no el id de la zona, para que la
+ * alerta siga diciendo de dónde salió el estuche aunque la zona se renombre o
+ * se borre después. null si el tipo no lo necesita.
  */
 data class AlertEvent(
     val id: Long = 0L,
     val type: AlertType,
     val timestamp: Long,
     val value: Float? = null,
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+    val detail: String? = null
 )
