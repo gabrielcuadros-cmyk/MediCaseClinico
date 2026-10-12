@@ -7,7 +7,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /** Radio medio de la Tierra en metros (esfera de referencia de la fórmula). */
-private const val EARTH_RADIUS_METERS = 6_371_000.0
+internal const val EARTH_RADIUS_METERS = 6_371_000.0
 
 /**
  * Distancia en metros entre dos puntos sobre la superficie terrestre

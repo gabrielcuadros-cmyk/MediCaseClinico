@@ -3,6 +3,7 @@ package com.example.medicaseclinico.ui.components.map
 import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.res.Configuration
+import androidx.annotation.ColorInt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,11 +17,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
@@ -34,6 +37,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.domain.geo.GeoPoint
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 import org.maplibre.android.MapLibre
 import org.maplibre.android.maps.MapView
@@ -55,12 +59,17 @@ private const val MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
  * La atribución va siempre visible sobre el mapa porque la licencia de
  * OpenStreetMap lo exige.
  *
+ * @param marker posición del estuche, o null si no hay ninguna que mostrar.
+ * La cámara la sigue hasta que el usuario mueve el mapa.
+ * @param circles zonas de seguridad, con su radio en metros reales.
  * @param onLoadFailed el mapa no se pudo crear o su estilo no se pudo
  * descargar (p. ej. sin internet); la pantalla decide qué mostrar.
  */
 @Composable
 fun MediCaseMap(
     modifier: Modifier = Modifier,
+    marker: GeoPoint? = null,
+    circles: List<MapCircle> = emptyList(),
     onLoadFailed: () -> Unit = {}
 ) {
     Box(modifier = modifier) {
@@ -72,7 +81,7 @@ fun MediCaseMap(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
         } else {
-            MapLibreMapView(onLoadFailed = onLoadFailed)
+            MapLibreMapView(marker = marker, circles = circles, onLoadFailed = onLoadFailed)
         }
         MapAttribution(
             modifier = Modifier
@@ -83,22 +92,41 @@ fun MediCaseMap(
 }
 
 @Composable
-private fun MapLibreMapView(onLoadFailed: () -> Unit) {
+private fun MapLibreMapView(
+    marker: GeoPoint?,
+    circles: List<MapCircle>,
+    onLoadFailed: () -> Unit
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnLoadFailed by rememberUpdatedState(onLoadFailed)
     val mapDescription = stringResource(R.string.map_content_description)
 
-    val mapView = remember(context) { createMapViewOrNull(context) }
-    if (mapView == null) {
+    // Rojo de alerta para el marcador, como en el diseño; azul primario para las zonas.
+    val pinColor = MediCaseTheme.statusColors.critical.toArgb()
+    val pinCenterColor = MaterialTheme.colorScheme.surface.toArgb()
+    val circleColor = MaterialTheme.colorScheme.primary.toArgb()
+
+    // Un MapView destruido no se puede reutilizar: si cambia el dueño del
+    // ciclo de vida, se crea un mapa nuevo en vez de reconectar el anterior.
+    val handle = remember(context, lifecycleOwner) {
+        createMapOrNull(context, pinColor, pinCenterColor, circleColor)
+    }
+    if (handle == null) {
         LaunchedEffect(Unit) { currentOnLoadFailed() }
         return
     }
+    val mapView = handle.mapView
+    val content = handle.content
 
-    DisposableEffect(mapView, lifecycleOwner) {
+    SideEffect { content.show(marker, circles) }
+
+    DisposableEffect(handle) {
         val failListener = MapView.OnDidFailLoadingMapListener { currentOnLoadFailed() }
         mapView.addOnDidFailLoadingMapListener(failListener)
-        mapView.getMapAsync { map -> map.setStyle(Style.Builder().fromUri(MAP_STYLE_URL)) }
+        mapView.getMapAsync { map ->
+            map.setStyle(Style.Builder().fromUri(MAP_STYLE_URL)) { style -> content.attach(map, style) }
+        }
 
         val mapLifecycle = MapViewLifecycle(mapView)
         // Al registrarse, el observador recibe los eventos que faltan hasta el
@@ -109,6 +137,7 @@ private fun MapLibreMapView(onLoadFailed: () -> Unit) {
             lifecycleOwner.lifecycle.removeObserver(mapLifecycle)
             context.unregisterComponentCallbacks(mapLifecycle)
             mapView.removeOnDidFailLoadingMapListener(failListener)
+            content.detach()
             // Salir de la pantalla no emite ON_STOP ni ON_DESTROY: hay que
             // cerrar el mapa aquí o se queda vivo con su hilo de render.
             mapLifecycle.destroy()
@@ -123,14 +152,28 @@ private fun MapLibreMapView(onLoadFailed: () -> Unit) {
     )
 }
 
+/** El `MapView` y quien dibuja sobre él: nacen y mueren juntos. */
+private class MapHandle(val mapView: MapView, val content: MapContentRenderer)
+
 /**
  * Crea el `MapView` ya inicializado, o null si la librería nativa no carga en
  * este dispositivo: un mapa que no abre no debe tumbar la app.
  */
-private fun createMapViewOrNull(context: Context): MapView? =
+private fun createMapOrNull(
+    context: Context,
+    @ColorInt pinColor: Int,
+    @ColorInt pinCenterColor: Int,
+    @ColorInt circleColor: Int
+): MapHandle? =
     try {
         MapLibre.getInstance(context.applicationContext)
-        MapView(context).apply { onCreate(null) }
+        MapHandle(
+            mapView = MapView(context).apply { onCreate(null) },
+            content = MapContentRenderer(
+                pinBitmap = MapContentRenderer.createPinBitmap(context, pinColor, pinCenterColor),
+                circleColor = circleColor
+            )
+        )
     } catch (e: Exception) {
         null
     } catch (e: LinkageError) {
