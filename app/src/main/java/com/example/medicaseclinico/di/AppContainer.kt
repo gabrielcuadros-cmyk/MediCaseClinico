@@ -1,6 +1,7 @@
 package com.example.medicaseclinico.di
 
 import android.content.Context
+import com.example.medicaseclinico.data.auth.FirebaseAuthRepository
 import com.example.medicaseclinico.data.ble.AndroidCaseDeviceRepository
 import com.example.medicaseclinico.data.local.AppDatabase
 import com.example.medicaseclinico.data.notification.SystemAlertPublisher
@@ -15,6 +16,7 @@ import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.alert.RecordingAlertPublisher
 import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
+import com.example.medicaseclinico.domain.repository.AuthRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
 import com.example.medicaseclinico.domain.repository.CaseLocationRepository
 import com.example.medicaseclinico.domain.repository.GeofenceRepository
@@ -54,6 +56,10 @@ class AppContainer(context: Context) {
 
     val geofenceRepository: GeofenceRepository by lazy {
         GeofenceRepositoryImpl(dao = database.geofenceDao())
+    }
+
+    val authRepository: AuthRepository by lazy {
+        FirebaseAuthRepository(context = appContext)
     }
 
     val medicalReportExporter: MedicalReportExporter by lazy {

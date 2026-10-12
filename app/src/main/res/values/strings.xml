@@ -326,4 +326,15 @@
     <string name="geofence_deleted_message">Zona de seguridad borrada.</string>
     <string name="geofence_delete_failed">No se pudo borrar la zona. Inténtalo de nuevo.</string>
     <string name="loss_mode_title">Modo Pérdida</string>
+
+    <!-- Autenticación: errores -->
+    <string name="auth_error_invalid_credentials">Correo o contraseña incorrectos.</string>
+    <string name="auth_error_invalid_email">El correo electrónico no es válido.</string>
+    <string name="auth_error_email_in_use">Ya existe una cuenta con ese correo. Inicia sesión.</string>
+    <string name="auth_error_weak_password">La contraseña es demasiado débil. Usa al menos 8 caracteres.</string>
+    <string name="auth_error_user_disabled">Esta cuenta está deshabilitada.</string>
+    <string name="auth_error_too_many_requests">Demasiados intentos. Espera unos minutos y vuelve a intentarlo.</string>
+    <string name="auth_error_network">Sin conexión a internet. Revisa tu red e inténtalo de nuevo.</string>
+    <string name="auth_error_not_configured">El inicio de sesión no está disponible en esta instalación.</string>
+    <string name="auth_error_unknown">No se pudo completar la operación. Inténtalo de nuevo.</string>
 </resources>
