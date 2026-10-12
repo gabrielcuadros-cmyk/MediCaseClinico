@@ -356,4 +356,13 @@
     <string name="login_submit">Iniciar Sesión</string>
     <string name="login_no_account">¿No tienes una cuenta?</string>
     <string name="login_create_account">Crear cuenta</string>
+
+    <!-- Recuperar contraseña -->
+    <string name="recovery_title">Recuperar Contraseña</string>
+    <string name="recovery_subtitle">Te enviaremos un enlace de seguridad para restablecer tu cuenta.</string>
+    <string name="recovery_submit">Enviar enlace de recuperación</string>
+    <string name="recovery_back_to_login">Volver a Iniciar Sesión</string>
+    <string name="recovery_sent_title">Revisa tu correo</string>
+    <string name="recovery_sent_message">Si hay una cuenta con %1$s, recibirás un enlace para elegir una contraseña nueva. Mira también la carpeta de correo no deseado.</string>
+    <string name="recovery_use_another_email">Usar otro correo</string>
 </resources>
