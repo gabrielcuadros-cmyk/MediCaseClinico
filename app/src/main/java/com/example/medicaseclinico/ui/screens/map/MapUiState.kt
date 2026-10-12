@@ -28,7 +28,8 @@ sealed interface MapUiState {
      * @param elapsed tiempo desde [updatedAt], ya calculado para no hacerlo al dibujar.
      * @param liveStatus [CaseLiveStatus.LIVE] si la posición es la actual; si
      * no, es la última conocida y este valor explica por qué no hay una nueva.
-     * @param geofences zonas activas, de la más cercana al estuche a la más lejana.
+     * @param geofences zonas activas: primero las que contienen al estuche (la
+     * más pequeña delante) y después las demás, de la más cercana a la más lejana.
      */
     data class Success(
         val latitude: Double,

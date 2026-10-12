@@ -71,6 +71,17 @@ class LocateCaseInGeofencesUseCaseTest {
     }
 
     @Test
+    fun `dentro de varias zonas va primero la mas pequena`() {
+        // Misma posición central: el barrio contiene a Casa y al estuche.
+        val district = home.copy(id = 3L, name = "Barrio", radiusMeters = 650.0)
+
+        val result = locate(listOf(district, clinic, home), latitude, longitude)
+
+        assertEquals(listOf("Casa", "Barrio", "Clínica"), result.map { it.geofence.name })
+        assertEquals(listOf(true, true, false), result.map { it.isInside })
+    }
+
+    @Test
     fun `fuera de todas las zonas va primero la de borde mas cercano`() {
         // A 400 m de Casa: 250 m de su borde y 100 m del borde de Clínica.
         val result = locate(listOf(home, clinic), metersNorth(400.0), longitude)
