@@ -69,7 +69,8 @@ private val PickerFitPadding = 32.dp
  * @param recenterRequests contador de veces que el usuario pidió centrar el
  * mapa en el estuche; cada incremento vuelve a centrarlo y a seguirlo.
  * @param centerPicker si no es null, el mapa pasa al modo "elegir un punto":
- * deja de seguir al estuche y dibuja un círculo alrededor de su centro.
+ * deja de seguir al estuche, dibuja un círculo destacado alrededor de su
+ * centro y atenúa [circles] para que no se confundan con él.
  * @param onCenterChanged punto elegido en ese modo, cada vez que el mapa se detiene.
  * @param onLoadFailed el mapa no se pudo crear o su estilo no se pudo
  * descargar (p. ej. sin internet); la pantalla decide qué mostrar.
@@ -134,11 +135,12 @@ private fun MapLibreMapView(
         glyph = MaterialTheme.colorScheme.onPrimary.toArgb()
     )
     val circleColor = MaterialTheme.colorScheme.primary.toArgb()
+    val mutedCircleColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
 
     // Un MapView destruido no se puede reutilizar: si cambia el dueño del
     // ciclo de vida, se crea un mapa nuevo en vez de reconectar el anterior.
     val handle = remember(context, lifecycleOwner) {
-        createMapOrNull(context, pinColors, circleColor, fitPaddingPx)
+        createMapOrNull(context, pinColors, circleColor, mutedCircleColor, fitPaddingPx)
     }
     if (handle == null) {
         LaunchedEffect(Unit) { currentOnLoadFailed() }
@@ -195,6 +197,7 @@ private fun createMapOrNull(
     context: Context,
     pinColors: MapPinColors,
     @ColorInt circleColor: Int,
+    @ColorInt mutedCircleColor: Int,
     fitPaddingPx: Int
 ): MapHandle? =
     try {
@@ -204,6 +207,7 @@ private fun createMapOrNull(
             content = MapContentRenderer(
                 pinBitmap = MapContentRenderer.createPinBitmap(context, pinColors),
                 circleColor = circleColor,
+                mutedCircleColor = mutedCircleColor,
                 fitPaddingPx = fitPaddingPx
             )
         )

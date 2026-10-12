@@ -72,12 +72,15 @@ internal class MapPinColors(
 internal class MapContentRenderer(
     private val pinBitmap: Bitmap,
     @param:ColorInt private val circleColor: Int,
+    @param:ColorInt private val mutedCircleColor: Int,
     private val fitPaddingPx: Int
 ) {
     private var map: MapLibreMap? = null
     private var markerSource: GeoJsonSource? = null
     private var circlesSource: GeoJsonSource? = null
     private var pickerSource: GeoJsonSource? = null
+    private var circlesFillLayer: FillLayer? = null
+    private var circlesLineLayer: LineLayer? = null
 
     private var marker: GeoPoint? = null
     private var circles: List<MapCircle> = emptyList()
@@ -112,18 +115,12 @@ internal class MapContentRenderer(
 
         val circlesSource = GeoJsonSource(CIRCLES_SOURCE_ID)
         style.addSource(circlesSource)
-        style.addLayer(
-            FillLayer(CIRCLES_FILL_LAYER_ID, CIRCLES_SOURCE_ID).withProperties(
-                PropertyFactory.fillColor(circleColor),
-                PropertyFactory.fillOpacity(CIRCLE_FILL_OPACITY)
-            )
-        )
-        style.addLayer(
-            LineLayer(CIRCLES_LINE_LAYER_ID, CIRCLES_SOURCE_ID).withProperties(
-                PropertyFactory.lineColor(circleColor),
-                PropertyFactory.lineWidth(CIRCLE_LINE_WIDTH)
-            )
-        )
+        // El color y el trazo de estas dos capas los pone styleCircles().
+        val circlesFillLayer = FillLayer(CIRCLES_FILL_LAYER_ID, CIRCLES_SOURCE_ID)
+        style.addLayer(circlesFillLayer)
+        val circlesLineLayer = LineLayer(CIRCLES_LINE_LAYER_ID, CIRCLES_SOURCE_ID)
+            .withProperties(PropertyFactory.lineWidth(CIRCLE_LINE_WIDTH))
+        style.addLayer(circlesLineLayer)
 
         val pickerSource = GeoJsonSource(PICKER_SOURCE_ID)
         style.addSource(pickerSource)
@@ -166,6 +163,8 @@ internal class MapContentRenderer(
 
         this.map = map
         this.circlesSource = circlesSource
+        this.circlesFillLayer = circlesFillLayer
+        this.circlesLineLayer = circlesLineLayer
         this.pickerSource = pickerSource
         this.markerSource = markerSource
         render()
@@ -196,12 +195,15 @@ internal class MapContentRenderer(
         map = null
         markerSource = null
         circlesSource = null
+        circlesFillLayer = null
+        circlesLineLayer = null
         pickerSource = null
     }
 
     private fun render() {
         val map = map ?: return
 
+        styleCircles()
         circlesSource?.setGeoJson(
             FeatureCollection.fromFeatures(circles.map { it.toFeature() })
         )
@@ -233,6 +235,24 @@ internal class MapContentRenderer(
             }
             followMarker -> map.animateCamera(CameraUpdateFactory.newLatLng(target))
         }
+    }
+
+    /**
+     * Mientras se elige un punto, las zonas ya guardadas pasan a segundo
+     * plano (gris tenue y borde punteado): lo que debe destacar es el círculo
+     * de la zona nueva, y dos círculos azules superpuestos no se distinguen.
+     */
+    private fun styleCircles() {
+        val muted = picker != null
+        val color = if (muted) mutedCircleColor else circleColor
+        circlesFillLayer?.setProperties(
+            PropertyFactory.fillColor(color),
+            PropertyFactory.fillOpacity(if (muted) MUTED_CIRCLE_FILL_OPACITY else CIRCLE_FILL_OPACITY)
+        )
+        circlesLineLayer?.setProperties(
+            PropertyFactory.lineColor(color),
+            PropertyFactory.lineDasharray(if (muted) DASHED_LINE else SOLID_LINE)
+        )
     }
 
     /**
@@ -306,7 +326,12 @@ internal class MapContentRenderer(
         private const val PIN_IMAGE_ID = "medicase-pin"
 
         private const val CIRCLE_FILL_OPACITY = 0.15f
+        private const val MUTED_CIRCLE_FILL_OPACITY = 0.08f
         private const val PICKER_FILL_OPACITY = 0.3f
+
+        // Patrón del trazo en múltiplos del grosor de la línea: raya, hueco.
+        private val DASHED_LINE = arrayOf(2f, 2f)
+        private val SOLID_LINE = arrayOf(1f, 0f)
         private const val CIRCLE_LINE_WIDTH = 2f
 
         /** Nivel de calle: se distinguen las manzanas alrededor del estuche. */
