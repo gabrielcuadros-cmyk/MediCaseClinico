@@ -111,7 +111,8 @@ class AlertsViewModel(
                     id = event.id,
                     type = event.type,
                     value = event.value,
-                    elapsed = RelativeTime.between(timestamp = event.timestamp, now = now)
+                    elapsed = RelativeTime.between(timestamp = event.timestamp, now = now),
+                    detail = event.detail?.takeIf { it.isNotBlank() }
                 )
             }
         return if (alerts.isEmpty()) {

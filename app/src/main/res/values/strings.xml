@@ -237,6 +237,7 @@
     <string name="alerts_connection_description">Pérdida de enlace directo con el móvil.</string>
     <string name="alerts_geofence_title">Geocerca de Seguridad Violada</string>
     <string name="alerts_geofence_description">El dispositivo ha salido de la geocerca establecida.</string>
+    <string name="alerts_geofence_description_with_zone">El dispositivo ha salido de la geocerca establecida en %1$s.</string>
     <string name="alerts_security_title">Intento de Acceso con Contraseña</string>
     <string name="alerts_security_description">Bloqueo por intentos fallidos de contraseña de 4 dígitos.</string>
 

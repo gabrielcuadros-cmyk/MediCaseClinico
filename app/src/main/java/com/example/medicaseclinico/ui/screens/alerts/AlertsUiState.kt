@@ -42,11 +42,14 @@ sealed interface AlertsUiState {
  * @param value temperatura en °C o batería en % según [type]; null si el tipo
  * no lleva valor.
  * @param elapsed tiempo desde la alerta, ya calculado para no hacerlo al dibujar.
+ * @param detail nombre de la zona en una alerta de geocerca; null si la alerta
+ * no lo tiene (otros tipos, o geocercas registradas sin nombre).
  */
 @Immutable
 data class AlertItem(
     val id: Long,
     val type: AlertType,
     val value: Float?,
-    val elapsed: RelativeTime
+    val elapsed: RelativeTime,
+    val detail: String? = null
 )

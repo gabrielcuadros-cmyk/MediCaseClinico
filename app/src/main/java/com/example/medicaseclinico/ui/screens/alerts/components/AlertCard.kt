@@ -171,7 +171,12 @@ private fun AlertItem.cardStyle(): AlertCardStyle {
             accent = statusColors.warning,
             container = statusColors.warningContainer,
             title = stringResource(R.string.alerts_geofence_title),
-            description = stringResource(R.string.alerts_geofence_description)
+            // Sin nombre de zona guardado se usa el texto genérico, sin inventar uno.
+            description = if (detail != null) {
+                stringResource(R.string.alerts_geofence_description_with_zone, detail)
+            } else {
+                stringResource(R.string.alerts_geofence_description)
+            }
         )
         AlertType.SECURITY -> AlertCardStyle(
             icon = Icons.Outlined.Lock,
@@ -202,7 +207,13 @@ private fun temperatureDescription(celsius: Float?): String {
 private fun AlertCardPreview() {
     val alerts = listOf(
         AlertItem(id = 1, type = AlertType.TEMPERATURE, value = 8.4f, elapsed = RelativeTime.Minutes(5)),
-        AlertItem(id = 2, type = AlertType.GEOFENCE, value = null, elapsed = RelativeTime.Minutes(23)),
+        AlertItem(
+            id = 2,
+            type = AlertType.GEOFENCE,
+            value = null,
+            elapsed = RelativeTime.Minutes(23),
+            detail = "Hospital Clínico"
+        ),
         AlertItem(id = 3, type = AlertType.SECURITY, value = null, elapsed = RelativeTime.Hours(1)),
         AlertItem(id = 4, type = AlertType.BATTERY, value = 15f, elapsed = RelativeTime.Hours(3)),
         AlertItem(id = 5, type = AlertType.CONNECTION, value = null, elapsed = RelativeTime.Hours(12))
