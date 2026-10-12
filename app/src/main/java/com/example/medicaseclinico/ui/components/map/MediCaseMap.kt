@@ -62,6 +62,8 @@ private const val MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
  * @param marker posición del estuche, o null si no hay ninguna que mostrar.
  * La cámara la sigue hasta que el usuario mueve el mapa.
  * @param circles zonas de seguridad, con su radio en metros reales.
+ * @param recenterRequests contador de veces que el usuario pidió centrar el
+ * mapa en el estuche; cada incremento vuelve a centrarlo y a seguirlo.
  * @param onLoadFailed el mapa no se pudo crear o su estilo no se pudo
  * descargar (p. ej. sin internet); la pantalla decide qué mostrar.
  */
@@ -70,6 +72,7 @@ fun MediCaseMap(
     modifier: Modifier = Modifier,
     marker: GeoPoint? = null,
     circles: List<MapCircle> = emptyList(),
+    recenterRequests: Int = 0,
     onLoadFailed: () -> Unit = {}
 ) {
     Box(modifier = modifier) {
@@ -81,11 +84,16 @@ fun MediCaseMap(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
         } else {
-            MapLibreMapView(marker = marker, circles = circles, onLoadFailed = onLoadFailed)
+            MapLibreMapView(
+                marker = marker,
+                circles = circles,
+                recenterRequests = recenterRequests,
+                onLoadFailed = onLoadFailed
+            )
         }
         MapAttribution(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.BottomStart)
                 .padding(6.dp)
         )
     }
@@ -95,6 +103,7 @@ fun MediCaseMap(
 private fun MapLibreMapView(
     marker: GeoPoint?,
     circles: List<MapCircle>,
+    recenterRequests: Int,
     onLoadFailed: () -> Unit
 ) {
     val context = LocalContext.current
@@ -102,15 +111,19 @@ private fun MapLibreMapView(
     val currentOnLoadFailed by rememberUpdatedState(onLoadFailed)
     val mapDescription = stringResource(R.string.map_content_description)
 
-    // Rojo de alerta para el marcador, como en el diseño; azul primario para las zonas.
-    val pinColor = MediCaseTheme.statusColors.critical.toArgb()
-    val pinCenterColor = MaterialTheme.colorScheme.surface.toArgb()
+    // Como en el diseño: pin rojo de alerta con insignia azul, y zonas en azul primario.
+    val pinColors = MapPinColors(
+        pin = MediCaseTheme.statusColors.critical.toArgb(),
+        badge = MaterialTheme.colorScheme.primary.toArgb(),
+        badgeBorder = MaterialTheme.colorScheme.surface.toArgb(),
+        glyph = MaterialTheme.colorScheme.onPrimary.toArgb()
+    )
     val circleColor = MaterialTheme.colorScheme.primary.toArgb()
 
     // Un MapView destruido no se puede reutilizar: si cambia el dueño del
     // ciclo de vida, se crea un mapa nuevo en vez de reconectar el anterior.
     val handle = remember(context, lifecycleOwner) {
-        createMapOrNull(context, pinColor, pinCenterColor, circleColor)
+        createMapOrNull(context, pinColors, circleColor)
     }
     if (handle == null) {
         LaunchedEffect(Unit) { currentOnLoadFailed() }
@@ -120,6 +133,9 @@ private fun MapLibreMapView(
     val content = handle.content
 
     SideEffect { content.show(marker, circles) }
+    LaunchedEffect(content, recenterRequests) {
+        if (recenterRequests > 0) content.recenter()
+    }
 
     DisposableEffect(handle) {
         val failListener = MapView.OnDidFailLoadingMapListener { currentOnLoadFailed() }
@@ -161,8 +177,7 @@ private class MapHandle(val mapView: MapView, val content: MapContentRenderer)
  */
 private fun createMapOrNull(
     context: Context,
-    @ColorInt pinColor: Int,
-    @ColorInt pinCenterColor: Int,
+    pinColors: MapPinColors,
     @ColorInt circleColor: Int
 ): MapHandle? =
     try {
@@ -170,7 +185,7 @@ private fun createMapOrNull(
         MapHandle(
             mapView = MapView(context).apply { onCreate(null) },
             content = MapContentRenderer(
-                pinBitmap = MapContentRenderer.createPinBitmap(context, pinColor, pinCenterColor),
+                pinBitmap = MapContentRenderer.createPinBitmap(context, pinColors),
                 circleColor = circleColor
             )
         )

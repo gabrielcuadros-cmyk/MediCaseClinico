@@ -262,4 +262,42 @@
     <!-- Mapa (MapLibre + OpenStreetMap) -->
     <string name="map_content_description">Mapa</string>
     <string name="map_attribution">© OpenStreetMap · OpenMapTiles · OpenFreeMap</string>
+    <string name="map_load_failed">No se pudo cargar el mapa. Revisa tu conexión a internet.</string>
+
+    <!-- Geolocalización -->
+    <string name="map_title">Geolocalización</string>
+    <string name="map_subtitle">Ubicación GPS en tiempo real de tu estuche.</string>
+    <string name="map_loading">Buscando la ubicación del estuche…</string>
+    <string name="map_error_title">No se pudo leer la ubicación</string>
+    <string name="map_error_message">Hubo un problema al acceder a las ubicaciones guardadas en el teléfono. Reintenta; si persiste, reinicia la aplicación.</string>
+    <string name="map_empty_no_signal_title">Sin señal GPS</string>
+    <string name="map_empty_no_signal_message">El GPS del estuche aún no tiene posición. Llévalo a un lugar despejado; su ubicación aparecerá aquí.</string>
+    <string name="map_empty_no_link_title">Sin ubicación del estuche</string>
+    <string name="map_empty_no_link_message">Conecta tu estuche por Bluetooth. Su ubicación aparecerá aquí en cuanto la envíe.</string>
+    <string name="map_empty_not_supported_title">Estuche sin GPS</string>
+    <string name="map_empty_not_supported_message">El estuche conectado no informa su ubicación.</string>
+    <string name="map_status_no_signal">Sin señal GPS · última ubicación conocida</string>
+    <string name="map_status_no_link">Estuche sin conexión · última ubicación conocida</string>
+    <string name="map_status_not_supported">Estuche sin GPS · última ubicación conocida</string>
+    <string name="map_recenter">Centrar en el estuche</string>
+    <string name="map_timestamp_live">TIEMPO REAL: %1$s</string>
+    <string name="map_timestamp_last_known">ÚLTIMA POSICIÓN: %1$s</string>
+    <string name="map_coordinates_label">Coordenadas GPS</string>
+    <string name="map_coordinates_value">%1$s, %2$s</string>
+    <string name="map_latitude_north">%1$.4f° N</string>
+    <string name="map_latitude_south">%1$.4f° S</string>
+    <string name="map_longitude_east">%1$.4f° E</string>
+    <string name="map_longitude_west">%1$.4f° W</string>
+    <string name="map_last_update_label">Última actualización</string>
+    <string name="map_geofence_label">Geocerca de Seguridad</string>
+    <string name="map_geofence_inside">Activa (Radio: %1$dm)</string>
+    <string name="map_geofence_outside">Fuera de zona (Radio: %1$dm)</string>
+    <string name="map_geofence_none">Sin configurar</string>
+    <string name="map_geofence_adjust">Ajustar</string>
+    <string name="map_open_google_maps">Abrir en Google Maps</string>
+    <string name="map_open_external_failed">No hay ninguna aplicación para abrir la ubicación.</string>
+    <string name="map_loss_mode">Modo Pérdida / Robo</string>
+    <string name="map_configure_geofence">Configurar Geocerca</string>
+    <string name="geofence_config_title">Configurar Geocerca</string>
+    <string name="loss_mode_title">Modo Pérdida</string>
 </resources>

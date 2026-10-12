@@ -34,6 +34,14 @@ data class MapCircle(
     val radiusMeters: Double
 )
 
+/** Colores del marcador del estuche, ya resueltos desde el tema. */
+internal class MapPinColors(
+    @param:ColorInt val pin: Int,
+    @param:ColorInt val badge: Int,
+    @param:ColorInt val badgeBorder: Int,
+    @param:ColorInt val glyph: Int
+)
+
 /**
  * Dibuja el marcador del estuche y los círculos sobre un mapa ya cargado, y
  * mueve la cámara.
@@ -64,6 +72,16 @@ internal class MapContentRenderer(
     /** El estilo terminó de cargar: se añaden las capas y se pinta lo pendiente. */
     fun attach(map: MapLibreMap, style: Style) {
         if (detached) return
+
+        // La atribución la muestra MediCaseMap como texto siempre visible, así
+        // que sobra el botón "i" del SDK. Sin giro ni inclinación el norte
+        // queda arriba y no hace falta brújula.
+        map.uiSettings.apply {
+            isLogoEnabled = false
+            isAttributionEnabled = false
+            isRotateGesturesEnabled = false
+            isTiltGesturesEnabled = false
+        }
 
         val circlesSource = GeoJsonSource(CIRCLES_SOURCE_ID)
         style.addSource(circlesSource)
@@ -111,6 +129,16 @@ internal class MapContentRenderer(
         this.marker = marker
         this.circles = circles
         render()
+    }
+
+    /** El usuario pidió volver al estuche: se centra en él y se le vuelve a seguir. */
+    fun recenter() {
+        followMarker = true
+        val map = map ?: return
+        val marker = marker ?: return
+        map.animateCamera(
+            CameraUpdateFactory.newLatLngZoom(LatLng(marker.latitude, marker.longitude), INITIAL_ZOOM)
+        )
     }
 
     /** El mapa se va a destruir: tocar sus fuentes después provocaría un crash nativo. */
@@ -173,28 +201,41 @@ internal class MapContentRenderer(
         private const val INITIAL_ZOOM = 15.0
 
         /**
-         * Convierte el ícono del marcador en la imagen que usa el mapa, con el
-         * color del tema y un centro claro para que el hueco del pin no deje
-         * ver las calles de debajo.
+         * Compone la imagen del marcador como en el diseño: pin del color de
+         * alerta con una insignia redonda y un termómetro, que es lo que dice
+         * que el pin es el estuche de insulina y no un lugar cualquiera.
          */
-        fun createPinBitmap(
-            context: Context,
-            @ColorInt pinColor: Int,
-            @ColorInt centerColor: Int
-        ): Bitmap {
-            val drawable = checkNotNull(ContextCompat.getDrawable(context, R.drawable.ic_map_case_pin)).mutate()
-            val width = drawable.intrinsicWidth
-            val height = drawable.intrinsicHeight
+        fun createPinBitmap(context: Context, colors: MapPinColors): Bitmap {
+            val pin = checkNotNull(ContextCompat.getDrawable(context, R.drawable.ic_map_case_pin)).mutate()
+            val glyph = checkNotNull(ContextCompat.getDrawable(context, R.drawable.ic_map_thermometer)).mutate()
+            val width = pin.intrinsicWidth
+            val height = pin.intrinsicHeight
             val bitmap = createBitmap(width, height)
             val canvas = Canvas(bitmap)
 
-            // Proporciones del ícono: 14 × 20, con el hueco centrado en (7, 7).
-            val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = centerColor }
-            canvas.drawCircle(width / 2f, height * 7f / 20f, width * 3.2f / 14f, centerPaint)
+            pin.setTint(colors.pin)
+            pin.setBounds(0, 0, width, height)
+            pin.draw(canvas)
 
-            drawable.setTint(pinColor)
-            drawable.setBounds(0, 0, width, height)
-            drawable.draw(canvas)
+            // Proporciones de la silueta: 14 × 20, con la cabeza centrada en (7, 7).
+            val unit = width / 14f
+            val centerX = width / 2f
+            val centerY = height * 7f / 20f
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+            paint.color = colors.badgeBorder
+            canvas.drawCircle(centerX, centerY, unit * 4.4f, paint)
+            paint.color = colors.badge
+            canvas.drawCircle(centerX, centerY, unit * 3.7f, paint)
+
+            val glyphHalf = (unit * 2.7f).toInt()
+            glyph.setTint(colors.glyph)
+            glyph.setBounds(
+                centerX.toInt() - glyphHalf,
+                centerY.toInt() - glyphHalf,
+                centerX.toInt() + glyphHalf,
+                centerY.toInt() + glyphHalf
+            )
+            glyph.draw(canvas)
             return bitmap
         }
     }

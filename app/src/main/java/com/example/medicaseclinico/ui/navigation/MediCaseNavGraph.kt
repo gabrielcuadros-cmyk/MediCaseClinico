@@ -11,6 +11,7 @@ import com.example.medicaseclinico.ui.components.PendingFeatureScreen
 import com.example.medicaseclinico.ui.screens.alerts.AlertsRoute
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardRoute
 import com.example.medicaseclinico.ui.screens.history.TemperatureHistoryRoute
+import com.example.medicaseclinico.ui.screens.map.MapRoute
 import com.example.medicaseclinico.ui.screens.notifications.NotificationSettingsRoute
 
 /**
@@ -36,7 +37,17 @@ fun MediCaseNavGraph(
             TemperatureHistoryRoute(onBack = { navController.popBackStack() })
         }
         composable(TopLevelDestination.MAP.route) {
-            PendingFeatureScreen(titleRes = TopLevelDestination.MAP.labelRes)
+            MapRoute(
+                onBack = { navController.popBackStack() },
+                onOpenLossMode = { navController.navigate(SecondaryRoutes.LOSS_MODE) },
+                onConfigureGeofence = { navController.navigate(SecondaryRoutes.GEOFENCE_CONFIG) }
+            )
+        }
+        composable(SecondaryRoutes.GEOFENCE_CONFIG) {
+            PendingFeatureScreen(titleRes = R.string.geofence_config_title)
+        }
+        composable(SecondaryRoutes.LOSS_MODE) {
+            PendingFeatureScreen(titleRes = R.string.loss_mode_title)
         }
         composable(TopLevelDestination.ALERTS.route) {
             AlertsRoute(onBack = { navController.popBackStack() })
