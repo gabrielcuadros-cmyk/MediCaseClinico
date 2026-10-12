@@ -1,5 +1,6 @@
 package com.example.medicaseclinico.domain.alert
 
+import com.example.medicaseclinico.domain.model.Geofence
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 
 /**
@@ -17,4 +18,10 @@ interface AlertPublisher {
 
     /** El enlace BLE volvió a establecerse. */
     fun onConnectionRestored()
+
+    /** El estuche salió de una zona de seguridad activa. */
+    fun onGeofenceExited(geofence: Geofence)
+
+    /** El estuche volvió a entrar en una zona de la que había salido. */
+    fun onGeofenceEntered(geofence: Geofence)
 }

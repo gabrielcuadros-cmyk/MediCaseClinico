@@ -21,6 +21,7 @@ import com.example.medicaseclinico.domain.repository.GeofenceRepository
 import com.example.medicaseclinico.domain.repository.MedicalReportExporter
 import com.example.medicaseclinico.domain.repository.NotificationPreferencesRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
+import com.example.medicaseclinico.domain.usecase.EvaluateGeofencesUseCase
 import com.example.medicaseclinico.domain.usecase.ShouldSaveCaseLocationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -92,8 +93,10 @@ class AppContainer(context: Context) {
             deviceRepository = caseDeviceRepository,
             temperatureRepository = temperatureRepository,
             caseLocationRepository = caseLocationRepository,
+            geofenceRepository = geofenceRepository,
             alertPublisher = alertPublisher,
             shouldSaveLocation = ShouldSaveCaseLocationUseCase(),
+            evaluateGeofences = EvaluateGeofencesUseCase(),
             scope = applicationScope
         )
     }

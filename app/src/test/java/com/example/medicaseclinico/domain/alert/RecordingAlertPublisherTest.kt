@@ -2,6 +2,7 @@ package com.example.medicaseclinico.domain.alert
 
 import com.example.medicaseclinico.domain.model.AlertEvent
 import com.example.medicaseclinico.domain.model.AlertType
+import com.example.medicaseclinico.domain.model.Geofence
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,6 +21,14 @@ import java.io.IOException
 class RecordingAlertPublisherTest {
 
     private val delta = 0.01f
+
+    private val home = Geofence(
+        id = 1L,
+        name = "Casa",
+        latitude = -16.3989,
+        longitude = -71.5369,
+        radiusMeters = 150.0
+    )
 
     private class FakeAlertEventRepository(private val failing: Boolean = false) : AlertEventRepository {
         val recorded = mutableListOf<AlertEvent>()
@@ -49,6 +58,12 @@ class RecordingAlertPublisherTest {
         }
         override fun onConnectionRestored() {
             calls += "restored"
+        }
+        override fun onGeofenceExited(geofence: Geofence) {
+            calls += "exited ${geofence.name}"
+        }
+        override fun onGeofenceEntered(geofence: Geofence) {
+            calls += "entered ${geofence.name}"
         }
     }
 
@@ -137,6 +152,27 @@ class RecordingAlertPublisherTest {
         publisher.onConnectionLost()
 
         assertEquals(2, repository.recorded.size)
+    }
+
+    @Test
+    fun `cada salida de una zona se registra con el nombre de la zona`() = alertTest {
+        publisher.onGeofenceExited(home)
+        publisher.onGeofenceEntered(home)
+        now = 2_000L
+        publisher.onGeofenceExited(home)
+
+        assertEquals(listOf(AlertType.GEOFENCE, AlertType.GEOFENCE), repository.recorded.map { it.type })
+        assertEquals(listOf("Casa", "Casa"), repository.recorded.map { it.detail })
+        assertEquals(listOf(1_000L, 2_000L), repository.recorded.map { it.timestamp })
+        assertNull(repository.recorded.first().value)
+    }
+
+    @Test
+    fun `volver a una zona no registra nada pero llega al emisor real`() = alertTest {
+        publisher.onGeofenceEntered(home)
+
+        assertTrue(repository.recorded.isEmpty())
+        assertEquals(listOf("entered Casa"), delegate.calls)
     }
 
     @Test

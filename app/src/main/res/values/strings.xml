@@ -175,6 +175,8 @@
     <string name="notif_battery_text">Batería al %1$d%%. Conecta el MediCase al cargador: la refrigeración podría fallar.</string>
     <string name="notif_connection_title">Estuche desconectado</string>
     <string name="notif_connection_text">Se perdió la conexión Bluetooth con tu MediCase. Acércalo al teléfono.</string>
+    <string name="notif_geofence_title">El estuche salió de una zona segura</string>
+    <string name="notif_geofence_text">Tu MediCase salió de la zona «%1$s». Revisa su ubicación en el mapa.</string>
 
     <!-- Pantalla de Notificaciones -->
     <string name="settings_save_error">No se pudo guardar el ajuste. Inténtalo de nuevo.</string>

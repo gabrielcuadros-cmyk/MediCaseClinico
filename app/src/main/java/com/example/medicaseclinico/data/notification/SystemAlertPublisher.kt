@@ -14,6 +14,7 @@ import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.model.AlertType
 import com.example.medicaseclinico.domain.model.BatteryThresholds
+import com.example.medicaseclinico.domain.model.Geofence
 import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import java.time.Instant
@@ -132,6 +133,34 @@ class SystemAlertPublisher(
     }
 
     // ------------------------------------------------------------------
+    //  Geocercas
+    // ------------------------------------------------------------------
+    /**
+     * Una notificación por zona (etiqueta con su id): salir de "Casa" no debe
+     * tapar el aviso de que también salió de "Clínica".
+     */
+    @Synchronized
+    override fun onGeofenceExited(geofence: Geofence) {
+        post(
+            id = NOTIFICATION_ID_GEOFENCE,
+            tag = geofenceTag(geofence),
+            channel = AlertChannel.GEOFENCE,
+            title = appContext.getString(R.string.notif_geofence_title),
+            text = appContext.getString(R.string.notif_geofence_text, geofence.name),
+            silent = false,
+            ongoing = false
+        )
+    }
+
+    /** El estuche volvió: el aviso de salida de esa zona ya no aplica. */
+    @Synchronized
+    override fun onGeofenceEntered(geofence: Geofence) {
+        notificationManager.cancel(geofenceTag(geofence), NOTIFICATION_ID_GEOFENCE)
+    }
+
+    private fun geofenceTag(geofence: Geofence) = "$GEOFENCE_TAG_PREFIX${geofence.id}"
+
+    // ------------------------------------------------------------------
     //  Construcción y envío seguro
     // ------------------------------------------------------------------
     private fun post(
@@ -140,7 +169,8 @@ class SystemAlertPublisher(
         title: String,
         text: String,
         silent: Boolean,
-        ongoing: Boolean
+        ongoing: Boolean,
+        tag: String? = null
     ) {
         if (!canPostNotifications()) return
         if (!preferencesProvider().allows(channel.toAlertType(), currentMinuteOfDay())) return
@@ -167,7 +197,7 @@ class SystemAlertPublisher(
             .build()
 
         try {
-            notificationManager.notify(id, notification)
+            notificationManager.notify(tag, id, notification)
         } catch (e: SecurityException) {
             // Permiso revocado por el usuario
         }
@@ -212,6 +242,8 @@ class SystemAlertPublisher(
         const val NOTIFICATION_ID_TEMPERATURE = 1001
         const val NOTIFICATION_ID_BATTERY = 1002
         const val NOTIFICATION_ID_CONNECTION = 1003
+        const val NOTIFICATION_ID_GEOFENCE = 1004
+        const val GEOFENCE_TAG_PREFIX = "geofence-"
         val TEMPERATURE_REMINDER_MS = TimeUnit.MINUTES.toMillis(15)
         val TEMPERATURE_UPDATE_MS = TimeUnit.SECONDS.toMillis(30)
         const val ALERT_COLOR = 0xFFD64535.toInt()

@@ -3,6 +3,7 @@ package com.example.medicaseclinico.domain.alert
 import com.example.medicaseclinico.domain.model.AlertEvent
 import com.example.medicaseclinico.domain.model.AlertType
 import com.example.medicaseclinico.domain.model.BatteryThresholds
+import com.example.medicaseclinico.domain.model.Geofence
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import kotlinx.coroutines.CoroutineScope
@@ -75,11 +76,27 @@ class RecordingAlertPublisher(
     }
 
     /**
+     * Cada salida ya es un episodio (la evaluación de geocercas solo avisa al
+     * cruzar el borde), así que se registra siempre, con el nombre de la zona.
+     */
+    @Synchronized
+    override fun onGeofenceExited(geofence: Geofence) {
+        record(type = AlertType.GEOFENCE, value = null, detail = geofence.name)
+        delegate.onGeofenceExited(geofence)
+    }
+
+    /** Volver a la zona no es una alerta: solo se avisa al emisor real. */
+    @Synchronized
+    override fun onGeofenceEntered(geofence: Geofence) {
+        delegate.onGeofenceEntered(geofence)
+    }
+
+    /**
      * Si la base de datos falla, la alerta no queda en el historial pero la
      * notificación se emite igual: el `Result` se descarta a propósito.
      */
-    private fun record(type: AlertType, value: Float?) {
-        val event = AlertEvent(type = type, timestamp = clock(), value = value)
+    private fun record(type: AlertType, value: Float?, detail: String? = null) {
+        val event = AlertEvent(type = type, timestamp = clock(), value = value, detail = detail)
         scope.launch { alertEventRepository.recordAlert(event) }
     }
 }

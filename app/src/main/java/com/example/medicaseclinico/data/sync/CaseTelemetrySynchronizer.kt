@@ -6,11 +6,15 @@ import com.example.medicaseclinico.domain.model.CaseLocation
 import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.CaseTelemetry
 import com.example.medicaseclinico.domain.model.ConnectionStatus
+import com.example.medicaseclinico.domain.model.Geofence
+import com.example.medicaseclinico.domain.model.GeofenceTransitionType
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
 import com.example.medicaseclinico.domain.repository.CaseLocationRepository
+import com.example.medicaseclinico.domain.repository.GeofenceRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
+import com.example.medicaseclinico.domain.usecase.EvaluateGeofencesUseCase
 import com.example.medicaseclinico.domain.usecase.ShouldSaveCaseLocationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -29,8 +33,10 @@ class CaseTelemetrySynchronizer(
     private val deviceRepository: CaseDeviceRepository,
     private val temperatureRepository: TemperatureRepository,
     private val caseLocationRepository: CaseLocationRepository,
+    private val geofenceRepository: GeofenceRepository,
     private val alertPublisher: AlertPublisher,
     private val shouldSaveLocation: ShouldSaveCaseLocationUseCase,
+    private val evaluateGeofences: EvaluateGeofencesUseCase,
     private val scope: CoroutineScope,
     private val clock: () -> Long = System::currentTimeMillis
 ) {
@@ -44,6 +50,11 @@ class CaseTelemetrySynchronizer(
 
     // Solo se accede desde la corrutina de ubicación.
     private var lastSavedLocation: CaseLocation? = null
+    private var geofenceInsideById: Map<Long, Boolean> = emptyMap()
+
+    // La escribe la corrutina de zonas y la lee la de ubicación.
+    @Volatile
+    private var geofences: List<Geofence> = emptyList()
 
     /** Inicia la sincronización y la vigilancia de conexión. Idempotente. */
     fun start() {
@@ -52,6 +63,7 @@ class CaseTelemetrySynchronizer(
             purgeExpiredReadings()
             purgeExpiredLocations()
             launch { collectTelemetry() }
+            launch { collectGeofences() }
             launch { collectCaseLocation() }
             launch { watchConnection() }
         }
@@ -126,7 +138,47 @@ class CaseTelemetrySynchronizer(
         deviceRepository.caseLocation.collect { state ->
             val reported = state as? CaseLocationState.Reported ?: return@collect
             val fix = reported.reading as? CaseGpsReading.Fix ?: return@collect
+            checkGeofences(fix)
             onLocationFix(fix, reported.receivedAt)
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Geocercas
+    // ------------------------------------------------------------------
+    /**
+     * Mantiene al día las zonas guardadas. Si la base falla, se deja de
+     * evaluar (lista vacía) en lugar de tumbar el resto de la sincronización.
+     */
+    private suspend fun collectGeofences() {
+        try {
+            geofenceRepository.observeGeofences().collect { geofences = it }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            geofences = emptyList()
+        }
+    }
+
+    /**
+     * Se evalúa con cada posición, no solo con las que se guardan: una salida
+     * debe avisarse al momento. Sin posición (sin señal GPS o sin enlace) no
+     * se evalúa y se conserva el último estado, de modo que si el estuche
+     * reaparece fuera de la zona, la salida se detecta entonces.
+     */
+    private fun checkGeofences(fix: CaseGpsReading.Fix) {
+        val evaluation = evaluateGeofences(
+            geofences = geofences,
+            latitude = fix.latitude,
+            longitude = fix.longitude,
+            previousInsideById = geofenceInsideById
+        )
+        geofenceInsideById = evaluation.insideById
+        evaluation.transitions.forEach { transition ->
+            when (transition.type) {
+                GeofenceTransitionType.EXITED -> alertPublisher.onGeofenceExited(transition.geofence)
+                GeofenceTransitionType.ENTERED -> alertPublisher.onGeofenceEntered(transition.geofence)
+            }
         }
     }
 
