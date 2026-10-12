@@ -12,6 +12,7 @@ import com.example.medicaseclinico.data.repository.CaseLocationRepositoryImpl
 import com.example.medicaseclinico.data.repository.GeofenceRepositoryImpl
 import com.example.medicaseclinico.data.repository.TemperatureRepositoryImpl
 import com.example.medicaseclinico.data.sync.CaseTelemetrySynchronizer
+import com.example.medicaseclinico.data.user.FirestoreUserProfileRepository
 import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.alert.RecordingAlertPublisher
 import com.example.medicaseclinico.domain.model.NotificationPreferences
@@ -23,6 +24,7 @@ import com.example.medicaseclinico.domain.repository.GeofenceRepository
 import com.example.medicaseclinico.domain.repository.MedicalReportExporter
 import com.example.medicaseclinico.domain.repository.NotificationPreferencesRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
+import com.example.medicaseclinico.domain.repository.UserProfileRepository
 import com.example.medicaseclinico.domain.usecase.EvaluateGeofencesUseCase
 import com.example.medicaseclinico.domain.usecase.ShouldSaveCaseLocationUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -60,6 +62,10 @@ class AppContainer(context: Context) {
 
     val authRepository: AuthRepository by lazy {
         FirebaseAuthRepository(context = appContext)
+    }
+
+    val userProfileRepository: UserProfileRepository by lazy {
+        FirestoreUserProfileRepository(context = appContext)
     }
 
     val medicalReportExporter: MedicalReportExporter by lazy {

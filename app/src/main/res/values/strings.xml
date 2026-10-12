@@ -354,6 +354,27 @@
     <string name="login_no_account">¿No tienes una cuenta?</string>
     <string name="login_create_account">Crear cuenta</string>
 
+    <!-- Crear cuenta -->
+    <string name="register_title">Crear Cuenta</string>
+    <string name="register_subtitle">Monitorea y asegura tus medicamentos al instante.</string>
+    <string name="register_name_label">Nombre completo</string>
+    <string name="register_name_placeholder">Ej. Dr. Alejandro Díaz</string>
+    <string name="register_phone_label">Teléfono móvil</string>
+    <string name="register_phone_placeholder">+51 987 654 321</string>
+    <string name="register_password_placeholder">Mínimo %1$d caracteres</string>
+    <string name="register_confirm_password_label">Confirmar contraseña</string>
+    <string name="register_confirm_password_placeholder">Repite tu contraseña</string>
+    <string name="register_terms">Acepto los Términos de Servicio y la Política de Privacidad.</string>
+    <string name="register_submit">Crear Cuenta</string>
+    <string name="register_have_account">¿Ya tienes una cuenta?</string>
+    <string name="register_sign_in">Iniciar sesión</string>
+    <string name="auth_field_name_required">Escribe tu nombre completo.</string>
+    <string name="auth_field_phone_required">Escribe tu teléfono móvil.</string>
+    <string name="auth_field_phone_invalid">El teléfono no es válido. Usa solo números, con el prefijo del país si quieres.</string>
+    <string name="auth_field_password_too_short">La contraseña debe tener al menos %1$d caracteres.</string>
+    <string name="auth_field_passwords_do_not_match">Las contraseñas no coinciden.</string>
+    <string name="auth_field_terms_required">Debes aceptar los términos para crear la cuenta.</string>
+
     <!-- Recuperar contraseña -->
     <string name="recovery_title">Recuperar Contraseña</string>
     <string name="recovery_subtitle">Te enviaremos un enlace de seguridad para restablecer tu cuenta.</string>
