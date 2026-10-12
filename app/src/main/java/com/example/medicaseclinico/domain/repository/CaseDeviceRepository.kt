@@ -1,5 +1,6 @@
 package com.example.medicaseclinico.domain.repository
 
+import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.CaseTelemetry
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
@@ -25,6 +26,15 @@ interface CaseDeviceRepository {
 
     /** Flujo caliente de mediciones recibidas del estuche. */
     val telemetry: Flow<CaseTelemetry>
+
+    /**
+     * Ubicación del estuche según su propio GPS, mientras dure el enlace.
+     *
+     * Vuelve a [CaseLocationState.Unavailable] al perder la conexión: este
+     * flujo solo cuenta lo que el estuche dice ahora. La última ubicación
+     * conocida, con su hora, es cosa del historial guardado.
+     */
+    val caseLocation: StateFlow<CaseLocationState>
 
     /** Inicia escaneo, conexión y suscripción a notificaciones. */
     fun startMonitoring()

@@ -16,6 +16,7 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
 import android.os.ParcelUuid
+import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.CaseTelemetry
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
@@ -44,7 +45,7 @@ import kotlin.coroutines.resume
 
 /**
  * Cliente BLE del estuche MediCase: escaneo → conexión → suscripción a
- * temperatura y batería → reconexión automática con espera progresiva.
+ * temperatura, batería y ubicación → reconexión automática con espera progresiva.
  */
 @SuppressLint("MissingPermission")
 class AndroidCaseDeviceRepository(
@@ -72,6 +73,10 @@ class AndroidCaseDeviceRepository(
     )
     override val telemetry: Flow<CaseTelemetry> = _telemetry.asSharedFlow()
 
+    private val _caseLocation =
+        MutableStateFlow<CaseLocationState>(CaseLocationState.Unavailable)
+    override val caseLocation: StateFlow<CaseLocationState> = _caseLocation.asStateFlow()
+
     // ------------------------------------------------------------------
     //  Estado interno de la conexión
     // ------------------------------------------------------------------
@@ -96,6 +101,7 @@ class AndroidCaseDeviceRepository(
         monitoringJob = null
         closeGatt()
         _connectionStatus.value = ConnectionStatus.DISCONNECTED
+        _caseLocation.value = CaseLocationState.Unavailable
     }
 
     // ------------------------------------------------------------------
@@ -122,6 +128,7 @@ class AndroidCaseDeviceRepository(
                 }
                 closeGatt()
                 _connectionStatus.value = ConnectionStatus.DISCONNECTED
+                _caseLocation.value = CaseLocationState.Unavailable
                 failedAttempts++
                 if (failedAttempts > MAX_RECONNECT_ATTEMPTS) {
                     publishFailure(
@@ -152,6 +159,7 @@ class AndroidCaseDeviceRepository(
 
     private fun publishFailure(issue: DeviceIssue) {
         _connectionStatus.value = ConnectionStatus.DISCONNECTED
+        _caseLocation.value = CaseLocationState.Unavailable
         _deviceIssue.value = issue
     }
 
@@ -219,7 +227,7 @@ class AndroidCaseDeviceRepository(
     }
 
     // ------------------------------------------------------------------
-    //  3) Suscripción a temperatura y batería
+    //  3) Suscripción a temperatura, batería y ubicación
     // ------------------------------------------------------------------
     private suspend fun subscribeToMeasurements(gatt: BluetoothGatt): Boolean {
         val temperature = gatt.findCharacteristic(GattSpec.TEMPERATURE_MEASUREMENT)
@@ -234,7 +242,22 @@ class AndroidCaseDeviceRepository(
                 enableUpdates(gatt, battery)
             }
         }
+        subscribeToLocation(gatt)
         return true
+    }
+
+    /**
+     * La ubicación es opcional, como la batería: si el estuche no la ofrece o
+     * no se puede activar, el enlace sigue siendo válido para la temperatura.
+     */
+    private suspend fun subscribeToLocation(gatt: BluetoothGatt) {
+        val location = gatt.findCharacteristic(GattSpec.LOCATION_AND_SPEED)
+        val subscribed = location != null && enableUpdates(gatt, location)
+        _caseLocation.value = if (subscribed) {
+            CaseLocationState.Unavailable
+        } else {
+            CaseLocationState.NotSupported
+        }
     }
 
     private suspend fun enableUpdates(
@@ -373,6 +396,10 @@ class AndroidCaseDeviceRepository(
             GattSpec.BATTERY_LEVEL ->
                 GattParser.parseBatteryPercent(value)?.let { percent ->
                     _telemetry.tryEmit(CaseTelemetry.Battery(percent, now))
+                }
+            GattSpec.LOCATION_AND_SPEED ->
+                GattParser.parseLocationAndSpeed(value)?.let { reading ->
+                    _caseLocation.value = CaseLocationState.Reported(reading, now)
                 }
         }
     }
