@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -49,6 +50,9 @@ import org.maplibre.android.maps.Style
  */
 private const val MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 
+/** Aire alrededor del círculo del punto elegido cuando el mapa ajusta el zoom para que quepa. */
+private val PickerFitPadding = 32.dp
+
 /**
  * Mapa base de la app: el único sitio donde se crea un `MapView`.
  *
@@ -64,6 +68,9 @@ private const val MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
  * @param circles zonas de seguridad, con su radio en metros reales.
  * @param recenterRequests contador de veces que el usuario pidió centrar el
  * mapa en el estuche; cada incremento vuelve a centrarlo y a seguirlo.
+ * @param centerPicker si no es null, el mapa pasa al modo "elegir un punto":
+ * deja de seguir al estuche y dibuja un círculo alrededor de su centro.
+ * @param onCenterChanged punto elegido en ese modo, cada vez que el mapa se detiene.
  * @param onLoadFailed el mapa no se pudo crear o su estilo no se pudo
  * descargar (p. ej. sin internet); la pantalla decide qué mostrar.
  */
@@ -73,6 +80,8 @@ fun MediCaseMap(
     marker: GeoPoint? = null,
     circles: List<MapCircle> = emptyList(),
     recenterRequests: Int = 0,
+    centerPicker: MapCenterPicker? = null,
+    onCenterChanged: (GeoPoint) -> Unit = {},
     onLoadFailed: () -> Unit = {}
 ) {
     Box(modifier = modifier) {
@@ -88,6 +97,8 @@ fun MediCaseMap(
                 marker = marker,
                 circles = circles,
                 recenterRequests = recenterRequests,
+                centerPicker = centerPicker,
+                onCenterChanged = onCenterChanged,
                 onLoadFailed = onLoadFailed
             )
         }
@@ -104,11 +115,15 @@ private fun MapLibreMapView(
     marker: GeoPoint?,
     circles: List<MapCircle>,
     recenterRequests: Int,
+    centerPicker: MapCenterPicker?,
+    onCenterChanged: (GeoPoint) -> Unit,
     onLoadFailed: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnLoadFailed by rememberUpdatedState(onLoadFailed)
+    val currentOnCenterChanged by rememberUpdatedState(onCenterChanged)
+    val fitPaddingPx = with(LocalDensity.current) { PickerFitPadding.roundToPx() }
     val mapDescription = stringResource(R.string.map_content_description)
 
     // Como en el diseño: pin rojo de alerta con insignia azul, y zonas en azul primario.
@@ -123,7 +138,7 @@ private fun MapLibreMapView(
     // Un MapView destruido no se puede reutilizar: si cambia el dueño del
     // ciclo de vida, se crea un mapa nuevo en vez de reconectar el anterior.
     val handle = remember(context, lifecycleOwner) {
-        createMapOrNull(context, pinColors, circleColor)
+        createMapOrNull(context, pinColors, circleColor, fitPaddingPx)
     }
     if (handle == null) {
         LaunchedEffect(Unit) { currentOnLoadFailed() }
@@ -132,7 +147,7 @@ private fun MapLibreMapView(
     val mapView = handle.mapView
     val content = handle.content
 
-    SideEffect { content.show(marker, circles) }
+    SideEffect { content.show(marker, circles, centerPicker) }
     LaunchedEffect(content, recenterRequests) {
         if (recenterRequests > 0) content.recenter()
     }
@@ -140,6 +155,7 @@ private fun MapLibreMapView(
     DisposableEffect(handle) {
         val failListener = MapView.OnDidFailLoadingMapListener { currentOnLoadFailed() }
         mapView.addOnDidFailLoadingMapListener(failListener)
+        content.onCenterChanged = { currentOnCenterChanged(it) }
         mapView.getMapAsync { map ->
             map.setStyle(Style.Builder().fromUri(MAP_STYLE_URL)) { style -> content.attach(map, style) }
         }
@@ -178,7 +194,8 @@ private class MapHandle(val mapView: MapView, val content: MapContentRenderer)
 private fun createMapOrNull(
     context: Context,
     pinColors: MapPinColors,
-    @ColorInt circleColor: Int
+    @ColorInt circleColor: Int,
+    fitPaddingPx: Int
 ): MapHandle? =
     try {
         MapLibre.getInstance(context.applicationContext)
@@ -186,7 +203,8 @@ private fun createMapOrNull(
             mapView = MapView(context).apply { onCreate(null) },
             content = MapContentRenderer(
                 pinBitmap = MapContentRenderer.createPinBitmap(context, pinColors),
-                circleColor = circleColor
+                circleColor = circleColor,
+                fitPaddingPx = fitPaddingPx
             )
         )
     } catch (e: Exception) {

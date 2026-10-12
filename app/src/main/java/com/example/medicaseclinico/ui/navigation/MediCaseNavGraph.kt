@@ -10,6 +10,7 @@ import com.example.medicaseclinico.R
 import com.example.medicaseclinico.ui.components.PendingFeatureScreen
 import com.example.medicaseclinico.ui.screens.alerts.AlertsRoute
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardRoute
+import com.example.medicaseclinico.ui.screens.geofence.GeofenceConfigRoute
 import com.example.medicaseclinico.ui.screens.history.TemperatureHistoryRoute
 import com.example.medicaseclinico.ui.screens.map.MapRoute
 import com.example.medicaseclinico.ui.screens.notifications.NotificationSettingsRoute
@@ -44,7 +45,7 @@ fun MediCaseNavGraph(
             )
         }
         composable(SecondaryRoutes.GEOFENCE_CONFIG) {
-            PendingFeatureScreen(titleRes = R.string.geofence_config_title)
+            GeofenceConfigRoute(onBack = { navController.popBackStack() })
         }
         composable(SecondaryRoutes.LOSS_MODE) {
             PendingFeatureScreen(titleRes = R.string.loss_mode_title)

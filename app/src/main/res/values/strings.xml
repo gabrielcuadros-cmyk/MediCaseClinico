@@ -298,6 +298,25 @@
     <string name="map_open_external_failed">No hay ninguna aplicación para abrir la ubicación.</string>
     <string name="map_loss_mode">Modo Pérdida / Robo</string>
     <string name="map_configure_geofence">Configurar Geocerca</string>
+
+    <!-- Configurar Geocerca -->
     <string name="geofence_config_title">Configurar Geocerca</string>
+    <string name="geofence_config_subtitle">Establece un radio seguro para recibir alertas al salir de la zona.</string>
+    <string name="geofence_config_loading">Cargando zonas de seguridad…</string>
+    <string name="geofence_config_error_title">No se pudieron leer las zonas</string>
+    <string name="geofence_config_error_message">Hubo un problema al acceder a las zonas guardadas en el teléfono. Reintenta; si persiste, reinicia la aplicación.</string>
+    <string name="geofence_move_map_hint">Mueve y amplía el mapa hasta el lugar de la zona.</string>
+    <string name="geofence_name_label">Nombre de la Zona</string>
+    <string name="geofence_name_placeholder">Ej.: Casa, Trabajo</string>
+    <string name="geofence_radius_label">Radio en metros</string>
+    <string name="geofence_radius_value">%1$dm</string>
+    <string name="geofence_saved_zones_header">ZONAS GUARDADAS</string>
+    <string name="geofence_saved_zones_empty">Aún no hay zonas guardadas. Sitúa el mapa, ponle un nombre y guarda la primera.</string>
+    <string name="geofence_zone_range">Rango de seguridad: %1$dm</string>
+    <string name="geofence_zone_inside">Dentro</string>
+    <string name="geofence_zone_outside">Fuera</string>
+    <string name="geofence_save">Guardar Zona de Seguridad</string>
+    <string name="geofence_saved_message">Zona de seguridad guardada.</string>
+    <string name="geofence_save_failed">No se pudo guardar la zona. Inténtalo de nuevo.</string>
     <string name="loss_mode_title">Modo Pérdida</string>
 </resources>

@@ -16,3 +16,18 @@ data class Geofence(
     val radiusMeters: Double,
     val isActive: Boolean = true
 )
+
+/**
+ * Límites de fábrica de una zona de seguridad.
+ *
+ * El radio mínimo queda por encima de la histéresis de las alertas y del
+ * vaivén de un GPS quieto: una zona más pequeña alertaría sin que el estuche
+ * se mueva.
+ */
+object GeofenceLimits {
+    const val MIN_RADIUS_METERS = 50
+    const val MAX_RADIUS_METERS = 1_000
+    const val RADIUS_STEP_METERS = 50
+    const val DEFAULT_RADIUS_METERS = 300
+    const val MAX_NAME_LENGTH = 40
+}

@@ -13,6 +13,7 @@ import com.example.medicaseclinico.domain.geo.GeoPoint
 import com.example.medicaseclinico.domain.geo.circleOutline
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.FillLayer
@@ -32,6 +33,20 @@ data class MapCircle(
     val latitude: Double,
     val longitude: Double,
     val radiusMeters: Double
+)
+
+/**
+ * Modo "elegir un punto": el centro del mapa es el punto elegido y a su
+ * alrededor se dibuja un círculo de [radiusMeters]. El usuario mueve el mapa
+ * por debajo; el círculo se queda en el centro.
+ *
+ * @param start dónde abrir el mapa, o null si no hay ningún lugar conocido
+ * desde el que empezar.
+ */
+@Immutable
+data class MapCenterPicker(
+    val radiusMeters: Double,
+    val start: GeoPoint?
 )
 
 /** Colores del marcador del estuche, ya resueltos desde el tema. */
@@ -56,18 +71,30 @@ internal class MapPinColors(
  */
 internal class MapContentRenderer(
     private val pinBitmap: Bitmap,
-    @param:ColorInt private val circleColor: Int
+    @param:ColorInt private val circleColor: Int,
+    private val fitPaddingPx: Int
 ) {
     private var map: MapLibreMap? = null
     private var markerSource: GeoJsonSource? = null
     private var circlesSource: GeoJsonSource? = null
+    private var pickerSource: GeoJsonSource? = null
 
     private var marker: GeoPoint? = null
     private var circles: List<MapCircle> = emptyList()
+    private var picker: MapCenterPicker? = null
+
+    /** A quién avisar del punto elegido en el modo "elegir un punto". */
+    var onCenterChanged: (GeoPoint) -> Unit = {}
 
     private var detached = false
     private var followMarker = true
     private var cameraPlaced = false
+
+    // Modo "elegir un punto": el centro solo cuenta cuando el mapa se abrió en
+    // un lugar conocido o el usuario lo movió; la vista inicial del mundo no
+    // es una elección.
+    private var centerChosen = false
+    private var fittedRadiusMeters: Double? = null
 
     /** El estilo terminó de cargar: se añaden las capas y se pinta lo pendiente. */
     fun attach(map: MapLibreMap, style: Style) {
@@ -98,6 +125,21 @@ internal class MapContentRenderer(
             )
         )
 
+        val pickerSource = GeoJsonSource(PICKER_SOURCE_ID)
+        style.addSource(pickerSource)
+        style.addLayer(
+            FillLayer(PICKER_FILL_LAYER_ID, PICKER_SOURCE_ID).withProperties(
+                PropertyFactory.fillColor(circleColor),
+                PropertyFactory.fillOpacity(PICKER_FILL_OPACITY)
+            )
+        )
+        style.addLayer(
+            LineLayer(PICKER_LINE_LAYER_ID, PICKER_SOURCE_ID).withProperties(
+                PropertyFactory.lineColor(circleColor),
+                PropertyFactory.lineWidth(CIRCLE_LINE_WIDTH)
+            )
+        )
+
         // El marcador se añade al final para que quede encima de los círculos.
         style.addImage(PIN_IMAGE_ID, pinBitmap)
         val markerSource = GeoJsonSource(MARKER_SOURCE_ID)
@@ -114,20 +156,27 @@ internal class MapContentRenderer(
         map.addOnCameraMoveStartedListener { reason ->
             if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) {
                 followMarker = false
+                centerChosen = true
             }
         }
+        // El círculo del punto elegido acompaña al centro mientras el mapa se
+        // mueve; el aviso se da al soltar, no en cada fotograma.
+        map.addOnCameraMoveListener { renderPickerCircle() }
+        map.addOnCameraIdleListener { reportChosenCenter() }
 
         this.map = map
         this.circlesSource = circlesSource
+        this.pickerSource = pickerSource
         this.markerSource = markerSource
         render()
     }
 
     /** Lo que debe verse ahora. Se puede llamar antes de que el mapa esté listo. */
-    fun show(marker: GeoPoint?, circles: List<MapCircle>) {
-        if (marker == this.marker && circles == this.circles) return
+    fun show(marker: GeoPoint?, circles: List<MapCircle>, picker: MapCenterPicker?) {
+        if (marker == this.marker && circles == this.circles && picker == this.picker) return
         this.marker = marker
         this.circles = circles
+        this.picker = picker
         render()
     }
 
@@ -147,6 +196,7 @@ internal class MapContentRenderer(
         map = null
         markerSource = null
         circlesSource = null
+        pickerSource = null
     }
 
     private fun render() {
@@ -165,6 +215,14 @@ internal class MapContentRenderer(
             )
         )
 
+        val picker = picker
+        if (picker != null) {
+            placePickerCamera(map, picker)
+            renderPickerCircle()
+            return
+        }
+        pickerSource?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
+
         if (marker == null) return
         val target = LatLng(marker.latitude, marker.longitude)
         when {
@@ -175,6 +233,56 @@ internal class MapContentRenderer(
             }
             followMarker -> map.animateCamera(CameraUpdateFactory.newLatLng(target))
         }
+    }
+
+    /**
+     * En el modo "elegir un punto" la cámara no sigue a nadie: se abre una vez
+     * en el punto de partida y después solo cambia el zoom, para que el
+     * círculo quepa entero cuando el usuario cambia el radio.
+     */
+    private fun placePickerCamera(map: MapLibreMap, picker: MapCenterPicker) {
+        val start = picker.start
+        if (!cameraPlaced && !centerChosen && start != null) {
+            map.moveCamera(
+                CameraUpdateFactory.newLatLngZoom(LatLng(start.latitude, start.longitude), INITIAL_ZOOM)
+            )
+            cameraPlaced = true
+            centerChosen = true
+            fitPickerCircle(map, picker, animate = false)
+        } else if (centerChosen && picker.radiusMeters != fittedRadiusMeters) {
+            fitPickerCircle(map, picker, animate = true)
+        }
+    }
+
+    private fun fitPickerCircle(map: MapLibreMap, picker: MapCenterPicker, animate: Boolean) {
+        val center = map.cameraPosition.target ?: return
+        fittedRadiusMeters = picker.radiusMeters
+        val outline = circleOutline(center.latitude, center.longitude, picker.radiusMeters)
+            .map { LatLng(it.latitude, it.longitude) }
+        try {
+            val update = CameraUpdateFactory.newLatLngBounds(
+                LatLngBounds.Builder().includes(outline).build(),
+                fitPaddingPx
+            )
+            if (animate) map.animateCamera(update) else map.moveCamera(update)
+        } catch (e: RuntimeException) {
+            // Mapa aún sin tamaño o límites no válidos: se queda el zoom que había.
+        }
+    }
+
+    private fun renderPickerCircle() {
+        val picker = picker ?: return
+        val center = map?.cameraPosition?.target ?: return
+        pickerSource?.setGeoJson(
+            MapCircle(center.latitude, center.longitude, picker.radiusMeters).toFeature()
+        )
+    }
+
+    private fun reportChosenCenter() {
+        if (picker == null || !centerChosen) return
+        // wrap(): tras dar la vuelta al mundo la longitud se sale de ±180.
+        val center = map?.cameraPosition?.target?.wrap() ?: return
+        onCenterChanged(GeoPoint(latitude = center.latitude, longitude = center.longitude))
     }
 
     private fun MapCircle.toFeature(): Feature {
@@ -190,11 +298,15 @@ internal class MapContentRenderer(
         private const val CIRCLES_SOURCE_ID = "medicase-circles"
         private const val CIRCLES_FILL_LAYER_ID = "medicase-circles-fill"
         private const val CIRCLES_LINE_LAYER_ID = "medicase-circles-line"
+        private const val PICKER_SOURCE_ID = "medicase-picker"
+        private const val PICKER_FILL_LAYER_ID = "medicase-picker-fill"
+        private const val PICKER_LINE_LAYER_ID = "medicase-picker-line"
         private const val MARKER_SOURCE_ID = "medicase-marker"
         private const val MARKER_LAYER_ID = "medicase-marker-layer"
         private const val PIN_IMAGE_ID = "medicase-pin"
 
         private const val CIRCLE_FILL_OPACITY = 0.15f
+        private const val PICKER_FILL_OPACITY = 0.3f
         private const val CIRCLE_LINE_WIDTH = 2f
 
         /** Nivel de calle: se distinguen las manzanas alrededor del estuche. */
