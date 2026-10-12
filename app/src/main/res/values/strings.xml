@@ -337,4 +337,23 @@
     <string name="auth_error_network">Sin conexión a internet. Revisa tu red e inténtalo de nuevo.</string>
     <string name="auth_error_not_configured">El inicio de sesión no está disponible en esta instalación.</string>
     <string name="auth_error_unknown">No se pudo completar la operación. Inténtalo de nuevo.</string>
+
+    <!-- Autenticación: elementos comunes de los formularios -->
+    <string name="auth_logo_description">MediCase. Tu insulina, siempre en buenas manos.</string>
+    <string name="auth_logo_brand_first">Medi</string>
+    <string name="auth_logo_brand_second">Case</string>
+    <string name="auth_logo_tagline">Tu insulina, siempre en buenas manos</string>
+    <string name="auth_email_label">Correo electrónico</string>
+    <string name="auth_email_placeholder">correo@ejemplo.com</string>
+    <string name="auth_password_label">Contraseña</string>
+    <string name="auth_show_password">Mostrar contraseña</string>
+    <string name="auth_hide_password">Ocultar contraseña</string>
+    <string name="auth_field_email_required">Escribe tu correo electrónico.</string>
+    <string name="auth_field_password_required">Escribe tu contraseña.</string>
+
+    <!-- Iniciar sesión -->
+    <string name="login_forgot_password">¿Olvidé mi contraseña?</string>
+    <string name="login_submit">Iniciar Sesión</string>
+    <string name="login_no_account">¿No tienes una cuenta?</string>
+    <string name="login_create_account">Crear cuenta</string>
 </resources>
