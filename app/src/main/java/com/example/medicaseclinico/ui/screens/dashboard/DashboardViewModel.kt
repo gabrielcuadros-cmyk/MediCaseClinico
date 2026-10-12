@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
+import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
@@ -32,10 +34,16 @@ import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Cerebro del Dashboard de MediCase Clínico con estado BLE real.
+ *
+ * @param clock se inyecta para que los tests fijen la hora del tiempo relativo.
+ * @param tickIntervalMs cada cuánto se recalcula "hace X min" aunque no
+ * lleguen lecturas nuevas.
  */
 class DashboardViewModel(
     private val temperatureRepository: TemperatureRepository,
-    private val deviceRepository: CaseDeviceRepository
+    private val deviceRepository: CaseDeviceRepository,
+    private val clock: () -> Long = System::currentTimeMillis,
+    private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS
 ) : ViewModel() {
 
     private val retryTrigger = MutableStateFlow(0)
@@ -74,9 +82,10 @@ class DashboardViewModel(
         combine(
             temperatureRepository.observeLatestReading(),
             temperatureRepository.observeLatestBatteryLevel(),
-            deviceRepository.connectionStatus
-        ) { latestReading, batteryLevel, connectionStatus ->
-            buildUiState(latestReading, batteryLevel, connectionStatus)
+            deviceRepository.connectionStatus,
+            currentTime()
+        ) { latestReading, batteryLevel, connectionStatus, now ->
+            buildUiState(latestReading, batteryLevel, connectionStatus, now)
         }
             .onStart {
                 emit(DashboardUiState.Loading(connectionStatus = deviceRepository.connectionStatus.value))
@@ -101,10 +110,22 @@ class DashboardViewModel(
                 )
             }
 
+    /**
+     * Sin esto, con el estuche desconectado no llegan lecturas nuevas y el pie
+     * se quedaría diciendo "hace 2 min" para siempre.
+     */
+    private fun currentTime(): Flow<Long> = flow {
+        while (true) {
+            emit(clock())
+            delay(tickIntervalMs)
+        }
+    }
+
     private fun buildUiState(
         latestReading: TemperatureReading?,
         batteryLevel: Int?,
-        connectionStatus: ConnectionStatus
+        connectionStatus: ConnectionStatus,
+        now: Long
     ): DashboardUiState {
         if (latestReading == null) {
             return DashboardUiState.Empty(connectionStatus = connectionStatus)
@@ -114,7 +135,10 @@ class DashboardViewModel(
             currentTemperature = latestReading.temperatureCelsius,
             temperatureStatus = TemperatureStatus.fromCelsius(latestReading.temperatureCelsius),
             batteryLevel = batteryLevel?.coerceIn(0, 100),
-            lastReadingTimestamp = latestReading.timestamp
+            lastReadingElapsed = RelativeTime.between(
+                timestamp = latestReading.timestamp,
+                now = now
+            )
         )
     }
 
@@ -129,6 +153,9 @@ class DashboardViewModel(
         private const val STOP_TIMEOUT_MS = 5_000L
         private const val MAX_AUTO_RETRIES = 3L
         private const val BASE_RETRY_DELAY_MS = 1_000L
+
+        /** El tiempo relativo cambia como mucho una vez por minuto. */
+        const val DEFAULT_TICK_INTERVAL_MS = 60_000L
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

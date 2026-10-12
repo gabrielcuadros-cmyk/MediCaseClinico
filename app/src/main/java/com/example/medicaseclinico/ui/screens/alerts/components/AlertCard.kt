@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +40,7 @@ import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.model.AlertType
 import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.model.TemperatureStatus
+import com.example.medicaseclinico.ui.components.relativeTimeLabel
 import com.example.medicaseclinico.ui.screens.alerts.AlertItem
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 
@@ -110,7 +110,7 @@ fun AlertCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = alert.elapsed.label(),
+                        text = relativeTimeLabel(alert.elapsed),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -195,15 +195,6 @@ private fun temperatureDescription(celsius: Float?): String {
     } else {
         stringResource(R.string.alerts_temperature_low, temperatureText)
     }
-}
-
-/** "Ahora", "Hace 5 min", "Hace 1 hora", "Hace 3 días". */
-@Composable
-private fun RelativeTime.label(): String = when (this) {
-    RelativeTime.JustNow -> stringResource(R.string.alerts_time_now)
-    is RelativeTime.Minutes -> pluralStringResource(R.plurals.alerts_time_minutes, count, count)
-    is RelativeTime.Hours -> pluralStringResource(R.plurals.alerts_time_hours, count, count)
-    is RelativeTime.Days -> pluralStringResource(R.plurals.alerts_time_days, count, count)
 }
 
 @Preview(showBackground = true, name = "Tarjetas de alerta")

@@ -3,6 +3,7 @@ package com.example.medicaseclinico.ui.screens.dashboard
 import androidx.compose.runtime.Immutable
 import com.example.medicaseclinico.domain.model.BatteryThresholds
 import com.example.medicaseclinico.domain.model.ConnectionStatus
+import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 
 /**
@@ -43,8 +44,12 @@ sealed interface DashboardUiState {
          * null si el estuche aún no lo ha reportado → la tarjeta muestra "--".
          */
         val batteryLevel: Int?,
-        /** Marca de tiempo de la última lectura (para "Sincronizado hace 2 min"). */
-        val lastReadingTimestamp: Long
+        /**
+         * Tiempo desde la última lectura, para el pie "Última lectura recibida
+         * vía Bluetooth hace 2 min". Lo calcula el ViewModel para que la UI no
+         * consulte el reloj al dibujar.
+         */
+        val lastReadingElapsed: RelativeTime
     ) : DashboardUiState {
         /**
          * false si el estuche está desconectado: la temperatura mostrada es la

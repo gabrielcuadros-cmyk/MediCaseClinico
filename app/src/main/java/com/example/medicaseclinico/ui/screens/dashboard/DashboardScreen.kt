@@ -7,7 +7,6 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import android.text.format.DateUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -48,6 +47,7 @@ import com.example.medicaseclinico.R
 import com.example.medicaseclinico.data.ble.BlePermissions
 import com.example.medicaseclinico.data.notification.NotificationPermission
 import com.example.medicaseclinico.domain.model.DeviceIssue
+import com.example.medicaseclinico.ui.components.relativeTimeLabel
 import com.example.medicaseclinico.ui.screens.dashboard.components.BatteryCard
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardEmptyContent
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardErrorContent
@@ -220,11 +220,9 @@ private fun DashboardSuccessContent(
             isLow = state.isBatteryLow,
             modifier = Modifier.fillMaxWidth()
         )
-        val relativeTime = DateUtils.getRelativeTimeSpanString(
-            state.lastReadingTimestamp,
-            System.currentTimeMillis(),
-            DateUtils.MINUTE_IN_MILLIS
-        ).toString()
+        // El tiempo va en medio de la frase: "…vía Bluetooth hace 5 min".
+        val relativeTime = relativeTimeLabel(state.lastReadingElapsed)
+            .replaceFirstChar { it.lowercase() }
         Text(
             text = stringResource(R.string.dashboard_last_sync, relativeTime),
             style = MaterialTheme.typography.labelSmall,

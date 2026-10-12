@@ -238,19 +238,19 @@
     <string name="alerts_security_title">Intento de Acceso con Contraseña</string>
     <string name="alerts_security_description">Bloqueo por intentos fallidos de contraseña de 4 dígitos.</string>
 
-    <!-- Alertas de Seguridad: tiempo relativo -->
-    <string name="alerts_time_now">Ahora</string>
-    <plurals name="alerts_time_minutes">
+    <!-- Tiempo relativo (Alertas y pie del Dashboard) -->
+    <string name="relative_time_now">Ahora</string>
+    <plurals name="relative_time_minutes">
         <item quantity="one">Hace %1$d min</item>
         <item quantity="many">Hace %1$d min</item>
         <item quantity="other">Hace %1$d min</item>
     </plurals>
-    <plurals name="alerts_time_hours">
+    <plurals name="relative_time_hours">
         <item quantity="one">Hace %1$d hora</item>
         <item quantity="many">Hace %1$d horas</item>
         <item quantity="other">Hace %1$d horas</item>
     </plurals>
-    <plurals name="alerts_time_days">
+    <plurals name="relative_time_days">
         <item quantity="one">Hace %1$d día</item>
         <item quantity="many">Hace %1$d días</item>
         <item quantity="other">Hace %1$d días</item>
