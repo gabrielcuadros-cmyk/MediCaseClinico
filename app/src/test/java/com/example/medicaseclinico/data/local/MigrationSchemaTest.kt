@@ -6,8 +6,8 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Comprueba la migración 1 → 2 contra los esquemas que exporta Room, sin
- * necesitar un teléfono: si la entidad y la migración dejan de coincidir,
+ * Comprueba las migraciones contra los esquemas que exporta Room, sin
+ * necesitar un teléfono: si una entidad y su migración dejan de coincidir,
  * este test falla en cada compilación.
  */
 class MigrationSchemaTest {
@@ -29,6 +29,9 @@ class MigrationSchemaTest {
         }
     }
 
+    // ------------------------------------------------------------------
+    //  Migración 1 → 2
+    // ------------------------------------------------------------------
     @Test
     fun `la migracion 1 a 2 crea alert_events igual que el esquema exportado`() {
         val expected = createStatements(version = 2).getValue("alert_events")
@@ -50,5 +53,32 @@ class MigrationSchemaTest {
     fun `la migracion declara las versiones 1 y 2`() {
         assertEquals(1, MIGRATION_1_2.startVersion)
         assertEquals(2, MIGRATION_1_2.endVersion)
+    }
+
+    // ------------------------------------------------------------------
+    //  Migración 2 → 3
+    // ------------------------------------------------------------------
+    @Test
+    fun `la migracion 2 a 3 crea case_locations igual que el esquema exportado`() {
+        val expected = createStatements(version = 3).getValue("case_locations")
+
+        assertEquals(expected.sorted(), MIGRATION_2_3_STATEMENTS.sorted())
+    }
+
+    @Test
+    fun `la version 3 solo anade case_locations y no toca lecturas ni alertas`() {
+        val version2 = createStatements(version = 2)
+        val version3 = createStatements(version = 3)
+
+        assertEquals(setOf("case_locations"), version3.keys - version2.keys)
+        assertEquals(version2.getValue("temperature_readings"), version3.getValue("temperature_readings"))
+        assertEquals(version2.getValue("alert_events"), version3.getValue("alert_events"))
+        assertTrue(version2.getValue("alert_events").isNotEmpty())
+    }
+
+    @Test
+    fun `la migracion declara las versiones 2 y 3`() {
+        assertEquals(2, MIGRATION_2_3.startVersion)
+        assertEquals(3, MIGRATION_2_3.endVersion)
     }
 }

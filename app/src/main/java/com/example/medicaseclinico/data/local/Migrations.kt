@@ -30,3 +30,24 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
         MIGRATION_1_2_STATEMENTS.forEach { statement -> db.execSQL(statement) }
     }
 }
+
+/** Sentencias de la migración 2 → 3: crea la tabla "case_locations" y su índice. */
+internal val MIGRATION_2_3_STATEMENTS: List<String> = listOf(
+    "CREATE TABLE IF NOT EXISTS `case_locations` (" +
+        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`latitude` REAL NOT NULL, " +
+        "`longitude` REAL NOT NULL, " +
+        "`timestamp` INTEGER NOT NULL)",
+    "CREATE INDEX IF NOT EXISTS `index_case_locations_timestamp` " +
+        "ON `case_locations` (`timestamp`)"
+)
+
+/**
+ * Añade el historial de posiciones del estuche sin tocar las lecturas
+ * térmicas ni las alertas ya guardadas.
+ */
+val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        MIGRATION_2_3_STATEMENTS.forEach { statement -> db.execSQL(statement) }
+    }
+}
