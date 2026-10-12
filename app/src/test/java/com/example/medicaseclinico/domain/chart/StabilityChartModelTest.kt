@@ -49,8 +49,39 @@ class StabilityChartModelTest {
     }
 
     @Test
-    fun `un hueco sin lecturas parte la linea en dos tramos`() {
+    fun `un hueco largo sin lecturas parte la linea en dos tramos`() {
         val model = model(bucket(0, 4.0f), bucket(1, 4.0f), bucket(5, 4.0f))
+
+        assertEquals(listOf(2, 1), model.segments.map { it.size })
+    }
+
+    @Test
+    fun `intervalos vacios de menos de cinco minutos no cortan la linea`() {
+        // Lecturas cada 4 min con intervalos de 2 min: uno vacío entre cada par.
+        val model = model(bucket(0, 4.0f), bucket(2, 4.1f), bucket(4, 4.2f), bucket(6, 4.1f))
+
+        assertEquals(4, model.segments.single().size)
+    }
+
+    @Test
+    fun `un hueco de mas de cinco minutos corta la linea aunque sea el unico`() {
+        // 6 min entre los dos intervalos con datos.
+        val model = model(bucket(0, 4.0f), bucket(3, 4.0f))
+
+        assertEquals(listOf(1, 1), model.segments.map { it.size })
+    }
+
+    @Test
+    fun `con intervalos mas largos que el hueco maximo los vecinos siguen unidos`() {
+        val quarterHour = TimeUnit.MINUTES.toMillis(15)
+        fun wideBucket(index: Long) = bucket(0, 4.0f).copy(startTimestamp = index * quarterHour)
+
+        val model = buildStabilityChartModel(
+            buckets = listOf(wideBucket(0), wideBucket(1), wideBucket(3)),
+            bucketMs = quarterHour,
+            rangeStart = 0L,
+            rangeEnd = 4 * quarterHour
+        )
 
         assertEquals(listOf(2, 1), model.segments.map { it.size })
     }
