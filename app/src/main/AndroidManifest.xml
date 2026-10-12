@@ -28,6 +28,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- Descarga del mapa (OpenStreetMap). No se pide la ubicación del teléfono para el mapa -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Android 13+ (API 33): permiso para mostrar notificaciones de alerta -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 

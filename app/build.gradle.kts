@@ -100,6 +100,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
 
+    // --- Mapa (MapLibre + OpenStreetMap, sin API key) ---
+    implementation(libs.maplibre.android.sdk)
+
     // --- Firebase ---
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

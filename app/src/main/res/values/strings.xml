@@ -258,4 +258,8 @@
         <item quantity="many">Hace %1$d días</item>
         <item quantity="other">Hace %1$d días</item>
     </plurals>
+
+    <!-- Mapa (MapLibre + OpenStreetMap) -->
+    <string name="map_content_description">Mapa</string>
+    <string name="map_attribution">© OpenStreetMap · OpenMapTiles · OpenFreeMap</string>
 </resources>
