@@ -1,12 +1,17 @@
 package com.example.medicaseclinico.data.sync
 
 import com.example.medicaseclinico.domain.alert.AlertPublisher
+import com.example.medicaseclinico.domain.model.CaseGpsReading
+import com.example.medicaseclinico.domain.model.CaseLocation
+import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.CaseTelemetry
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
+import com.example.medicaseclinico.domain.repository.CaseLocationRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
+import com.example.medicaseclinico.domain.usecase.ShouldSaveCaseLocationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -23,7 +28,9 @@ import kotlin.coroutines.cancellation.CancellationException
 class CaseTelemetrySynchronizer(
     private val deviceRepository: CaseDeviceRepository,
     private val temperatureRepository: TemperatureRepository,
+    private val caseLocationRepository: CaseLocationRepository,
     private val alertPublisher: AlertPublisher,
+    private val shouldSaveLocation: ShouldSaveCaseLocationUseCase,
     private val scope: CoroutineScope,
     private val clock: () -> Long = System::currentTimeMillis
 ) {
@@ -35,12 +42,17 @@ class CaseTelemetrySynchronizer(
     private var lastSavedAt: Long = 0L
     private var lastSavedStatus: TemperatureStatus? = null
 
+    // Solo se accede desde la corrutina de ubicación.
+    private var lastSavedLocation: CaseLocation? = null
+
     /** Inicia la sincronización y la vigilancia de conexión. Idempotente. */
     fun start() {
         if (syncJob?.isActive == true) return
         syncJob = scope.launch {
             purgeExpiredReadings()
+            purgeExpiredLocations()
             launch { collectTelemetry() }
+            launch { collectCaseLocation() }
             launch { watchConnection() }
         }
     }
@@ -103,6 +115,43 @@ class CaseTelemetrySynchronizer(
     }
 
     // ------------------------------------------------------------------
+    //  Ubicación del estuche
+    // ------------------------------------------------------------------
+    /**
+     * Guarda las posiciones del GPS del estuche para que el mapa tenga una
+     * "última ubicación conocida" cuando se pierda el enlace. Las tramas
+     * "sin señal" no se guardan: no son una posición.
+     */
+    private suspend fun collectCaseLocation() {
+        deviceRepository.caseLocation.collect { state ->
+            val reported = state as? CaseLocationState.Reported ?: return@collect
+            val fix = reported.reading as? CaseGpsReading.Fix ?: return@collect
+            onLocationFix(fix, reported.receivedAt)
+        }
+    }
+
+    private suspend fun onLocationFix(fix: CaseGpsReading.Fix, receivedAt: Long) {
+        val shouldPersist = shouldSaveLocation(
+            lastSaved = lastSavedLocation,
+            latitude = fix.latitude,
+            longitude = fix.longitude,
+            receivedAt = receivedAt
+        )
+        if (!shouldPersist) return
+
+        val location = CaseLocation(
+            latitude = fix.latitude,
+            longitude = fix.longitude,
+            timestamp = receivedAt
+        )
+        // Si falla el guardado no se actualiza la referencia: se reintenta
+        // con la siguiente posición.
+        caseLocationRepository.saveLocation(location).onSuccess {
+            lastSavedLocation = location
+        }
+    }
+
+    // ------------------------------------------------------------------
     //  Conexión con periodo de gracia
     // ------------------------------------------------------------------
     private suspend fun watchConnection() {
@@ -122,6 +171,11 @@ class CaseTelemetrySynchronizer(
     private suspend fun purgeExpiredReadings() {
         val cutoff = clock() - TimeUnit.DAYS.toMillis(RETENTION_DAYS)
         temperatureRepository.purgeReadingsOlderThan(cutoff)
+    }
+
+    private suspend fun purgeExpiredLocations() {
+        val cutoff = clock() - TimeUnit.DAYS.toMillis(RETENTION_DAYS)
+        caseLocationRepository.deleteOlderThan(cutoff)
     }
 
     private companion object {

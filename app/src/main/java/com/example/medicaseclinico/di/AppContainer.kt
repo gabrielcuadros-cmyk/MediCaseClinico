@@ -19,6 +19,7 @@ import com.example.medicaseclinico.domain.repository.CaseLocationRepository
 import com.example.medicaseclinico.domain.repository.MedicalReportExporter
 import com.example.medicaseclinico.domain.repository.NotificationPreferencesRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
+import com.example.medicaseclinico.domain.usecase.ShouldSaveCaseLocationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,7 +85,9 @@ class AppContainer(context: Context) {
         CaseTelemetrySynchronizer(
             deviceRepository = caseDeviceRepository,
             temperatureRepository = temperatureRepository,
+            caseLocationRepository = caseLocationRepository,
             alertPublisher = alertPublisher,
+            shouldSaveLocation = ShouldSaveCaseLocationUseCase(),
             scope = applicationScope
         )
     }
