@@ -262,7 +262,8 @@
     <!-- Mapa (MapLibre + OpenStreetMap) -->
     <string name="map_content_description">Mapa</string>
     <string name="map_attribution">© OpenStreetMap · OpenMapTiles · OpenFreeMap</string>
-    <string name="map_load_failed">No se pudo cargar el mapa. Revisa tu conexión a internet.</string>
+    <string name="map_unavailable_title">Mapa no disponible</string>
+    <string name="map_unavailable_message">No se pudo descargar el mapa. Revisa tu conexión a internet.</string>
 
     <!-- Geolocalización -->
     <string name="map_title">Geolocalización</string>

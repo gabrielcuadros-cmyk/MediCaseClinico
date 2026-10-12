@@ -99,6 +99,9 @@ internal class MapContentRenderer(
     private var centerChosen = false
     private var fittedRadiusMeters: Double? = null
 
+    /** true cuando el estilo ya cargó y hay un mapa utilizable en pantalla. */
+    val isAttached: Boolean get() = map != null
+
     /** El estilo terminó de cargar: se añaden las capas y se pinta lo pendiente. */
     fun attach(map: MapLibreMap, style: Style) {
         if (detached) return

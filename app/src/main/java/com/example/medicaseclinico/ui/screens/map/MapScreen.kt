@@ -43,7 +43,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -181,12 +180,9 @@ fun MapScreen(
                     MediCaseLoadingState(message = stringResource(R.string.map_loading))
 
                 is MapUiState.Empty ->
-                    MediCaseMessageState(
-                        icon = Icons.Outlined.LocationOff,
-                        title = stringResource(uiState.liveStatus.emptyTitleRes()),
-                        message = stringResource(uiState.liveStatus.emptyMessageRes()),
-                        accentColor = MaterialTheme.colorScheme.primary,
-                        accentContainerColor = MaterialTheme.colorScheme.primaryContainer
+                    EmptyContent(
+                        liveStatus = uiState.liveStatus,
+                        onConfigureGeofence = onConfigureGeofence
                     )
 
                 is MapUiState.Success ->
@@ -208,6 +204,42 @@ fun MapScreen(
                         onAction = onRetry
                     )
             }
+        }
+    }
+}
+
+/**
+ * Sin ninguna posición del estuche no hay mapa que enseñar, pero las zonas de
+ * seguridad se pueden dejar preparadas igualmente: el acceso a configurarlas
+ * no debe depender de que el estuche esté conectado.
+ */
+@Composable
+private fun EmptyContent(
+    liveStatus: CaseLiveStatus,
+    onConfigureGeofence: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        MediCaseMessageState(
+            icon = Icons.Outlined.LocationOff,
+            title = stringResource(liveStatus.emptyTitleRes()),
+            message = stringResource(liveStatus.emptyMessageRes()),
+            accentColor = MaterialTheme.colorScheme.primary,
+            accentContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.weight(1f)
+        )
+        OutlinedButton(
+            onClick = onConfigureGeofence,
+            shape = ButtonShape,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ScreenPadding)
+                .heightIn(min = ButtonHeight)
+        ) {
+            ButtonLabel(
+                icon = Icons.Outlined.Settings,
+                text = stringResource(R.string.map_configure_geofence)
+            )
         }
     }
 }
@@ -317,9 +349,8 @@ private fun CaseMapArea(
     state: MapUiState.Success,
     modifier: Modifier = Modifier
 ) {
-    // Estado solo visual: cuántas veces se pidió centrar y si el mapa falló al cargar.
+    // Estado solo visual: cuántas veces se pidió centrar el mapa en el estuche.
     var recenterRequests by remember { mutableIntStateOf(0) }
-    var mapLoadFailed by remember { mutableStateOf(false) }
 
     val marker = remember(state.latitude, state.longitude) {
         GeoPoint(latitude = state.latitude, longitude = state.longitude)
@@ -335,8 +366,7 @@ private fun CaseMapArea(
             modifier = Modifier.fillMaxSize(),
             marker = marker,
             circles = circles,
-            recenterRequests = recenterRequests,
-            onLoadFailed = { mapLoadFailed = true }
+            recenterRequests = recenterRequests
         )
 
         RecenterButton(
@@ -359,16 +389,6 @@ private fun CaseMapArea(
             state.nearestGeofence?.takeIf { it.isInside }?.let { geofence ->
                 ZoneChip(name = geofence.name)
             }
-        }
-
-        if (mapLoadFailed) {
-            MapOverlayLabel(
-                text = stringResource(R.string.map_load_failed),
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(horizontal = 32.dp)
-                    .semantics { liveRegion = LiveRegionMode.Polite }
-            )
         }
 
         PositionTimeLabel(

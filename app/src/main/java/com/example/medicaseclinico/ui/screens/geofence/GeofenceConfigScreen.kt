@@ -309,8 +309,6 @@ private fun ZonePickerMap(
     onCenterChanged: (GeoPoint) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var mapLoadFailed by remember { mutableStateOf(false) }
-
     val circles = remember(state.savedZones) {
         state.savedZones.map {
             MapCircle(latitude = it.latitude, longitude = it.longitude, radiusMeters = it.radiusMeters)
@@ -320,16 +318,13 @@ private fun ZonePickerMap(
         MapCenterPicker(radiusMeters = state.radiusMeters.toDouble(), start = state.mapStart)
     }
 
-    Box(modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant)) {
-        MediCaseMap(
-            modifier = Modifier.fillMaxSize(),
-            marker = state.casePosition,
-            circles = circles,
-            centerPicker = picker,
-            onCenterChanged = onCenterChanged,
-            onLoadFailed = { mapLoadFailed = true }
-        )
-
+    MediCaseMap(
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+        marker = state.casePosition,
+        circles = circles,
+        centerPicker = picker,
+        onCenterChanged = onCenterChanged
+    ) {
         // La punta del pin debe caer justo en el centro del mapa.
         Icon(
             imageVector = Icons.Filled.LocationOn,
@@ -341,12 +336,9 @@ private fun ZonePickerMap(
                 .size(CenterPinSize)
         )
 
-        val overlayText = when {
-            mapLoadFailed -> stringResource(R.string.map_load_failed)
-            !state.hasCenter -> stringResource(R.string.geofence_move_map_hint)
-            else -> null
-        }
-        if (overlayText != null) {
+        // Sin un lugar conocido desde el que abrir, el mapa muestra el mundo
+        // entero: se explica qué hacer en vez de dejar al usuario adivinarlo.
+        if (!state.hasCenter) {
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -356,7 +348,7 @@ private fun ZonePickerMap(
                 color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.8f)
             ) {
                 Text(
-                    text = overlayText,
+                    text = stringResource(R.string.geofence_move_map_hint),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.inverseOnSurface,
                     textAlign = TextAlign.Center,

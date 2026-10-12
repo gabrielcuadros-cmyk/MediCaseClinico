@@ -5,13 +5,23 @@ import android.content.Context
 import android.content.res.Configuration
 import androidx.annotation.ColorInt
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,8 +29,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -28,8 +42,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -40,6 +58,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.geo.GeoPoint
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
+import kotlinx.coroutines.delay
 import org.maplibre.android.MapLibre
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
@@ -54,6 +73,13 @@ private const val MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 private val PickerFitPadding = 32.dp
 
 /**
+ * Cuánto se espera al estilo del mapa antes de darlo por no disponible. Sin
+ * internet el SDK no informa de ningún error: se queda reintentando en
+ * silencio, y sin este límite el usuario vería un recuadro vacío para siempre.
+ */
+private const val STYLE_LOAD_TIMEOUT_MS = 8_000L
+
+/**
  * Mapa base de la app: el único sitio donde se crea un `MapView`.
  *
  * MapLibre no tiene API de Compose compatible con el Kotlin del proyecto, así
@@ -62,6 +88,12 @@ private val PickerFitPadding = 32.dp
  *
  * La atribución va siempre visible sobre el mapa porque la licencia de
  * OpenStreetMap lo exige.
+ *
+ * Si el mapa no se puede mostrar (sin internet la primera vez, o un teléfono
+ * donde la librería nativa no carga) lo dice él mismo, con un botón para
+ * reintentar: así todas las pantallas lo explican igual y ninguna se queda
+ * con un hueco gris. Lo que cada pantalla muestra fuera del mapa (coordenadas,
+ * zonas) sigue funcionando.
  *
  * @param marker posición del estuche, o null si no hay ninguna que mostrar.
  * La cámara la sigue hasta que el usuario mueve el mapa.
@@ -72,8 +104,9 @@ private val PickerFitPadding = 32.dp
  * deja de seguir al estuche, dibuja un círculo destacado alrededor de su
  * centro y atenúa [circles] para que no se confundan con él.
  * @param onCenterChanged punto elegido en ese modo, cada vez que el mapa se detiene.
- * @param onLoadFailed el mapa no se pudo crear o su estilo no se pudo
- * descargar (p. ej. sin internet); la pantalla decide qué mostrar.
+ * @param overlay lo que la pantalla dibuja encima del mapa y solo tiene
+ * sentido con el mapa a la vista (p. ej. el pin del centro): queda tapado
+ * cuando el mapa no está disponible.
  */
 @Composable
 fun MediCaseMap(
@@ -83,8 +116,13 @@ fun MediCaseMap(
     recenterRequests: Int = 0,
     centerPicker: MapCenterPicker? = null,
     onCenterChanged: (GeoPoint) -> Unit = {},
-    onLoadFailed: () -> Unit = {}
+    overlay: @Composable BoxScope.() -> Unit = {}
 ) {
+    // Estado solo visual: si el mapa cargó o falló, y cuántas veces se reintentó.
+    var loaded by remember { mutableStateOf(false) }
+    var loadFailed by remember { mutableStateOf(false) }
+    var attempt by remember { mutableIntStateOf(0) }
+
     Box(modifier = modifier) {
         if (LocalInspectionMode.current) {
             // El IDE no puede cargar la librería nativa del mapa.
@@ -94,20 +132,98 @@ fun MediCaseMap(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
         } else {
-            MapLibreMapView(
-                marker = marker,
-                circles = circles,
-                recenterRequests = recenterRequests,
-                centerPicker = centerPicker,
-                onCenterChanged = onCenterChanged,
-                onLoadFailed = onLoadFailed
-            )
+            // Reintentar crea un MapView nuevo: el anterior pudo quedar a medias.
+            key(attempt) {
+                MapLibreMapView(
+                    marker = marker,
+                    circles = circles,
+                    recenterRequests = recenterRequests,
+                    centerPicker = centerPicker,
+                    onCenterChanged = onCenterChanged,
+                    onLoadFailed = { loadFailed = true },
+                    // El SDK reintenta solo cuando vuelve la red: si lo
+                    // consigue, el aviso se quita sin que el usuario haga nada.
+                    onLoaded = {
+                        loaded = true
+                        loadFailed = false
+                    }
+                )
+            }
+            if (!loaded && !loadFailed) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(32.dp),
+                    strokeWidth = 3.dp
+                )
+            }
         }
         MapAttribution(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(6.dp)
         )
+        overlay()
+        if (loadFailed) {
+            MapUnavailablePanel(
+                onRetry = {
+                    loaded = false
+                    loadFailed = false
+                    attempt++
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+/**
+ * Sustituye al mapa cuando no se puede mostrar. Tapa el mapa entero (y
+ * bloquea sus gestos) para no dejar a la vista una cuadrícula vacía que
+ * parezca un mapa roto.
+ */
+@Composable
+private fun MapUnavailablePanel(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.CloudOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.map_unavailable_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = stringResource(R.string.map_unavailable_message),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onRetry,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(text = stringResource(R.string.action_retry), fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }
 
@@ -118,11 +234,13 @@ private fun MapLibreMapView(
     recenterRequests: Int,
     centerPicker: MapCenterPicker?,
     onCenterChanged: (GeoPoint) -> Unit,
-    onLoadFailed: () -> Unit
+    onLoadFailed: () -> Unit,
+    onLoaded: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnLoadFailed by rememberUpdatedState(onLoadFailed)
+    val currentOnLoaded by rememberUpdatedState(onLoaded)
     val currentOnCenterChanged by rememberUpdatedState(onCenterChanged)
     val fitPaddingPx = with(LocalDensity.current) { PickerFitPadding.roundToPx() }
     val mapDescription = stringResource(R.string.map_content_description)
@@ -150,16 +268,27 @@ private fun MapLibreMapView(
     val content = handle.content
 
     SideEffect { content.show(marker, circles, centerPicker) }
+    LaunchedEffect(handle) {
+        delay(STYLE_LOAD_TIMEOUT_MS)
+        if (!content.isAttached) currentOnLoadFailed()
+    }
     LaunchedEffect(content, recenterRequests) {
         if (recenterRequests > 0) content.recenter()
     }
 
     DisposableEffect(handle) {
-        val failListener = MapView.OnDidFailLoadingMapListener { currentOnLoadFailed() }
+        // Solo cuenta como fallo si el estilo aún no cargó. Con el mapa ya en
+        // pantalla, un error posterior (una tesela que no baja) no lo inutiliza.
+        val failListener = MapView.OnDidFailLoadingMapListener {
+            if (!content.isAttached) currentOnLoadFailed()
+        }
         mapView.addOnDidFailLoadingMapListener(failListener)
         content.onCenterChanged = { currentOnCenterChanged(it) }
         mapView.getMapAsync { map ->
-            map.setStyle(Style.Builder().fromUri(MAP_STYLE_URL)) { style -> content.attach(map, style) }
+            map.setStyle(Style.Builder().fromUri(MAP_STYLE_URL)) { style ->
+                content.attach(map, style)
+                currentOnLoaded()
+            }
         }
 
         val mapLifecycle = MapViewLifecycle(mapView)
