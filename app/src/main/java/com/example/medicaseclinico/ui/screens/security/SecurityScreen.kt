@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -71,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.domain.model.AppearanceMode
 import com.example.medicaseclinico.domain.model.UserRole
 import com.example.medicaseclinico.ui.components.MediCaseLoadingState
 import com.example.medicaseclinico.ui.components.MediCaseMessageState
@@ -119,6 +124,7 @@ fun SecurityRoute(
         onSetPinRequired = viewModel::setPinRequired,
         onChangePin = viewModel::changePin,
         onRemoveUser = viewModel::removeUser,
+        onAppearanceSelected = viewModel::setAppearance,
         onOpenUsers = onOpenUsers,
         onAddUser = onAddUser,
         onOpenNotifications = onOpenNotifications,
@@ -139,6 +145,7 @@ fun SecurityScreen(
     onSetPinRequired: (required: Boolean, currentPin: String) -> Unit,
     onChangePin: (currentPin: String, newPin: String) -> Unit,
     onRemoveUser: (userId: String) -> Unit,
+    onAppearanceSelected: (AppearanceMode) -> Unit,
     onOpenUsers: () -> Unit,
     onAddUser: () -> Unit,
     onOpenNotifications: () -> Unit,
@@ -188,6 +195,7 @@ fun SecurityScreen(
                         onSetPinRequired = onSetPinRequired,
                         onChangePin = onChangePin,
                         onRemoveUser = onRemoveUser,
+                        onAppearanceSelected = onAppearanceSelected,
                         onOpenUsers = onOpenUsers,
                         onAddUser = onAddUser,
                         onOpenNotifications = onOpenNotifications,
@@ -219,6 +227,7 @@ private fun SecurityContent(
     onSetPinRequired: (required: Boolean, currentPin: String) -> Unit,
     onChangePin: (currentPin: String, newPin: String) -> Unit,
     onRemoveUser: (userId: String) -> Unit,
+    onAppearanceSelected: (AppearanceMode) -> Unit,
     onOpenUsers: () -> Unit,
     onAddUser: () -> Unit,
     onOpenNotifications: () -> Unit,
@@ -227,6 +236,7 @@ private fun SecurityContent(
 ) {
     var pinDialog by rememberSaveable { mutableStateOf<PinDialog?>(null) }
     var pendingRemovalId by rememberSaveable { mutableStateOf<String?>(null) }
+    var choosingAppearance by rememberSaveable { mutableStateOf(false) }
     val pendingRemoval = state.users.firstOrNull { it.id == pendingRemovalId }
 
     when (pinDialog) {
@@ -260,6 +270,17 @@ private fun SecurityContent(
                 onRemoveUser(pendingRemoval.id)
             },
             onDismiss = { pendingRemovalId = null }
+        )
+    }
+
+    if (choosingAppearance) {
+        AppearanceDialog(
+            selected = state.appearance,
+            onSelected = { mode ->
+                choosingAppearance = false
+                onAppearanceSelected(mode)
+            },
+            onDismiss = { choosingAppearance = false }
         )
     }
 
@@ -321,6 +342,12 @@ private fun SecurityContent(
             icon = Icons.Outlined.NotificationsNone,
             text = stringResource(R.string.notif_settings_title),
             onClick = onOpenNotifications
+        )
+        SettingsRow(
+            icon = Icons.Outlined.Palette,
+            text = stringResource(R.string.appearance_title),
+            value = stringResource(state.appearance.labelRes()),
+            onClick = { choosingAppearance = true }
         )
         if (onSignOut != null) {
             TextButton(
@@ -601,7 +628,8 @@ private fun AddUserButton(onClick: () -> Unit) {
 private fun SettingsRow(
     icon: ImageVector,
     text: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    value: String? = null
 ) {
     Surface(
         onClick = onClick,
@@ -629,6 +657,14 @@ private fun SettingsRow(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
+            if (value != null) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+            }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
@@ -669,6 +705,67 @@ private fun RemoveUserDialog(
     )
 }
 
+/**
+ * Elegir la apariencia. Se aplica al tocar la opción, sin botón de aceptar:
+ * el cambio se ve al instante y se deshace igual de fácil.
+ */
+@Composable
+private fun AppearanceDialog(
+    selected: AppearanceMode,
+    onSelected: (AppearanceMode) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.appearance_title)) },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                AppearanceMode.entries.forEach { mode ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 52.dp)
+                            .selectable(
+                                selected = mode == selected,
+                                role = Role.RadioButton,
+                                onClick = { onSelected(mode) }
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // onClick = null: el toque lo gestiona la fila entera.
+                        RadioButton(selected = mode == selected, onClick = null)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = stringResource(mode.labelRes()),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (mode == AppearanceMode.SYSTEM) {
+                                Text(
+                                    text = stringResource(R.string.appearance_system_description),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(text = stringResource(R.string.action_cancel)) }
+        }
+    )
+}
+
+@StringRes
+private fun AppearanceMode.labelRes(): Int = when (this) {
+    AppearanceMode.SYSTEM -> R.string.appearance_system
+    AppearanceMode.LIGHT -> R.string.appearance_light
+    AppearanceMode.DARK -> R.string.appearance_dark
+}
+
 @StringRes
 private fun CasePinAvailability.unavailableRes(): Int? = when (this) {
     CasePinAvailability.READY -> null
@@ -690,6 +787,7 @@ private fun SecurityMessage.textRes(): Int = when (this) {
     SecurityMessage.CASE_LOCKED_OUT -> R.string.security_msg_locked_out
     SecurityMessage.INVALID_PIN -> R.string.security_msg_invalid_pin
     SecurityMessage.CASE_FAILED -> R.string.security_msg_case_failed
+    SecurityMessage.APPEARANCE_NOT_SAVED -> R.string.settings_save_error
 }
 
 // ---------------------------------------------------------------------
@@ -705,6 +803,7 @@ private fun SecurityScreenPreview(uiState: SecurityUiState) {
                 onSetPinRequired = { _, _ -> },
                 onChangePin = { _, _ -> },
                 onRemoveUser = {},
+                onAppearanceSelected = {},
                 onOpenUsers = {},
                 onAddUser = {},
                 onOpenNotifications = {},
@@ -726,6 +825,7 @@ private fun SecurityReadyPreview() {
                 AccessUser(id = "2", name = "Dr. Luis Ramos", initials = "DL", role = UserRole.SECONDARY_ADMIN)
             ),
             usersFailed = false,
+            appearance = AppearanceMode.SYSTEM,
             isBusy = false,
             message = null
         )
@@ -740,6 +840,7 @@ private fun SecurityNotSupportedPreview() {
             pin = CasePinState(availability = CasePinAvailability.NOT_SUPPORTED, pinRequired = null),
             users = emptyList(),
             usersFailed = false,
+            appearance = AppearanceMode.SYSTEM,
             isBusy = false,
             message = null
         )

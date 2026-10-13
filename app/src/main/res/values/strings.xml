@@ -414,6 +414,11 @@
     <string name="security_remove_user_message">%1$s dejará de poder ver tu estuche. Esta acción no se puede deshacer.</string>
     <string name="security_remove_user_confirm">Quitar acceso</string>
     <string name="security_account_section">CUENTA</string>
+    <string name="appearance_title">Apariencia</string>
+    <string name="appearance_system">Sistema</string>
+    <string name="appearance_light">Claro</string>
+    <string name="appearance_dark">Oscuro</string>
+    <string name="appearance_system_description">Usa la apariencia del teléfono.</string>
     <string name="security_enable_lock_title">Activar la contraseña</string>
     <string name="security_enable_lock_message">El estuche volverá a pedir la contraseña para abrirse. Escribe la contraseña actual para confirmar.</string>
     <string name="security_disable_lock_title">Desactivar la contraseña</string>

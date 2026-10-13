@@ -7,10 +7,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
+import com.example.medicaseclinico.domain.model.AppearanceMode
 import com.example.medicaseclinico.domain.model.AuthorizedUser
 import com.example.medicaseclinico.domain.model.CaseCommandError
 import com.example.medicaseclinico.domain.model.CaseCommandException
 import com.example.medicaseclinico.domain.model.CaseControlState
+import com.example.medicaseclinico.domain.repository.AppearanceRepository
 import com.example.medicaseclinico.domain.repository.AuthRepository
 import com.example.medicaseclinico.domain.repository.AuthorizedUsersRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
@@ -43,7 +45,8 @@ import kotlin.coroutines.cancellation.CancellationException
 class SecurityViewModel(
     private val deviceRepository: CaseDeviceRepository,
     private val authRepository: AuthRepository,
-    private val authorizedUsersRepository: AuthorizedUsersRepository
+    private val authorizedUsersRepository: AuthorizedUsersRepository,
+    private val appearanceRepository: AppearanceRepository
 ) : ViewModel() {
 
     /** Lo que no viene de los repositorios: trabajo en curso y aviso pendiente. */
@@ -102,6 +105,18 @@ class SecurityViewModel(
         }
     }
 
+    /**
+     * Cambia la apariencia de la app. No espera a nada: la raíz observa la
+     * misma preferencia y repinta en cuanto queda guardada.
+     */
+    fun setAppearance(mode: AppearanceMode) {
+        viewModelScope.launch {
+            if (appearanceRepository.setMode(mode).isFailure) {
+                local.update { it.copy(message = SecurityMessage.APPEARANCE_NOT_SAVED) }
+            }
+        }
+    }
+
     /** La pantalla ya mostró el aviso: no debe repetirse al girar el teléfono. */
     fun onMessageShown() {
         local.update { it.copy(message = null) }
@@ -130,8 +145,13 @@ class SecurityViewModel(
     }
 
     private fun observeScreen(): Flow<SecurityUiState> =
-        combine(deviceRepository.controlState, observeUsers(), local) { control, users, local ->
-            buildUiState(control, users, local)
+        combine(
+            deviceRepository.controlState,
+            observeUsers(),
+            observeAppearance(),
+            local
+        ) { control, users, appearance, local ->
+            buildUiState(control, users, appearance, local)
         }
             .onStart { emit(SecurityUiState.Loading) }
             .catch { throwable ->
@@ -142,6 +162,7 @@ class SecurityViewModel(
     private fun buildUiState(
         control: CaseControlState,
         users: Users,
+        appearance: AppearanceMode,
         local: Local
     ): SecurityUiState = SecurityUiState.Success(
         pin = control.toPinState(),
@@ -154,6 +175,7 @@ class SecurityViewModel(
             )
         },
         usersFailed = users.failed,
+        appearance = appearance,
         isBusy = local.isBusy,
         message = local.message
     )
@@ -180,6 +202,13 @@ class SecurityViewModel(
                 if (throwable is CancellationException) throw throwable
                 emit(Users(list = emptyList(), failed = true))
             }
+
+    /** Si la preferencia no se puede leer, se muestra la de fábrica en vez de tumbar la pantalla. */
+    private fun observeAppearance(): Flow<AppearanceMode> =
+        appearanceRepository.mode.catch { throwable ->
+            if (throwable is CancellationException) throw throwable
+            emit(AppearanceMode.DEFAULT)
+        }
 
     private suspend fun currentOwnerId(): String? =
         try {
@@ -218,7 +247,8 @@ class SecurityViewModel(
                 SecurityViewModel(
                     deviceRepository = application.container.caseDeviceRepository,
                     authRepository = application.container.authRepository,
-                    authorizedUsersRepository = application.container.authorizedUsersRepository
+                    authorizedUsersRepository = application.container.authorizedUsersRepository,
+                    appearanceRepository = application.container.appearanceRepository
                 )
             }
         }

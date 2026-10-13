@@ -1,6 +1,7 @@
 package com.example.medicaseclinico.ui.screens.security
 
 import androidx.compose.runtime.Immutable
+import com.example.medicaseclinico.domain.model.AppearanceMode
 import com.example.medicaseclinico.domain.model.UserRole
 
 /**
@@ -18,6 +19,7 @@ sealed interface SecurityUiState {
      * @param usersFailed la lista no se pudo leer. Va aparte y no como error
      * de toda la pantalla: la contraseña del estuche se gestiona por
      * Bluetooth y debe seguir disponible aunque falle la nube.
+     * @param appearance apariencia elegida para la app (Sistema / Claro / Oscuro).
      * @param isBusy hay una orden al estuche o un borrado en curso.
      * @param message aviso pendiente de mostrar tras una acción.
      */
@@ -25,6 +27,7 @@ sealed interface SecurityUiState {
         val pin: CasePinState,
         val users: List<AccessUser>,
         val usersFailed: Boolean,
+        val appearance: AppearanceMode,
         val isBusy: Boolean,
         val message: SecurityMessage?
     ) : SecurityUiState
@@ -80,5 +83,6 @@ enum class SecurityMessage {
     WRONG_PIN,
     CASE_LOCKED_OUT,
     INVALID_PIN,
-    CASE_FAILED
+    CASE_FAILED,
+    APPEARANCE_NOT_SAVED
 }
