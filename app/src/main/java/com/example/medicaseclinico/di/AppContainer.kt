@@ -6,6 +6,7 @@ import com.example.medicaseclinico.data.ble.AndroidCaseDeviceRepository
 import com.example.medicaseclinico.data.local.AppDatabase
 import com.example.medicaseclinico.data.notification.SystemAlertPublisher
 import com.example.medicaseclinico.data.preferences.DataStoreAppearanceRepository
+import com.example.medicaseclinico.data.preferences.DataStoreLossModeRepository
 import com.example.medicaseclinico.data.preferences.DataStoreNotificationPreferencesRepository
 import com.example.medicaseclinico.data.report.PdfMedicalReportExporter
 import com.example.medicaseclinico.data.repository.AlertEventRepositoryImpl
@@ -25,6 +26,7 @@ import com.example.medicaseclinico.domain.repository.AuthorizedUsersRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
 import com.example.medicaseclinico.domain.repository.CaseLocationRepository
 import com.example.medicaseclinico.domain.repository.GeofenceRepository
+import com.example.medicaseclinico.domain.repository.LossModeRepository
 import com.example.medicaseclinico.domain.repository.MedicalReportExporter
 import com.example.medicaseclinico.domain.repository.NotificationPreferencesRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
@@ -86,6 +88,10 @@ class AppContainer(context: Context) {
 
     val notificationPreferencesRepository: NotificationPreferencesRepository by lazy {
         DataStoreNotificationPreferencesRepository(appContext)
+    }
+
+    val lossModeRepository: LossModeRepository by lazy {
+        DataStoreLossModeRepository(context = appContext)
     }
 
     val appearanceRepository: AppearanceRepository by lazy {
