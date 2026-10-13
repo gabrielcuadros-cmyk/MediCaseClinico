@@ -138,7 +138,7 @@ private fun AdjustButton(onClick: () -> Unit) {
 
 /** "16.3989° S, 71.5369° W": hemisferio con letra en lugar de signo, como en el diseño. */
 @Composable
-private fun coordinatesLabel(latitude: Double, longitude: Double): String {
+fun coordinatesLabel(latitude: Double, longitude: Double): String {
     val latitudeText = stringResource(
         if (latitude >= 0) R.string.map_latitude_north else R.string.map_latitude_south,
         abs(latitude)

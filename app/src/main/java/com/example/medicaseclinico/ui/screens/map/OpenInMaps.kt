@@ -8,6 +8,17 @@ import java.util.Locale
 
 private const val GOOGLE_MAPS_PACKAGE = "com.google.android.apps.maps"
 
+// Locale.US: en español el separador decimal sería una coma y rompería la URI.
+private fun uriCoordinates(latitude: Double, longitude: Double): String =
+    String.format(Locale.US, "%.6f,%.6f", latitude, longitude)
+
+/**
+ * Enlace web a una posición, que abre cualquier teléfono o computadora aunque
+ * no tenga la app: sirve para enviarla a otra persona.
+ */
+fun mapsWebUrl(latitude: Double, longitude: Double): String =
+    "https://www.google.com/maps/search/?api=1&query=${uriCoordinates(latitude, longitude)}"
+
 /**
  * Abre la posición del estuche en Google Maps con un `Intent`, sin API key.
  *
@@ -18,10 +29,9 @@ private const val GOOGLE_MAPS_PACKAGE = "com.google.android.apps.maps"
  * @return false si ninguna aplicación pudo abrirla; nunca lanza excepción.
  */
 fun openInGoogleMaps(context: Context, latitude: Double, longitude: Double): Boolean {
-    // Locale.US: en español el separador decimal sería una coma y rompería la URI.
-    val coordinates = String.format(Locale.US, "%.6f,%.6f", latitude, longitude)
+    val coordinates = uriCoordinates(latitude, longitude)
     val geoUri = "geo:$coordinates?q=$coordinates".toUri()
-    val webUri = "https://www.google.com/maps/search/?api=1&query=$coordinates".toUri()
+    val webUri = mapsWebUrl(latitude, longitude).toUri()
 
     val attempts = listOf(
         Intent(Intent.ACTION_VIEW, geoUri).setPackage(GOOGLE_MAPS_PACKAGE),

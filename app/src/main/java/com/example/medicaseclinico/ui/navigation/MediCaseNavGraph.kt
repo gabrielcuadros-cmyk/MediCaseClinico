@@ -6,12 +6,11 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.medicaseclinico.R
-import com.example.medicaseclinico.ui.components.PendingFeatureScreen
 import com.example.medicaseclinico.ui.screens.alerts.AlertsRoute
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardRoute
 import com.example.medicaseclinico.ui.screens.geofence.GeofenceConfigRoute
 import com.example.medicaseclinico.ui.screens.history.TemperatureHistoryRoute
+import com.example.medicaseclinico.ui.screens.lossmode.LossModeRoute
 import com.example.medicaseclinico.ui.screens.map.MapRoute
 import com.example.medicaseclinico.ui.screens.notifications.NotificationSettingsRoute
 import com.example.medicaseclinico.ui.screens.security.SecurityRoute
@@ -55,7 +54,7 @@ fun MediCaseNavGraph(
             GeofenceConfigRoute(onBack = { navController.popBackStack() })
         }
         composable(SecondaryRoutes.LOSS_MODE) {
-            PendingFeatureScreen(titleRes = R.string.loss_mode_title)
+            LossModeRoute(onBack = { navController.popBackStack() })
         }
         composable(TopLevelDestination.ALERTS.route) {
             AlertsRoute(onBack = { navController.popBackStack() })
