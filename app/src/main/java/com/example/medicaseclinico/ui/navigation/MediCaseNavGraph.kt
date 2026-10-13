@@ -1,11 +1,16 @@
 package com.example.medicaseclinico.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.medicaseclinico.domain.model.AlertFilter
 import com.example.medicaseclinico.ui.screens.alerts.AlertsRoute
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardRoute
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardSection
@@ -33,6 +38,10 @@ fun MediCaseNavGraph(
     modifier: Modifier = Modifier,
     onSignOut: (() -> Unit)? = null
 ) {
+    // Filtro con el que el Inicio pide abrir Alertas. Vive aquí porque es lo
+    // único que conoce a las dos pantallas; se borra en cuanto se aplica.
+    var requestedAlertFilter by rememberSaveable { mutableStateOf<AlertFilter?>(null) }
+
     NavHost(
         navController = navController,
         startDestination = TopLevelDestination.HOME.route,
@@ -51,6 +60,12 @@ fun MediCaseNavGraph(
                             DashboardSection.SETTINGS -> TopLevelDestination.SECURITY
                         }
                     )
+                },
+                // "Registrar Acceso por PIN": los intentos del teclado del
+                // estuche están en Alertas, bajo el filtro Seguridad.
+                onOpenAccessLog = {
+                    requestedAlertFilter = AlertFilter.SECURITY
+                    navController.navigateToTopLevel(TopLevelDestination.ALERTS)
                 }
             )
         }
@@ -71,7 +86,11 @@ fun MediCaseNavGraph(
             LossModeRoute(onBack = { navController.popBackStack() })
         }
         composable(TopLevelDestination.ALERTS.route) {
-            AlertsRoute(onBack = { navController.popBackStack() })
+            AlertsRoute(
+                onBack = { navController.popBackStack() },
+                requestedFilter = requestedAlertFilter,
+                onRequestedFilterApplied = { requestedAlertFilter = null }
+            )
         }
         composable(TopLevelDestination.SECURITY.route) {
             SecurityRoute(

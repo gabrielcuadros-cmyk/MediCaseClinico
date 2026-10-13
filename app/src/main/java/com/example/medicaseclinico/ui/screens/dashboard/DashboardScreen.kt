@@ -20,14 +20,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -67,6 +78,7 @@ import com.example.medicaseclinico.ui.screens.dashboard.components.TemperatureCa
 fun DashboardRoute(
     onOpenLossMode: () -> Unit,
     onOpenSection: (DashboardSection) -> Unit,
+    onOpenAccessLog: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
 ) {
@@ -131,6 +143,7 @@ fun DashboardRoute(
         lossModeActive = lossModeActive,
         onOpenLossMode = onOpenLossMode,
         onOpenSection = onOpenSection,
+        onOpenAccessLog = onOpenAccessLog,
         permissionsPermanentlyDenied = permissionsPermanentlyDenied,
         onRetry = viewModel::retry,
         onIssueAction = { issue ->
@@ -167,7 +180,8 @@ fun DashboardScreen(
     userName: String? = null,
     lossModeActive: Boolean = false,
     onOpenLossMode: () -> Unit = {},
-    onOpenSection: (DashboardSection) -> Unit = {}
+    onOpenSection: (DashboardSection) -> Unit = {},
+    onOpenAccessLog: () -> Unit = {}
 ) {
     Scaffold(
         modifier = modifier,
@@ -225,7 +239,8 @@ fun DashboardScreen(
                     )
                     is DashboardUiState.Success -> DashboardSuccessContent(
                         state = state,
-                        onOpenSection = onOpenSection
+                        onOpenSection = onOpenSection,
+                        onOpenAccessLog = onOpenAccessLog
                     )
                 }
             }
@@ -237,6 +252,7 @@ fun DashboardScreen(
 private fun DashboardSuccessContent(
     state: DashboardUiState.Success,
     onOpenSection: (DashboardSection) -> Unit,
+    onOpenAccessLog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -272,12 +288,43 @@ private fun DashboardSuccessContent(
                     .fillMaxHeight()
             )
         }
+        // Lleva al registro de intentos del teclado del estuche: la app no
+        // abre el estuche ni teclea el PIN por el usuario.
+        Button(
+            onClick = onOpenAccessLog,
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.dashboard_access_log),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
         QuickSections(state = state.quickSections, onSectionClick = onOpenSection)
         // El tiempo va en medio de la frase: "…vía Bluetooth hace 5 min".
         val relativeTime = relativeTimeLabel(state.lastReadingElapsed)
             .replaceFirstChar { it.lowercase() }
+        val lastSync = stringResource(R.string.dashboard_last_sync, relativeTime)
         Text(
-            text = stringResource(R.string.dashboard_last_sync, relativeTime),
+            // La batería solo se menciona si el estuche informó alguna vez de ella.
+            text = when {
+                state.batteryLevel == null -> lastSync
+                state.isBatteryLow -> stringResource(R.string.dashboard_footer_battery_low, lastSync)
+                else -> stringResource(R.string.dashboard_footer_battery_ok, lastSync)
+            },
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

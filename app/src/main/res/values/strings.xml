@@ -62,7 +62,10 @@
     <string name="battery_unknown">--</string>
     <string name="battery_low_hint">Batería baja: conecta el cargador</string>
     <string name="battery_content_description">Batería del estuche: %1$s</string>
-    <string name="dashboard_last_sync">Última lectura recibida vía Bluetooth %1$s</string>
+    <string name="dashboard_last_sync">Sincronizado vía Bluetooth %1$s</string>
+    <string name="dashboard_footer_battery_ok">%1$s • Batería de Estuche OK</string>
+    <string name="dashboard_footer_battery_low">%1$s • Batería de Estuche baja</string>
+    <string name="dashboard_access_log">Registrar Acceso por PIN</string>
 
     <!-- Avisos del estuche BLE -->
     <string name="issue_permissions_title">Permiso de dispositivos cercanos necesario</string>

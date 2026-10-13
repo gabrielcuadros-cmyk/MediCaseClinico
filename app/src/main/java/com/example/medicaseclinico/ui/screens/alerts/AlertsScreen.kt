@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -46,14 +47,29 @@ private val CardSpacing = 12.dp
 
 /**
  * Entrada de la pestaña Alertas: conecta el ViewModel con la pantalla sin estado.
+ *
+ * @param requestedFilter filtro con el que otra pantalla pide abrir la lista,
+ * o null para dejar el que ya hubiera.
+ * @param onRequestedFilterApplied el filtro pedido ya se aplicó.
  */
 @Composable
 fun AlertsRoute(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    requestedFilter: AlertFilter? = null,
+    onRequestedFilterApplied: () -> Unit = {},
     viewModel: AlertsViewModel = viewModel(factory = AlertsViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Otra pantalla pidió abrir la lista ya filtrada (p. ej. solo Seguridad).
+    // Se aplica una vez: después manda lo que el usuario toque en los chips.
+    LaunchedEffect(requestedFilter) {
+        if (requestedFilter != null) {
+            viewModel.onFilterSelected(requestedFilter)
+            onRequestedFilterApplied()
+        }
+    }
 
     AlertsScreen(
         uiState = uiState,
