@@ -2,6 +2,7 @@ package com.example.medicaseclinico.ui.screens.users
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,7 +52,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,7 +68,7 @@ import com.example.medicaseclinico.domain.user.LastAccessDay
 import com.example.medicaseclinico.ui.components.MediCaseBackButton
 import com.example.medicaseclinico.ui.components.MediCaseLoadingState
 import com.example.medicaseclinico.ui.components.MediCaseMessageState
-import com.example.medicaseclinico.ui.components.labelRes
+import com.example.medicaseclinico.ui.screens.users.components.RoleChip
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -89,6 +92,7 @@ private const val ACCESS_DATE_PATTERN = "d MMM, hh:mm a"
 fun AuthorizedUsersRoute(
     onBack: () -> Unit,
     onAddUser: () -> Unit,
+    onOpenPermissions: (userId: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AuthorizedUsersViewModel = viewModel(factory = AuthorizedUsersViewModel.Factory)
 ) {
@@ -111,6 +115,7 @@ fun AuthorizedUsersRoute(
         snackbarHostState = snackbarHostState,
         onBack = onBack,
         onAddUser = onAddUser,
+        onOpenPermissions = onOpenPermissions,
         onRemoveUser = viewModel::removeUser,
         onRetry = viewModel::retry,
         modifier = modifier
@@ -127,6 +132,7 @@ fun AuthorizedUsersScreen(
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onAddUser: () -> Unit,
+    onOpenPermissions: (userId: String) -> Unit,
     onRemoveUser: (userId: String) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
@@ -185,6 +191,7 @@ fun AuthorizedUsersScreen(
                     UsersContent(
                         state = uiState,
                         onAddUser = onAddUser,
+                        onOpenPermissions = onOpenPermissions,
                         onRemoveUser = onRemoveUser
                     )
 
@@ -207,6 +214,7 @@ fun AuthorizedUsersScreen(
 private fun UsersContent(
     state: AuthorizedUsersUiState.Success,
     onAddUser: () -> Unit,
+    onOpenPermissions: (userId: String) -> Unit,
     onRemoveUser: (userId: String) -> Unit
 ) {
     var pendingRemovalId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -233,6 +241,7 @@ private fun UsersContent(
                 UserCard(
                     user = user,
                     enabled = !state.isBusy,
+                    onClick = { onOpenPermissions(user.id) },
                     onRemoveClick = { pendingRemovalId = user.id }
                 )
             }
@@ -263,12 +272,28 @@ private fun UsersContent(
 private fun UserCard(
     user: AuthorizedUserItem,
     enabled: Boolean,
+    onClick: () -> Unit,
     onRemoveClick: () -> Unit
 ) {
     val displayName = user.name.ifEmpty { stringResource(R.string.value_unknown) }
+    val openPermissionsLabel = stringResource(R.string.users_open_permissions, displayName)
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        // Solo los invitados tienen permisos que ajustar: el dueño los tiene todos.
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .then(
+                if (user.removable) {
+                    Modifier.clickable(
+                        onClickLabel = openPermissionsLabel,
+                        role = Role.Button,
+                        onClick = onClick
+                    )
+                } else {
+                    Modifier
+                }
+            ),
         shape = CardShape,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
@@ -341,30 +366,6 @@ private fun UserCard(
     }
 }
 
-/**
- * Insignia del rol. El texto dice el rol; el color solo lo refuerza (azul para
- * quien administra, verde para quien cuida).
- */
-@Composable
-private fun RoleChip(role: UserRole) {
-    val (container, content) = when (role) {
-        UserRole.PRINCIPAL, UserRole.SECONDARY_ADMIN ->
-            MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary
-        UserRole.CAREGIVER ->
-            MediCaseTheme.statusColors.safeContainer to MediCaseTheme.statusColors.safe
-    }
-    Surface(shape = RoundedCornerShape(6.dp), color = container) {
-        Text(
-            text = stringResource(role.labelRes()),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = content,
-            maxLines = 1,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-        )
-    }
-}
-
 /** "Hoy, 08:15 a. m.", "Ayer, 06:40 p. m.", "12 oct, 11:20 a. m." o "--". */
 @Composable
 private fun lastAccessText(lastAccess: LastAccess?): String {
@@ -432,6 +433,7 @@ private fun AuthorizedUsersScreenPreview(uiState: AuthorizedUsersUiState) {
                 snackbarHostState = remember { SnackbarHostState() },
                 onBack = {},
                 onAddUser = {},
+                onOpenPermissions = {},
                 onRemoveUser = {},
                 onRetry = {}
             )

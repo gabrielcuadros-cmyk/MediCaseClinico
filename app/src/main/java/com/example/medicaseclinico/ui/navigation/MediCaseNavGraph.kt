@@ -17,6 +17,7 @@ import com.example.medicaseclinico.ui.screens.notifications.NotificationSettings
 import com.example.medicaseclinico.ui.screens.security.SecurityRoute
 import com.example.medicaseclinico.ui.screens.users.AuthorizedUsersRoute
 import com.example.medicaseclinico.ui.screens.users.add.AddUserRoute
+import com.example.medicaseclinico.ui.screens.users.permissions.UserPermissionsRoute
 
 /**
  * Grafo de navegación principal de MediCase Clínico.
@@ -70,8 +71,14 @@ fun MediCaseNavGraph(
         composable(SecondaryRoutes.AUTHORIZED_USERS) {
             AuthorizedUsersRoute(
                 onBack = { navController.popBackStack() },
-                onAddUser = { navController.navigate(SecondaryRoutes.ADD_USER) }
+                onAddUser = { navController.navigate(SecondaryRoutes.ADD_USER) },
+                onOpenPermissions = { userId ->
+                    navController.navigate(SecondaryRoutes.userPermissions(userId))
+                }
             )
+        }
+        composable(SecondaryRoutes.USER_PERMISSIONS) {
+            UserPermissionsRoute(onBack = { navController.popBackStack() })
         }
         composable(SecondaryRoutes.ADD_USER) {
             AddUserRoute(

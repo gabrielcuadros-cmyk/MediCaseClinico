@@ -473,6 +473,25 @@
     <string name="add_user_error_save_failed">No se pudo registrar a la persona. Revisa tu conexión e inténtalo de nuevo.</string>
     <string name="add_user_share_title">Enviar invitación</string>
     <string name="add_user_share_unavailable">La persona quedó registrada, pero no hay ninguna app para enviar la invitación. Avísale por otro medio.</string>
+    <!-- Permisos de Usuario -->
+    <string name="user_permissions_title">Permisos de Usuario</string>
+    <string name="user_permissions_loading">Consultando los permisos…</string>
+    <string name="user_permissions_empty_title">Persona no encontrada</string>
+    <string name="user_permissions_empty_message">Esta persona ya no está en tu lista de usuarios autorizados.</string>
+    <string name="user_permissions_role">Rol: %1$s</string>
+    <string name="users_open_permissions">Ver los permisos de %1$s</string>
+    <string name="user_permission_temperature_title">Monitorear temperatura</string>
+    <string name="user_permission_temperature_description">Permite ver rangos históricos de la insulina.</string>
+    <string name="user_permission_location_title">Ver ubicación GPS</string>
+    <string name="user_permission_location_description">Seguimiento en mapa real de pérdidas o robos.</string>
+    <string name="user_permission_access_logs_title">Consultar registros de acceso</string>
+    <string name="user_permission_access_logs_description">Ver accesos registrados con contraseña de 4 dígitos.</string>
+    <string name="user_permission_alerts_title">Recibir alertas críticas</string>
+    <string name="user_permission_alerts_description">Avisos de picos térmicos y batería crítica.</string>
+    <string name="user_permission_reports_title">Exportar reportes PDF</string>
+    <string name="user_permission_reports_description">Descarga de reportes clínicos certificados.</string>
+    <string name="user_permission_manage_users_title">Gestionar otros usuarios</string>
+    <string name="user_permission_manage_users_description">Capacidad de agregar/remover cuidadores.</string>
     <string name="add_user_invitation_subject">Invitación a MediCase Clínico</string>
     <string name="add_user_invitation_text">Hola, %1$s. Te registré como %2$s de mi estuche de insulina en MediCase Clínico. Tu invitación está pendiente: te avisaré cuando puedas entrar desde tu teléfono.</string>
 </resources>

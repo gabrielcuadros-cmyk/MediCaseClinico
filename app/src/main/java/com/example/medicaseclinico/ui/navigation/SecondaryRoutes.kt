@@ -10,8 +10,15 @@ object SecondaryRoutes {
     const val ADD_USER = "add_user"
     const val AUTHORIZED_USERS = "authorized_users"
 
+    /** Argumento de [USER_PERMISSIONS]: id del registro de la persona. */
+    const val USER_ID_ARG = "userId"
+    const val USER_PERMISSIONS = "user_permissions/{$USER_ID_ARG}"
+
+    fun userPermissions(userId: String): String = "user_permissions/$userId"
+
     private val parentTab: Map<String, TopLevelDestination> = mapOf(
         AUTHORIZED_USERS to TopLevelDestination.SECURITY,
+        USER_PERMISSIONS to TopLevelDestination.SECURITY,
         NOTIFICATION_SETTINGS to TopLevelDestination.SECURITY,
         GEOFENCE_CONFIG to TopLevelDestination.MAP,
         LOSS_MODE to TopLevelDestination.MAP,
