@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -64,10 +65,12 @@ import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 
 /**
- * Estilo Liberty de OpenFreeMap: mapa vectorial con datos de OpenStreetMap,
- * público, sin API key ni cuenta.
+ * Estilos de OpenFreeMap: mapa vectorial con datos de OpenStreetMap, público,
+ * sin API key ni cuenta. Liberty para el tema claro y Dark para el oscuro: un
+ * mapa claro en una pantalla oscura deslumbra y rompe el resto del diseño.
  */
-private const val MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+private const val MAP_STYLE_LIGHT_URL = "https://tiles.openfreemap.org/styles/liberty"
+private const val MAP_STYLE_DARK_URL = "https://tiles.openfreemap.org/styles/dark"
 
 /** Aire alrededor del círculo del punto elegido cuando el mapa ajusta el zoom para que quepa. */
 private val PickerFitPadding = 32.dp
@@ -245,6 +248,11 @@ private fun MapLibreMapView(
     val fitPaddingPx = with(LocalDensity.current) { PickerFitPadding.roundToPx() }
     val mapDescription = stringResource(R.string.map_content_description)
 
+    // Se pregunta al tema de la app y no al del sistema: el usuario puede
+    // haber elegido una apariencia distinta de la del teléfono.
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val styleUrl = if (isDarkTheme) MAP_STYLE_DARK_URL else MAP_STYLE_LIGHT_URL
+
     // Como en el diseño: pin rojo de alerta con insignia azul, y zonas en azul primario.
     val pinColors = MapPinColors(
         pin = MediCaseTheme.statusColors.critical.toArgb(),
@@ -257,7 +265,8 @@ private fun MapLibreMapView(
 
     // Un MapView destruido no se puede reutilizar: si cambia el dueño del
     // ciclo de vida, se crea un mapa nuevo en vez de reconectar el anterior.
-    val handle = remember(context, lifecycleOwner) {
+    // También al cambiar de tema: el estilo y los colores del pin son otros.
+    val handle = remember(context, lifecycleOwner, isDarkTheme) {
         createMapOrNull(context, pinColors, circleColor, mutedCircleColor, fitPaddingPx)
     }
     if (handle == null) {
@@ -285,7 +294,7 @@ private fun MapLibreMapView(
         mapView.addOnDidFailLoadingMapListener(failListener)
         content.onCenterChanged = { currentOnCenterChanged(it) }
         mapView.getMapAsync { map ->
-            map.setStyle(Style.Builder().fromUri(MAP_STYLE_URL)) { style ->
+            map.setStyle(Style.Builder().fromUri(styleUrl)) { style ->
                 content.attach(map, style)
                 currentOnLoaded()
             }
