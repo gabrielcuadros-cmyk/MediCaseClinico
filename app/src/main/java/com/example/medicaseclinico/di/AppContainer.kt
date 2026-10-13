@@ -12,12 +12,14 @@ import com.example.medicaseclinico.data.repository.CaseLocationRepositoryImpl
 import com.example.medicaseclinico.data.repository.GeofenceRepositoryImpl
 import com.example.medicaseclinico.data.repository.TemperatureRepositoryImpl
 import com.example.medicaseclinico.data.sync.CaseTelemetrySynchronizer
+import com.example.medicaseclinico.data.user.FirestoreAuthorizedUsersRepository
 import com.example.medicaseclinico.data.user.FirestoreUserProfileRepository
 import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.alert.RecordingAlertPublisher
 import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import com.example.medicaseclinico.domain.repository.AuthRepository
+import com.example.medicaseclinico.domain.repository.AuthorizedUsersRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
 import com.example.medicaseclinico.domain.repository.CaseLocationRepository
 import com.example.medicaseclinico.domain.repository.GeofenceRepository
@@ -66,6 +68,10 @@ class AppContainer(context: Context) {
 
     val userProfileRepository: UserProfileRepository by lazy {
         FirestoreUserProfileRepository(context = appContext)
+    }
+
+    val authorizedUsersRepository: AuthorizedUsersRepository by lazy {
+        FirestoreAuthorizedUsersRepository(context = appContext)
     }
 
     val medicalReportExporter: MedicalReportExporter by lazy {
