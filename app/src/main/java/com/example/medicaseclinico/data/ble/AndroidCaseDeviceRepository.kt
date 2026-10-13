@@ -16,6 +16,10 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
 import android.os.ParcelUuid
+import com.example.medicaseclinico.domain.model.AccessEvent
+import com.example.medicaseclinico.domain.model.CaseCommandError
+import com.example.medicaseclinico.domain.model.CaseCommandException
+import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.CaseTelemetry
 import com.example.medicaseclinico.domain.model.ConnectionStatus
@@ -34,6 +38,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -45,7 +50,11 @@ import kotlin.coroutines.resume
 
 /**
  * Cliente BLE del estuche MediCase: escaneo → conexión → suscripción a
- * temperatura, batería y ubicación → reconexión automática con espera progresiva.
+ * temperatura, batería, ubicación y control → reconexión automática con
+ * espera progresiva.
+ *
+ * El formato de cada trama y lo que debe hacer el firmware está en
+ * `hardware/ble-protocol.md`.
  */
 @SuppressLint("MissingPermission")
 class AndroidCaseDeviceRepository(
@@ -77,6 +86,16 @@ class AndroidCaseDeviceRepository(
         MutableStateFlow<CaseLocationState>(CaseLocationState.Unavailable)
     override val caseLocation: StateFlow<CaseLocationState> = _caseLocation.asStateFlow()
 
+    private val _controlState =
+        MutableStateFlow<CaseControlState>(CaseControlState.Unavailable)
+    override val controlState: StateFlow<CaseControlState> = _controlState.asStateFlow()
+
+    private val _accessEvents = MutableSharedFlow<AccessEvent>(
+        extraBufferCapacity = ACCESS_EVENT_BUFFER_SIZE,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    override val accessEvents: Flow<AccessEvent> = _accessEvents.asSharedFlow()
+
     // ------------------------------------------------------------------
     //  Estado interno de la conexión
     // ------------------------------------------------------------------
@@ -84,6 +103,10 @@ class AndroidCaseDeviceRepository(
     @Volatile private var activeGatt: BluetoothGatt? = null
     @Volatile private var connectionResult: CompletableDeferred<Boolean>? = null
     @Volatile private var pendingGattOperation: CompletableDeferred<Boolean>? = null
+
+    // Las escrituras de control necesitan el código que devuelve el estuche
+    // (PIN incorrecto, falta emparejar…), no solo si salió bien.
+    @Volatile private var pendingWriteStatus: CompletableDeferred<Int>? = null
 
     private val gattOperationMutex = Mutex()
     private val disconnectionSignal = Channel<Unit>(Channel.CONFLATED)
@@ -102,6 +125,7 @@ class AndroidCaseDeviceRepository(
         closeGatt()
         _connectionStatus.value = ConnectionStatus.DISCONNECTED
         _caseLocation.value = CaseLocationState.Unavailable
+        _controlState.value = CaseControlState.Unavailable
     }
 
     // ------------------------------------------------------------------
@@ -129,6 +153,7 @@ class AndroidCaseDeviceRepository(
                 closeGatt()
                 _connectionStatus.value = ConnectionStatus.DISCONNECTED
                 _caseLocation.value = CaseLocationState.Unavailable
+                _controlState.value = CaseControlState.Unavailable
                 failedAttempts++
                 if (failedAttempts > MAX_RECONNECT_ATTEMPTS) {
                     publishFailure(
@@ -160,6 +185,7 @@ class AndroidCaseDeviceRepository(
     private fun publishFailure(issue: DeviceIssue) {
         _connectionStatus.value = ConnectionStatus.DISCONNECTED
         _caseLocation.value = CaseLocationState.Unavailable
+        _controlState.value = CaseControlState.Unavailable
         _deviceIssue.value = issue
     }
 
@@ -243,6 +269,7 @@ class AndroidCaseDeviceRepository(
             }
         }
         subscribeToLocation(gatt)
+        subscribeToControl(gatt)
         return true
     }
 
@@ -257,6 +284,141 @@ class AndroidCaseDeviceRepository(
             CaseLocationState.Unavailable
         } else {
             CaseLocationState.NotSupported
+        }
+    }
+
+    /**
+     * El servicio de control también es opcional: un estuche sin él sigue
+     * midiendo temperatura. Cada característica se activa por separado para
+     * que un firmware a medio hacer ofrezca lo que ya tiene.
+     */
+    private suspend fun subscribeToControl(gatt: BluetoothGatt) {
+        if (gatt.getService(GattSpec.CONTROL_SERVICE) == null) {
+            _controlState.value = CaseControlState.NotSupported
+            return
+        }
+        // Se marca listo antes de leer: las lecturas rellenan este estado.
+        _controlState.value = CaseControlState.Ready()
+
+        gatt.findCharacteristic(GattSpec.LOCK_STATE)?.let { lockState ->
+            runGattOperation { gatt.readCharacteristic(lockState) }
+            enableUpdates(gatt, lockState)
+        }
+        gatt.findCharacteristic(GattSpec.PIN_REQUIRED)?.let { pinRequired ->
+            runGattOperation { gatt.readCharacteristic(pinRequired) }
+        }
+        gatt.findCharacteristic(GattSpec.ACCESS_EVENT)?.let { accessEvent ->
+            enableUpdates(gatt, accessEvent)
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Órdenes al estuche (servicio de control)
+    // ------------------------------------------------------------------
+    override suspend fun setPinRequired(required: Boolean, currentPin: String): Result<Unit> =
+        writeControl(GattSpec.PIN_REQUIRED, ControlCodec.encodePinRequired(required, currentPin))
+            .onSuccess {
+                // El estuche no avisa de este cambio: se refleja lo que acaba de aceptar.
+                updateControl { it.copy(pinRequired = required) }
+            }
+
+    override suspend fun changePin(currentPin: String, newPin: String): Result<Unit> =
+        writeControl(GattSpec.PIN_CHANGE, ControlCodec.encodePinChange(currentPin, newPin))
+
+    override suspend fun setAlarm(on: Boolean): Result<Unit> =
+        writeControl(GattSpec.ALARM, ControlCodec.encodeAlarm(on))
+
+    override suspend fun setGpsIntervalSeconds(seconds: Int): Result<Unit> =
+        writeControl(GattSpec.GPS_INTERVAL, ControlCodec.encodeGpsInterval(seconds))
+
+    /**
+     * Escribe una orden y espera la respuesta del estuche.
+     *
+     * @param payload trama ya codificada, o null si el valor no era válido.
+     */
+    private suspend fun writeControl(uuid: java.util.UUID, payload: ByteArray?): Result<Unit> {
+        if (payload == null) return commandFailure(CaseCommandError.INVALID_VALUE)
+        val gatt = activeGatt
+        if (gatt == null || _connectionStatus.value != ConnectionStatus.CONNECTED) {
+            return commandFailure(CaseCommandError.NOT_CONNECTED)
+        }
+        return try {
+            val characteristic = gatt.findCharacteristic(uuid)
+                ?: return commandFailure(CaseCommandError.NOT_SUPPORTED)
+            val status = runGattWrite(gatt, characteristic, payload)
+                ?: return commandFailure(CaseCommandError.FAILED)
+            val error = ControlCodec.errorFromWriteStatus(status) ?: return Result.success(Unit)
+            if (error == CaseCommandError.PAIRING_REQUIRED) requestBond(gatt.device)
+            commandFailure(error)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            commandFailure(CaseCommandError.FAILED)
+        }
+    }
+
+    private fun commandFailure(error: CaseCommandError): Result<Unit> =
+        Result.failure(CaseCommandException(error))
+
+    /**
+     * @return el código de respuesta del estuche, o null si la escritura no
+     * pudo empezar o no hubo respuesta a tiempo.
+     */
+    private suspend fun runGattWrite(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic,
+        payload: ByteArray
+    ): Int? = gattOperationMutex.withLock {
+        val completion = CompletableDeferred<Int>()
+        pendingWriteStatus = completion
+        val started = try {
+            writeCharacteristicCompat(gatt, characteristic, payload)
+        } catch (e: SecurityException) {
+            false
+        }
+        val status = if (started) {
+            withTimeoutOrNull(CONTROL_WRITE_TIMEOUT_MS) { completion.await() }
+        } else {
+            null
+        }
+        pendingWriteStatus = null
+        status
+    }
+
+    @Suppress("DEPRECATION")
+    private fun writeCharacteristicCompat(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic,
+        value: ByteArray
+    ): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            gatt.writeCharacteristic(
+                characteristic,
+                value,
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            ) == BluetoothStatusCodes.SUCCESS
+        } else {
+            characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            characteristic.value = value
+            gatt.writeCharacteristic(characteristic)
+        }
+
+    /**
+     * El estuche rechazó la orden porque el teléfono no está emparejado: se
+     * pide a Android que abra el emparejamiento. La orden no se reintenta
+     * sola; el usuario la repite cuando termine de emparejar.
+     */
+    private fun requestBond(device: BluetoothDevice) {
+        try {
+            if (device.bondState == BluetoothDevice.BOND_NONE) device.createBond()
+        } catch (e: SecurityException) {
+            // Sin permiso no se puede emparejar: el error de la orden ya lo dice.
+        }
+    }
+
+    private fun updateControl(transform: (CaseControlState.Ready) -> CaseControlState.Ready) {
+        _controlState.update { current ->
+            (current as? CaseControlState.Ready)?.let(transform) ?: current
         }
     }
 
@@ -325,6 +487,7 @@ class AndroidCaseDeviceRepository(
             } else {
                 connectionResult?.complete(false)
                 pendingGattOperation?.complete(false)
+                pendingWriteStatus?.complete(BluetoothGatt.GATT_FAILURE)
                 disconnectionSignal.trySend(Unit)
             }
         }
@@ -339,6 +502,14 @@ class AndroidCaseDeviceRepository(
             status: Int
         ) {
             pendingGattOperation?.complete(status == BluetoothGatt.GATT_SUCCESS)
+        }
+
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            pendingWriteStatus?.complete(status)
         }
 
         override fun onCharacteristicChanged(
@@ -401,6 +572,25 @@ class AndroidCaseDeviceRepository(
                 GattParser.parseLocationAndSpeed(value)?.let { reading ->
                     _caseLocation.value = CaseLocationState.Reported(reading, now)
                 }
+            GattSpec.LOCK_STATE ->
+                ControlCodec.parseLockState(value)?.let { lockState ->
+                    updateControl { it.copy(lockState = lockState) }
+                }
+            GattSpec.PIN_REQUIRED ->
+                ControlCodec.parsePinRequired(value)?.let { required ->
+                    updateControl { it.copy(pinRequired = required) }
+                }
+            GattSpec.ACCESS_EVENT ->
+                ControlCodec.parseAccessEvent(value)?.let { frame ->
+                    // El estuche no tiene reloj: la hora del evento es la de recepción.
+                    _accessEvents.tryEmit(
+                        AccessEvent(
+                            type = frame.type,
+                            failedAttempts = frame.failedAttempts,
+                            receivedAt = now
+                        )
+                    )
+                }
         }
     }
 
@@ -428,5 +618,10 @@ class AndroidCaseDeviceRepository(
         const val MAX_RECONNECT_ATTEMPTS = 5
         const val BASE_BACKOFF_MS = 2_000L
         const val TELEMETRY_BUFFER_SIZE = 32
+        const val ACCESS_EVENT_BUFFER_SIZE = 16
+
+        // Más largo que una operación normal: puede incluir el diálogo de
+        // emparejamiento de Android, que espera al usuario.
+        const val CONTROL_WRITE_TIMEOUT_MS = 30_000L
     }
 }

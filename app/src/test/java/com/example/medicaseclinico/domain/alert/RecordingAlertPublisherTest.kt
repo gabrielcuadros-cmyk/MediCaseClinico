@@ -65,6 +65,12 @@ class RecordingAlertPublisherTest {
         override fun onGeofenceEntered(geofence: Geofence) {
             calls += "entered ${geofence.name}"
         }
+        override fun onAccessDenied(failedAttempts: Int, lockedOut: Boolean) {
+            calls += if (lockedOut) "locked out" else "denied $failedAttempts"
+        }
+        override fun onAccessGranted() {
+            calls += "granted"
+        }
     }
 
     private class Harness(scope: TestScope, failing: Boolean = false) {
@@ -173,6 +179,35 @@ class RecordingAlertPublisherTest {
 
         assertTrue(repository.recorded.isEmpty())
         assertEquals(listOf("entered Casa"), delegate.calls)
+    }
+
+    @Test
+    fun `cada pin incorrecto se registra con sus intentos fallidos seguidos`() = alertTest {
+        publisher.onAccessDenied(failedAttempts = 1, lockedOut = false)
+        now = 2_000L
+        publisher.onAccessDenied(failedAttempts = 2, lockedOut = false)
+
+        assertEquals(listOf(AlertType.SECURITY, AlertType.SECURITY), repository.recorded.map { it.type })
+        assertEquals(listOf(1f, 2f), repository.recorded.map { it.value })
+        assertEquals(listOf(1_000L, 2_000L), repository.recorded.map { it.timestamp })
+    }
+
+    @Test
+    fun `el bloqueo del estuche se registra sin numero de intentos`() = alertTest {
+        publisher.onAccessDenied(failedAttempts = 3, lockedOut = true)
+
+        val event = repository.recorded.single()
+        assertEquals(AlertType.SECURITY, event.type)
+        assertNull(event.value)
+        assertEquals(listOf("locked out"), delegate.calls)
+    }
+
+    @Test
+    fun `abrir con el pin correcto no registra nada pero llega al emisor real`() = alertTest {
+        publisher.onAccessGranted()
+
+        assertTrue(repository.recorded.isEmpty())
+        assertEquals(listOf("granted"), delegate.calls)
     }
 
     @Test

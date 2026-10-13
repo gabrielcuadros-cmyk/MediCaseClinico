@@ -183,7 +183,12 @@ private fun AlertItem.cardStyle(): AlertCardStyle {
             accent = statusColors.critical,
             container = statusColors.criticalContainer,
             title = stringResource(R.string.alerts_security_title),
-            description = stringResource(R.string.alerts_security_description)
+            // Con número: un PIN incorrecto. Sin número: el bloqueo del diseño.
+            description = if (value != null && !value.isNaN()) {
+                stringResource(R.string.alerts_security_denied_description, value.toInt())
+            } else {
+                stringResource(R.string.alerts_security_description)
+            }
         )
     }
 }

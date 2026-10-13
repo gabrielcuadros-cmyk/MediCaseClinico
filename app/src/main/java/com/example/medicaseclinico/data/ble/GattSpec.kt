@@ -37,6 +37,34 @@ object GattSpec {
     /** Location and Speed (0x2A67): latitud y longitud en 1e-7 grados, vía Notify. */
     val LOCATION_AND_SPEED: UUID = sigUuid("2a67")
 
+    // ------------------------------------------------------------------
+    //  Servicio propio "MediCase Control" (ver hardware/ble-protocol.md)
+    // ------------------------------------------------------------------
+    /** Base propia: los bytes centrales son "MEDICASE" en ASCII. */
+    private fun controlUuid(shortId: String): UUID =
+        UUID.fromString("4d43$shortId-4d45-4449-4341-534500000000")
+
+    /** Cierre, PIN, accesos, alarma y frecuencia del GPS. Opcional. */
+    val CONTROL_SERVICE: UUID = controlUuid("0001")
+
+    /** Estado del cierre: 0 cerrado, 1 abierto. Read y Notify. */
+    val LOCK_STATE: UUID = controlUuid("0002")
+
+    /** Seguro (PIN requerido): Read 1 byte; Write cifrada de estado + PIN actual. */
+    val PIN_REQUIRED: UUID = controlUuid("0003")
+
+    /** Cambio de PIN: Write cifrada de PIN actual + PIN nuevo. No se puede leer. */
+    val PIN_CHANGE: UUID = controlUuid("0004")
+
+    /** Evento de acceso desde el teclado: tipo + intentos fallidos. Notify. */
+    val ACCESS_EVENT: UUID = controlUuid("0005")
+
+    /** Alarma sonora (zumbador): 0 apagada, 1 sonando. Read y Write cifrada. */
+    val ALARM: UUID = controlUuid("0006")
+
+    /** Segundos entre posiciones del GPS, de 1 a 60. Read y Write cifrada. */
+    val GPS_INTERVAL: UUID = controlUuid("0007")
+
     /** Client Characteristic Configuration Descriptor: activa Notify/Indicate. */
     val CLIENT_CHARACTERISTIC_CONFIG: UUID = sigUuid("2902")
 

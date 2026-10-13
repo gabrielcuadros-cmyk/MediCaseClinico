@@ -161,6 +161,32 @@ class SystemAlertPublisher(
     private fun geofenceTag(geofence: Geofence) = "$GEOFENCE_TAG_PREFIX${geofence.id}"
 
     // ------------------------------------------------------------------
+    //  Accesos desde el teclado del estuche
+    // ------------------------------------------------------------------
+    /** Una sola notificación que se actualiza: tres fallos no deben ser tres avisos apilados. */
+    @Synchronized
+    override fun onAccessDenied(failedAttempts: Int, lockedOut: Boolean) {
+        post(
+            id = NOTIFICATION_ID_SECURITY,
+            channel = AlertChannel.SECURITY,
+            title = appContext.getString(R.string.notif_security_title),
+            text = if (lockedOut) {
+                appContext.getString(R.string.notif_security_locked_text)
+            } else {
+                appContext.getString(R.string.notif_security_denied_text, failedAttempts)
+            },
+            silent = false,
+            ongoing = false
+        )
+    }
+
+    /** Se abrió con el PIN correcto: el aviso de intentos fallidos ya no aplica. */
+    @Synchronized
+    override fun onAccessGranted() {
+        notificationManager.cancel(NOTIFICATION_ID_SECURITY)
+    }
+
+    // ------------------------------------------------------------------
     //  Construcción y envío seguro
     // ------------------------------------------------------------------
     private fun post(
@@ -243,6 +269,7 @@ class SystemAlertPublisher(
         const val NOTIFICATION_ID_BATTERY = 1002
         const val NOTIFICATION_ID_CONNECTION = 1003
         const val NOTIFICATION_ID_GEOFENCE = 1004
+        const val NOTIFICATION_ID_SECURITY = 1005
         const val GEOFENCE_TAG_PREFIX = "geofence-"
         val TEMPERATURE_REMINDER_MS = TimeUnit.MINUTES.toMillis(15)
         val TEMPERATURE_UPDATE_MS = TimeUnit.SECONDS.toMillis(30)

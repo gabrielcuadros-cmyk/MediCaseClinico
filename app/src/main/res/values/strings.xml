@@ -29,6 +29,7 @@
     <string name="action_accept">Aceptar</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_sign_out">Cerrar sesión</string>
+    <string name="value_unknown">--</string>
     <string name="session_checking">Comprobando tu sesión…</string>
 
     <!-- Dashboard: carga y vacío -->
@@ -177,6 +178,9 @@
     <string name="notif_battery_text">Batería al %1$d%%. Conecta el MediCase al cargador: la refrigeración podría fallar.</string>
     <string name="notif_connection_title">Estuche desconectado</string>
     <string name="notif_connection_text">Se perdió la conexión Bluetooth con tu MediCase. Acércalo al teléfono.</string>
+    <string name="notif_security_title">Intento de acceso al estuche</string>
+    <string name="notif_security_denied_text">Alguien tecleó una contraseña incorrecta en tu MediCase. Intentos fallidos seguidos: %1$d.</string>
+    <string name="notif_security_locked_text">Tu MediCase se bloqueó por intentos fallidos de contraseña.</string>
     <string name="notif_geofence_title">El estuche salió de una zona segura</string>
     <string name="notif_geofence_text">Tu MediCase salió de la zona «%1$s». Revisa su ubicación en el mapa.</string>
 
@@ -242,6 +246,7 @@
     <string name="alerts_geofence_description_with_zone">El dispositivo ha salido de la geocerca establecida en %1$s.</string>
     <string name="alerts_security_title">Intento de Acceso con Contraseña</string>
     <string name="alerts_security_description">Bloqueo por intentos fallidos de contraseña de 4 dígitos.</string>
+    <string name="alerts_security_denied_description">Se tecleó una contraseña incorrecta en el estuche. Intentos fallidos seguidos: %1$d.</string>
 
     <!-- Tiempo relativo (Alertas y pie del Dashboard) -->
     <string name="relative_time_now">Ahora</string>
@@ -385,4 +390,53 @@
     <string name="recovery_sent_title">Revisa tu correo</string>
     <string name="recovery_sent_message">Si hay una cuenta con %1$s, recibirás un enlace para elegir una contraseña nueva. Mira también la carpeta de correo no deseado.</string>
     <string name="recovery_use_another_email">Usar otro correo</string>
+
+    <!-- Seguridad del Estuche -->
+    <string name="security_title">Seguridad del Estuche</string>
+    <string name="security_subtitle">Administra la contraseña de 4 dígitos y el registro de accesos.</string>
+    <string name="security_loading">Consultando la seguridad del estuche…</string>
+    <string name="security_error_title">No se pudo cargar la seguridad</string>
+    <string name="security_error_message">Ocurrió un error inesperado. Reintenta en unos segundos.</string>
+    <string name="security_lock_title">Contraseña del Estuche (4 dígitos)</string>
+    <string name="security_lock_description">Abre el estuche con una contraseña numérica.</string>
+    <string name="security_case_not_supported">Requiere un estuche compatible.</string>
+    <string name="security_case_disconnected">Conecta el estuche por Bluetooth para gestionar su contraseña.</string>
+    <string name="security_pin_section">CONTRASEÑA DEL ESTUCHE</string>
+    <string name="security_pin_mask">••••</string>
+    <string name="security_pin_hidden_description">Contraseña oculta</string>
+    <string name="security_change_pin_action">Cambiar la contraseña del estuche</string>
+    <string name="security_users_section">USUARIOS CON ACCESO</string>
+    <string name="security_users_empty">Aún no has dado acceso a nadie.</string>
+    <string name="security_users_failed">No se pudo leer la lista de usuarios.</string>
+    <string name="security_add_user">Agregar Usuario</string>
+    <string name="security_remove_user">Quitar el acceso a %1$s</string>
+    <string name="security_remove_user_title">¿Quitar el acceso?</string>
+    <string name="security_remove_user_message">%1$s dejará de poder ver tu estuche. Esta acción no se puede deshacer.</string>
+    <string name="security_remove_user_confirm">Quitar acceso</string>
+    <string name="security_account_section">CUENTA</string>
+    <string name="security_enable_lock_title">Activar la contraseña</string>
+    <string name="security_enable_lock_message">El estuche volverá a pedir la contraseña para abrirse. Escribe la contraseña actual para confirmar.</string>
+    <string name="security_disable_lock_title">Desactivar la contraseña</string>
+    <string name="security_disable_lock_message">El estuche se abrirá sin pedir contraseña. Escribe la contraseña actual para confirmar.</string>
+    <string name="security_change_pin_title">Cambiar la contraseña</string>
+    <string name="security_change_pin_message">La contraseña nueva se guarda solo en el estuche. Si la olvidas, la app no puede recuperarla.</string>
+    <string name="security_change_pin_confirm">Cambiar</string>
+    <string name="security_current_pin_label">Contraseña actual</string>
+    <string name="security_new_pin_label">Contraseña nueva (4 dígitos)</string>
+    <string name="security_repeat_pin_label">Repite la contraseña nueva</string>
+    <string name="security_pin_mismatch">Las contraseñas no coinciden.</string>
+    <string name="security_msg_pin_changed">Contraseña del estuche cambiada.</string>
+    <string name="security_msg_lock_enabled">El estuche pide contraseña para abrirse.</string>
+    <string name="security_msg_lock_disabled">El estuche se abre sin contraseña.</string>
+    <string name="security_msg_user_removed">Acceso retirado.</string>
+    <string name="security_msg_user_remove_failed">No se pudo quitar el acceso. Inténtalo de nuevo.</string>
+    <string name="security_msg_pairing_required">Empareja el estuche cuando el teléfono lo pida y repite la acción.</string>
+    <string name="security_msg_wrong_pin">La contraseña actual no es correcta.</string>
+    <string name="security_msg_locked_out">Estuche bloqueado temporalmente por intentos fallidos.</string>
+    <string name="security_msg_invalid_pin">La contraseña debe tener 4 dígitos.</string>
+    <string name="security_msg_case_failed">El estuche no respondió. Inténtalo de nuevo.</string>
+    <string name="user_role_principal">Principal</string>
+    <string name="user_role_caregiver">Cuidador</string>
+    <string name="user_role_secondary_admin">Administrador Secundario</string>
+    <string name="add_user_title">Nuevo Usuario</string>
 </resources>

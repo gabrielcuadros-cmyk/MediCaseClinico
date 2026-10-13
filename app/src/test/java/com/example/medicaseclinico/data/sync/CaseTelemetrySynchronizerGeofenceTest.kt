@@ -1,6 +1,9 @@
 package com.example.medicaseclinico.data.sync
 
 import com.example.medicaseclinico.domain.alert.AlertPublisher
+import com.example.medicaseclinico.domain.model.AccessEvent
+import com.example.medicaseclinico.domain.model.AccessEventType
+import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.model.CaseGpsReading
 import com.example.medicaseclinico.domain.model.CaseLocation
 import com.example.medicaseclinico.domain.model.CaseLocationState
@@ -19,6 +22,7 @@ import com.example.medicaseclinico.domain.usecase.EvaluateGeofencesUseCase
 import com.example.medicaseclinico.domain.usecase.ShouldSaveCaseLocationUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
@@ -39,6 +43,12 @@ class CaseTelemetrySynchronizerGeofenceTest {
         override val deviceIssue = MutableStateFlow<DeviceIssue?>(null)
         override val telemetry: Flow<CaseTelemetry> = emptyFlow()
         override val caseLocation = MutableStateFlow<CaseLocationState>(CaseLocationState.Unavailable)
+        override val controlState = MutableStateFlow<CaseControlState>(CaseControlState.Unavailable)
+        override val accessEvents = MutableSharedFlow<AccessEvent>(extraBufferCapacity = 8)
+        override suspend fun setPinRequired(required: Boolean, currentPin: String) = Result.success(Unit)
+        override suspend fun changePin(currentPin: String, newPin: String) = Result.success(Unit)
+        override suspend fun setAlarm(on: Boolean) = Result.success(Unit)
+        override suspend fun setGpsIntervalSeconds(seconds: Int) = Result.success(Unit)
         override fun startMonitoring() = Unit
         override fun stopMonitoring() = Unit
     }
@@ -85,6 +95,14 @@ class CaseTelemetrySynchronizerGeofenceTest {
 
     private class FakeAlertPublisher : AlertPublisher {
         val geofenceCalls = mutableListOf<String>()
+        val accessCalls = mutableListOf<String>()
+
+        override fun onAccessDenied(failedAttempts: Int, lockedOut: Boolean) {
+            accessCalls += if (lockedOut) "locked out" else "denied $failedAttempts"
+        }
+        override fun onAccessGranted() {
+            accessCalls += "granted"
+        }
 
         override fun onTemperature(celsius: Float, status: TemperatureStatus) = Unit
         override fun onBatteryLevel(percent: Int) = Unit
@@ -137,6 +155,14 @@ class CaseTelemetrySynchronizerGeofenceTest {
 
         fun setGeofences(list: List<Geofence>) {
             geofences.geofences.value = list
+            scope.runCurrent()
+        }
+
+        /** El estuche avisa de un intento en su teclado. */
+        fun keypad(type: AccessEventType, failedAttempts: Int) {
+            device.accessEvents.tryEmit(
+                AccessEvent(type = type, failedAttempts = failedAttempts, receivedAt = now)
+            )
             scope.runCurrent()
         }
     }
@@ -226,6 +252,17 @@ class CaseTelemetrySynchronizerGeofenceTest {
             assertTrue(alerts.geofenceCalls.isEmpty())
             assertEquals(1, locations.saved.size)
         }
+
+    @Test
+    fun `los intentos en el teclado del estuche llegan como alertas de seguridad`() = syncTest {
+        keypad(AccessEventType.DENIED, failedAttempts = 1)
+        keypad(AccessEventType.DENIED, failedAttempts = 2)
+        keypad(AccessEventType.LOCKED_OUT, failedAttempts = 3)
+        keypad(AccessEventType.GRANTED, failedAttempts = 0)
+
+        assertEquals(listOf("denied 1", "denied 2", "locked out", "granted"), alerts.accessCalls)
+        assertTrue(alerts.geofenceCalls.isEmpty())
+    }
 
     private companion object {
         // Plaza de Armas de Arequipa.

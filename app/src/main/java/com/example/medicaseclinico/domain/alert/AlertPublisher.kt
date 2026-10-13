@@ -24,4 +24,15 @@ interface AlertPublisher {
 
     /** El estuche volvió a entrar en una zona de la que había salido. */
     fun onGeofenceEntered(geofence: Geofence)
+
+    /**
+     * Alguien tecleó un PIN incorrecto en el estuche.
+     *
+     * @param failedAttempts intentos fallidos seguidos que lleva el estuche.
+     * @param lockedOut true si el estuche bloqueó el teclado por ello.
+     */
+    fun onAccessDenied(failedAttempts: Int, lockedOut: Boolean)
+
+    /** El estuche se abrió con el PIN correcto: los fallos anteriores ya no preocupan. */
+    fun onAccessGranted()
 }

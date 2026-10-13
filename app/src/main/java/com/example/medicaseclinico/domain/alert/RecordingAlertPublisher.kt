@@ -92,6 +92,26 @@ class RecordingAlertPublisher(
     }
 
     /**
+     * Cada intento fallido es un hecho distinto (no un estado que dure), así
+     * que se registran todos. El intento lleva cuántos fallos van seguidos; el
+     * bloqueo no lleva número: es lo que distingue una tarjeta de la otra.
+     */
+    @Synchronized
+    override fun onAccessDenied(failedAttempts: Int, lockedOut: Boolean) {
+        record(
+            type = AlertType.SECURITY,
+            value = if (lockedOut) null else failedAttempts.toFloat()
+        )
+        delegate.onAccessDenied(failedAttempts, lockedOut)
+    }
+
+    /** Abrir con el PIN correcto no es una alerta: solo se avisa al emisor real. */
+    @Synchronized
+    override fun onAccessGranted() {
+        delegate.onAccessGranted()
+    }
+
+    /**
      * Si la base de datos falla, la alerta no queda en el historial pero la
      * notificación se emite igual: el `Result` se descarta a propósito.
      */

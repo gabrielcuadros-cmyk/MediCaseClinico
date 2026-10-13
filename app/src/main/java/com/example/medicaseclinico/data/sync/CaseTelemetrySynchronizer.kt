@@ -1,6 +1,7 @@
 package com.example.medicaseclinico.data.sync
 
 import com.example.medicaseclinico.domain.alert.AlertPublisher
+import com.example.medicaseclinico.domain.model.AccessEventType
 import com.example.medicaseclinico.domain.model.CaseGpsReading
 import com.example.medicaseclinico.domain.model.CaseLocation
 import com.example.medicaseclinico.domain.model.CaseLocationState
@@ -65,6 +66,7 @@ class CaseTelemetrySynchronizer(
             launch { collectTelemetry() }
             launch { collectGeofences() }
             launch { collectCaseLocation() }
+            launch { collectAccessEvents() }
             launch { watchConnection() }
         }
     }
@@ -200,6 +202,25 @@ class CaseTelemetrySynchronizer(
         // con la siguiente posición.
         caseLocationRepository.saveLocation(location).onSuccess {
             lastSavedLocation = location
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Accesos desde el teclado del estuche
+    // ------------------------------------------------------------------
+    /**
+     * Un PIN incorrecto o un bloqueo son alertas de Seguridad. La hora de la
+     * alerta es la de recepción, porque el estuche no tiene reloj.
+     */
+    private suspend fun collectAccessEvents() {
+        deviceRepository.accessEvents.collect { event ->
+            when (event.type) {
+                AccessEventType.GRANTED -> alertPublisher.onAccessGranted()
+                AccessEventType.DENIED ->
+                    alertPublisher.onAccessDenied(event.failedAttempts, lockedOut = false)
+                AccessEventType.LOCKED_OUT ->
+                    alertPublisher.onAccessDenied(event.failedAttempts, lockedOut = true)
+            }
         }
     }
 
