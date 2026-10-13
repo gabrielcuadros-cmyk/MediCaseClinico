@@ -312,7 +312,11 @@ private fun UserCard(
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = stringResource(R.string.users_last_access, lastAccessText(user.lastAccess)),
+                    text = if (user.invitationPending) {
+                        stringResource(R.string.users_invitation_pending)
+                    } else {
+                        stringResource(R.string.users_last_access, lastAccessText(user.lastAccess))
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -447,6 +451,7 @@ private fun AuthorizedUsersListPreview() {
                     initials = "DA",
                     role = UserRole.PRINCIPAL,
                     lastAccess = null,
+                    invitationPending = false,
                     removable = false
                 ),
                 AuthorizedUserItem(
@@ -455,6 +460,7 @@ private fun AuthorizedUsersListPreview() {
                     initials = "SL",
                     role = UserRole.CAREGIVER,
                     lastAccess = LastAccess(atMillis = 0L, day = LastAccessDay.YESTERDAY),
+                    invitationPending = false,
                     removable = true
                 )
             ),

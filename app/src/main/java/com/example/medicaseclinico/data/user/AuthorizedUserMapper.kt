@@ -1,5 +1,6 @@
 package com.example.medicaseclinico.data.user
 
+import com.example.medicaseclinico.domain.model.AccessStatus
 import com.example.medicaseclinico.domain.model.AuthorizedUser
 import com.example.medicaseclinico.domain.model.UserPermissions
 import com.example.medicaseclinico.domain.model.UserRole
@@ -19,6 +20,7 @@ internal object AuthorizedUserMapper {
     const val FIELD_PHONE = "phone"
     const val FIELD_ROLE = "role"
     const val FIELD_PERMISSIONS = "permissions"
+    const val FIELD_STATUS = "status"
     const val FIELD_LAST_ACCESS_AT = "lastAccessAt"
 
     private const val PERMISSION_MONITOR_TEMPERATURE = "monitorTemperature"
@@ -41,6 +43,7 @@ internal object AuthorizedUserMapper {
             PERMISSION_EXPORT_REPORTS to user.permissions.exportReports,
             PERMISSION_MANAGE_USERS to user.permissions.manageUsers
         ),
+        FIELD_STATUS to user.status.name,
         FIELD_LAST_ACCESS_AT to user.lastAccessAt
     )
 
@@ -71,6 +74,11 @@ internal object AuthorizedUserMapper {
                 exportReports = permissions.granted(PERMISSION_EXPORT_REPORTS),
                 manageUsers = permissions.granted(PERMISSION_MANAGE_USERS)
             ),
+            // Sin estado reconocible se lee como pendiente: no se puede afirmar
+            // que alguien ya usa su acceso si el documento no lo dice.
+            status = (data[FIELD_STATUS] as? String)
+                ?.let { stored -> AccessStatus.entries.firstOrNull { it.name == stored } }
+                ?: AccessStatus.INVITATION_PENDING,
             lastAccessAt = (data[FIELD_LAST_ACCESS_AT] as? Number)?.toLong()
         )
     }

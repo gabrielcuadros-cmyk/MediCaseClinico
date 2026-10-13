@@ -16,6 +16,7 @@ import com.example.medicaseclinico.ui.screens.map.MapRoute
 import com.example.medicaseclinico.ui.screens.notifications.NotificationSettingsRoute
 import com.example.medicaseclinico.ui.screens.security.SecurityRoute
 import com.example.medicaseclinico.ui.screens.users.AuthorizedUsersRoute
+import com.example.medicaseclinico.ui.screens.users.add.AddUserRoute
 
 /**
  * Grafo de navegación principal de MediCase Clínico.
@@ -73,7 +74,10 @@ fun MediCaseNavGraph(
             )
         }
         composable(SecondaryRoutes.ADD_USER) {
-            PendingFeatureScreen(titleRes = R.string.add_user_title)
+            AddUserRoute(
+                onBack = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
+            )
         }
         composable(SecondaryRoutes.NOTIFICATION_SETTINGS) {
             NotificationSettingsRoute(onBack = { navController.popBackStack() })

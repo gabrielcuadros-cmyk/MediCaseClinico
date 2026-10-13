@@ -51,4 +51,29 @@ class UserPermissionsTest {
 
         assertEquals(UserPermissions.defaultsFor(UserRole.CAREGIVER), user.permissions)
     }
+
+    @Test
+    fun `cambiar un permiso no toca los demas`() {
+        val changed = UserPermissions.defaultsFor(UserRole.CAREGIVER)
+            .with(UserPermission.VIEW_ACCESS_LOGS, granted = true)
+            .with(UserPermission.VIEW_LOCATION, granted = false)
+
+        assertEquals(
+            UserPermissions(
+                monitorTemperature = true,
+                viewAccessLogs = true,
+                receiveCriticalAlerts = true
+            ),
+            changed
+        )
+    }
+
+    @Test
+    fun `cada permiso se lee del campo que le corresponde`() {
+        UserPermission.entries.forEach { permission ->
+            val onlyThis = UserPermissions().with(permission, granted = true)
+
+            assertEquals(listOf(permission), UserPermission.entries.filter { onlyThis.isGranted(it) })
+        }
+    }
 }

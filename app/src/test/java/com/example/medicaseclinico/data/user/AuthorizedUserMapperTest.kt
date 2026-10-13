@@ -1,5 +1,6 @@
 package com.example.medicaseclinico.data.user
 
+import com.example.medicaseclinico.domain.model.AccessStatus
 import com.example.medicaseclinico.domain.model.AuthorizedUser
 import com.example.medicaseclinico.domain.model.UserPermissions
 import com.example.medicaseclinico.domain.model.UserRole
@@ -16,6 +17,7 @@ class AuthorizedUserMapperTest {
         phone = "+51987654321",
         role = UserRole.CAREGIVER,
         permissions = UserPermissions(monitorTemperature = true, exportReports = true),
+        status = AccessStatus.ACTIVE,
         lastAccessAt = 1_700_000_000_000L
     )
 
@@ -51,6 +53,20 @@ class AuthorizedUserMapperTest {
         assertEquals(UserPermissions(), user?.permissions)
         assertEquals("", user?.email)
         assertNull(user?.lastAccessAt)
+    }
+
+    @Test
+    fun `sin estado reconocible la invitacion se lee como pendiente`() {
+        val stored = AuthorizedUserMapper.toMap(laura)
+
+        assertEquals(
+            AccessStatus.INVITATION_PENDING,
+            AuthorizedUserMapper.fromMap("abc", stored - "status")?.status
+        )
+        assertEquals(
+            AccessStatus.INVITATION_PENDING,
+            AuthorizedUserMapper.fromMap("abc", stored + ("status" to "ACEPTADA"))?.status
+        )
     }
 
     @Test

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
+import com.example.medicaseclinico.domain.model.AccessStatus
 import com.example.medicaseclinico.domain.model.AuthUser
 import com.example.medicaseclinico.domain.model.AuthorizedUser
 import com.example.medicaseclinico.domain.model.UserRole
@@ -157,6 +158,7 @@ class AuthorizedUsersViewModel(
             initials = initialsOf(name),
             role = UserRole.PRINCIPAL,
             lastAccess = lastSignInAt.toLastAccess(),
+            invitationPending = false,
             removable = false
         )
     }
@@ -171,6 +173,7 @@ class AuthorizedUsersViewModel(
         initials = initialsOf(name),
         role = role,
         lastAccess = lastAccessAt.toLastAccess(),
+        invitationPending = status == AccessStatus.INVITATION_PENDING,
         removable = true
     )
 

@@ -38,6 +38,8 @@ sealed interface AuthorizedUsersUiState {
  * @param name nombre, o vacío si la cuenta no tiene ninguno: la pantalla
  * muestra entonces "--".
  * @param lastAccess último acceso al estuche, o null si no se conoce.
+ * @param invitationPending la persona está invitada pero aún no usa su
+ * acceso: se dice eso en lugar de un último acceso que no puede tener.
  * @param removable false para el dueño de la cuenta: no puede quitarse el
  * acceso a sí mismo.
  */
@@ -48,6 +50,7 @@ data class AuthorizedUserItem(
     val initials: String,
     val role: UserRole,
     val lastAccess: LastAccess?,
+    val invitationPending: Boolean,
     val removable: Boolean
 )
 

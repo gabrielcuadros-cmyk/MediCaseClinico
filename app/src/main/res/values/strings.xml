@@ -452,4 +452,27 @@
     <string name="users_last_access">Último acceso: %1$s</string>
     <string name="users_last_access_today">Hoy, %1$s</string>
     <string name="users_last_access_yesterday">Ayer, %1$s</string>
+    <string name="users_invitation_pending">Invitación pendiente</string>
+
+    <!-- Nuevo Usuario -->
+    <string name="add_user_subtitle">Registra e invita a un nuevo usuario para tu estuche MediCase.</string>
+    <string name="add_user_name_placeholder">Ej. Laura Gómez</string>
+    <string name="add_user_role_label">Rol asignado</string>
+    <string name="add_user_permissions_label">Permisos iniciales</string>
+    <string name="add_user_permission_temperature">Ver temperatura de insulina</string>
+    <string name="add_user_permission_location">Monitorear ubicación GPS en vivo</string>
+    <string name="add_user_permission_access_logs">Consultar registros de acceso</string>
+    <string name="add_user_permission_alerts">Gestionar alertas de diagnóstico</string>
+    <string name="add_user_permission_reports">Exportar reportes médicos</string>
+    <string name="add_user_permission_manage_users">Gestionar usuarios</string>
+    <string name="add_user_submit">Enviar Invitación de Acceso</string>
+    <string name="add_user_field_name_required">Escribe el nombre completo de la persona.</string>
+    <string name="add_user_field_email_required">Escribe su correo electrónico.</string>
+    <string name="add_user_field_phone_required">Escribe su teléfono móvil.</string>
+    <string name="add_user_error_no_session">Inicia sesión con tu cuenta para invitar a otras personas.</string>
+    <string name="add_user_error_save_failed">No se pudo registrar a la persona. Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="add_user_share_title">Enviar invitación</string>
+    <string name="add_user_share_unavailable">La persona quedó registrada, pero no hay ninguna app para enviar la invitación. Avísale por otro medio.</string>
+    <string name="add_user_invitation_subject">Invitación a MediCase Clínico</string>
+    <string name="add_user_invitation_text">Hola, %1$s. Te registré como %2$s de mi estuche de insulina en MediCase Clínico. Tu invitación está pendiente: te avisaré cuando puedas entrar desde tu teléfono.</string>
 </resources>
