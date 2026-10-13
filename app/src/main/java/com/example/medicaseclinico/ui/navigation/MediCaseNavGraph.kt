@@ -14,6 +14,7 @@ import com.example.medicaseclinico.ui.screens.geofence.GeofenceConfigRoute
 import com.example.medicaseclinico.ui.screens.history.TemperatureHistoryRoute
 import com.example.medicaseclinico.ui.screens.map.MapRoute
 import com.example.medicaseclinico.ui.screens.notifications.NotificationSettingsRoute
+import com.example.medicaseclinico.ui.screens.security.SecurityRoute
 
 /**
  * Grafo de navegación principal de MediCase Clínico.
@@ -57,14 +58,14 @@ fun MediCaseNavGraph(
             AlertsRoute(onBack = { navController.popBackStack() })
         }
         composable(TopLevelDestination.SECURITY.route) {
-            PendingFeatureScreen(
-                titleRes = TopLevelDestination.SECURITY.labelRes,
-                actionLabelRes = R.string.open_notification_settings,
-                onAction = { navController.navigate(SecondaryRoutes.NOTIFICATION_SETTINGS) },
-                // Provisional: "Cerrar sesión" irá en la pantalla Seguridad del Estuche.
-                secondaryActionLabelRes = R.string.action_sign_out,
-                onSecondaryAction = onSignOut
+            SecurityRoute(
+                onAddUser = { navController.navigate(SecondaryRoutes.ADD_USER) },
+                onOpenNotifications = { navController.navigate(SecondaryRoutes.NOTIFICATION_SETTINGS) },
+                onSignOut = onSignOut
             )
+        }
+        composable(SecondaryRoutes.ADD_USER) {
+            PendingFeatureScreen(titleRes = R.string.add_user_title)
         }
         composable(SecondaryRoutes.NOTIFICATION_SETTINGS) {
             NotificationSettingsRoute(onBack = { navController.popBackStack() })
