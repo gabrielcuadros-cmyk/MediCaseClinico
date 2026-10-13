@@ -8,7 +8,8 @@ import java.time.format.FormatStyle
 import java.util.Locale
 
 /**
- * Fechas y horas del Historial Térmico y de su reporte PDF, en un único lugar.
+ * Fechas y horas que la app muestra (Historial Térmico, reporte PDF, Mapa y
+ * Usuarios Autorizados), en un único lugar.
  *
  * Antes cada pantalla creaba su formateador con la zona del teléfono, así que
  * la gráfica y el PDF podían escribir la misma hora de dos formas y nada de
@@ -27,6 +28,9 @@ class DateTimeLabels(
     private val axisHour = formatter(AXIS_HOUR_PATTERN)
     private val axisDay = formatter(AXIS_DAY_PATTERN)
     private val eventDate = formatter(EVENT_DATE_PATTERN)
+    private val positionTime = formatter(POSITION_TIME_PATTERN)
+    private val accessTime = formatter(ACCESS_TIME_PATTERN)
+    private val accessDateTime = formatter(ACCESS_DATE_TIME_PATTERN)
     private val shortTime =
         DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale).withZone(zone)
 
@@ -75,6 +79,19 @@ class DateTimeLabels(
         }
     }
 
+    /**
+     * Hora de una posición del estuche, con segundos y desfase horario como en
+     * el diseño del Mapa: "18:04:09 GMT-5".
+     */
+    fun positionTime(timestamp: Long): String = positionTime.format(Instant.ofEpochMilli(timestamp))
+
+    /** Hora de un acceso de hoy o de ayer, en formato de 12 horas: "08:15 a. m.". */
+    fun accessTime(timestamp: Long): String = accessTime.format(Instant.ofEpochMilli(timestamp))
+
+    /** Fecha y hora de un acceso más antiguo: "12 oct, 11:20 a. m.". */
+    fun accessDateTime(timestamp: Long): String =
+        accessDateTime.format(Instant.ofEpochMilli(timestamp))
+
     private fun formatter(pattern: String): DateTimeFormatter =
         DateTimeFormatter.ofPattern(pattern, locale).withZone(zone)
 
@@ -85,6 +102,9 @@ class DateTimeLabels(
         private const val AXIS_HOUR_PATTERN = "HH:mm"
         private const val AXIS_DAY_PATTERN = "d MMM"
         private const val EVENT_DATE_PATTERN = "d MMM"
+        private const val POSITION_TIME_PATTERN = "HH:mm:ss O"
+        private const val ACCESS_TIME_PATTERN = "hh:mm a"
+        private const val ACCESS_DATE_TIME_PATTERN = "d MMM, hh:mm a"
 
         /** Con la zona horaria y el idioma del teléfono: lo que usa la app. */
         fun system(): DateTimeLabels =

@@ -64,6 +64,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.model.UserRole
+import com.example.medicaseclinico.domain.time.DateTimeLabels
 import com.example.medicaseclinico.domain.user.LastAccessDay
 import com.example.medicaseclinico.ui.components.MediCaseBackButton
 import com.example.medicaseclinico.ui.components.MediCaseLoadingState
@@ -71,18 +72,11 @@ import com.example.medicaseclinico.ui.components.MediCaseMessageState
 import com.example.medicaseclinico.ui.screens.users.components.RoleChip
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 private val ScreenPadding = 16.dp
 private val CardSpacing = 12.dp
 private val CardShape = RoundedCornerShape(14.dp)
 private val ButtonShape = RoundedCornerShape(12.dp)
-
-private const val ACCESS_TIME_PATTERN = "hh:mm a"
-private const val ACCESS_DATE_PATTERN = "d MMM, hh:mm a"
 
 /**
  * Entrada de "Usuarios Autorizados": conecta el ViewModel con la pantalla sin
@@ -371,11 +365,13 @@ private fun UserCard(
 private fun lastAccessText(lastAccess: LastAccess?): String {
     if (lastAccess == null) return stringResource(R.string.value_unknown)
 
-    val pattern = if (lastAccess.day == LastAccessDay.EARLIER) ACCESS_DATE_PATTERN else ACCESS_TIME_PATTERN
-    val formatted = remember(lastAccess, pattern) {
-        DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
-            .withZone(ZoneId.systemDefault())
-            .format(Instant.ofEpochMilli(lastAccess.atMillis))
+    val dateTimeLabels = remember { DateTimeLabels.system() }
+    val formatted = remember(dateTimeLabels, lastAccess) {
+        if (lastAccess.day == LastAccessDay.EARLIER) {
+            dateTimeLabels.accessDateTime(lastAccess.atMillis)
+        } else {
+            dateTimeLabels.accessTime(lastAccess.atMillis)
+        }
     }
     return when (lastAccess.day) {
         LastAccessDay.TODAY -> stringResource(R.string.users_last_access_today, formatted)

@@ -66,6 +66,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.geo.GeoPoint
 import com.example.medicaseclinico.domain.model.RelativeTime
+import com.example.medicaseclinico.domain.time.DateTimeLabels
 import com.example.medicaseclinico.ui.components.MediCaseBackButton
 import com.example.medicaseclinico.ui.components.MediCaseLoadingState
 import com.example.medicaseclinico.ui.components.MediCaseMessageState
@@ -74,18 +75,11 @@ import com.example.medicaseclinico.ui.components.map.MediCaseMap
 import com.example.medicaseclinico.ui.screens.map.components.CaseLocationCard
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 private val ScreenPadding = 16.dp
 private val ButtonShape = RoundedCornerShape(12.dp)
 private val ButtonHeight = 52.dp
 private val AttributionClearance = 32.dp
-
-/** Hora con segundos y desfase horario, como el "14:30:00 GMT+2" del diseño. */
-private const val POSITION_TIME_PATTERN = "HH:mm:ss O"
 
 /**
  * Entrada de la pestaña Mapa: conecta el ViewModel con la pantalla sin estado
@@ -496,11 +490,8 @@ private fun PositionTimeLabel(
     isLive: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val formatter = remember {
-        DateTimeFormatter.ofPattern(POSITION_TIME_PATTERN, Locale.getDefault())
-            .withZone(ZoneId.systemDefault())
-    }
-    val time = remember(updatedAt) { formatter.format(Instant.ofEpochMilli(updatedAt)) }
+    val dateTimeLabels = remember { DateTimeLabels.system() }
+    val time = remember(dateTimeLabels, updatedAt) { dateTimeLabels.positionTime(updatedAt) }
     MapOverlayLabel(
         text = stringResource(
             if (isLive) R.string.map_timestamp_live else R.string.map_timestamp_last_known,

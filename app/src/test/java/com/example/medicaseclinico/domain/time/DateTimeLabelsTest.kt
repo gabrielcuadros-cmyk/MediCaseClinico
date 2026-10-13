@@ -100,6 +100,26 @@ class DateTimeLabelsTest {
     }
 
     @Test
+    fun `la hora de una posicion lleva segundos y el desfase de la zona`() {
+        // 23:04:09 UTC del 12 son las 18:04:09 en Lima, cinco horas menos.
+        val timestamp = utc(day = 12, hour = 23, minute = 4) + 9_000L
+
+        assertEquals("18:04:09 GMT-5", labels.positionTime(timestamp))
+    }
+
+    @Test
+    fun `la hora de un acceso va en formato de 12 horas en la zona indicada`() {
+        // 23:40 UTC del 12 son las 06:40 de la tarde en Lima.
+        assertEquals("06:40 PM", labels.accessTime(utc(day = 12, hour = 23, minute = 40)))
+    }
+
+    @Test
+    fun `un acceso antiguo lleva la fecha de la zona indicada`() {
+        // 03:20 UTC del 13 son las 10:20 de la noche del 12 en Lima.
+        assertEquals("12 Oct, 10:20 PM", labels.accessDateTime(utc(day = 13, hour = 3, minute = 20)))
+    }
+
+    @Test
     fun `un evento mas antiguo lleva su fecha`() {
         val reference = utc(day = 13, hour = 1)
         val event = utc(day = 6, hour = 3, minute = 11)
