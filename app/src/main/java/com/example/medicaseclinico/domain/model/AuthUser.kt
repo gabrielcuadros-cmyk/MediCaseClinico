@@ -5,11 +5,14 @@ package com.example.medicaseclinico.domain.model
  *
  * @param displayName nombre que dio al registrarse, o null si la cuenta no lo
  * tiene: la UI muestra entonces un saludo sin nombre, nunca uno inventado.
+ * @param lastSignInAt último inicio de sesión en la app (epoch ms), o null si
+ * el servicio de cuentas no lo informa.
  */
 data class AuthUser(
     val uid: String,
     val displayName: String?,
-    val email: String?
+    val email: String?,
+    val lastSignInAt: Long? = null
 )
 
 /**

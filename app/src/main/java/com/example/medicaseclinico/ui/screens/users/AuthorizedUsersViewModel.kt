@@ -146,7 +146,8 @@ class AuthorizedUsersViewModel(
 
     /**
      * Fila del dueño. Si la cuenta no tiene nombre se usa su correo, que es
-     * también un dato real. Su último acceso al estuche no se registra.
+     * también un dato real. Como último acceso se muestra su último inicio de
+     * sesión en la app, que es lo que el servicio de cuentas sí registra.
      */
     private fun AuthUser.toItem(): AuthorizedUserItem {
         val name = displayName?.takeIf { it.isNotBlank() } ?: email.orEmpty()
@@ -155,9 +156,13 @@ class AuthorizedUsersViewModel(
             name = name,
             initials = initialsOf(name),
             role = UserRole.PRINCIPAL,
-            lastAccess = null,
+            lastAccess = lastSignInAt.toLastAccess(),
             removable = false
         )
+    }
+
+    private fun Long?.toLastAccess(): LastAccess? = this?.let { at ->
+        LastAccess(atMillis = at, day = lastAccessDayOf(accessAt = at, now = clock(), zone = zone()))
     }
 
     private fun AuthorizedUser.toItem(): AuthorizedUserItem = AuthorizedUserItem(
@@ -165,9 +170,7 @@ class AuthorizedUsersViewModel(
         name = name,
         initials = initialsOf(name),
         role = role,
-        lastAccess = lastAccessAt?.let { at ->
-            LastAccess(atMillis = at, day = lastAccessDayOf(accessAt = at, now = clock(), zone = zone()))
-        },
+        lastAccess = lastAccessAt.toLastAccess(),
         removable = true
     )
 

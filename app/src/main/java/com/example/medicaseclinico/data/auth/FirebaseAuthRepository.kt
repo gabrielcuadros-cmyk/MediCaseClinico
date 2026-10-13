@@ -130,6 +130,8 @@ class FirebaseAuthRepository(context: Context) : AuthRepository {
     private fun FirebaseUser.toAuthUser() = AuthUser(
         uid = uid,
         displayName = displayName?.takeIf { it.isNotBlank() },
-        email = email
+        email = email,
+        // Firebase devuelve 0 cuando no conoce la fecha: eso no es un dato.
+        lastSignInAt = metadata?.lastSignInTimestamp?.takeIf { it > 0L }
     )
 }
