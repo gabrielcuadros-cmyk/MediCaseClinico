@@ -34,6 +34,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -524,7 +525,14 @@ private fun AccessUserCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            IconButton(onClick = onRemoveClick, enabled = enabled) {
+            // Rojo, como en Usuarios Autorizados: es una acción destructiva.
+            IconButton(
+                onClick = onRemoveClick,
+                enabled = enabled,
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
                 Icon(
                     imageVector = Icons.Outlined.DeleteOutline,
                     contentDescription = stringResource(R.string.security_remove_user, user.name)

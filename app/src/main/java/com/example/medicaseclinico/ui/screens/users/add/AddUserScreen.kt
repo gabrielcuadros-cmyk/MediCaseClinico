@@ -6,6 +6,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,20 +14,19 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -36,6 +36,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -60,6 +62,7 @@ import com.example.medicaseclinico.ui.screens.auth.components.AuthTextField
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 
 private val ScreenPadding = 16.dp
+private val SegmentShape = RoundedCornerShape(9.dp)
 private const val TEXT_MIME_TYPE = "text/plain"
 
 /** Roles que se pueden asignar a un invitado. El principal es siempre el dueño. */
@@ -196,13 +199,21 @@ fun AddUserScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
+        },
+        bottomBar = {
+            // Fuera del scroll para que invitar esté siempre a mano.
+            AuthPrimaryButton(
+                text = stringResource(R.string.add_user_submit),
+                onClick = onSendInvitation,
+                isLoading = uiState.isSubmitting,
+                modifier = Modifier.padding(horizontal = ScreenPadding, vertical = 12.dp)
+            )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(start = ScreenPadding, end = ScreenPadding, bottom = ScreenPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -251,28 +262,11 @@ fun AddUserScreen(
             )
 
             FieldLabel(text = stringResource(R.string.add_user_role_label))
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                AssignableRoles.forEachIndexed { index, role ->
-                    SegmentedButton(
-                        selected = uiState.role == role,
-                        onClick = { onRoleSelected(role) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = AssignableRoles.size
-                        ),
-                        enabled = enabled,
-                        // Sin la marca de verificación: el nombre largo no cabría.
-                        icon = {}
-                    ) {
-                        Text(
-                            text = stringResource(role.labelRes()),
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
+            RoleSelector(
+                selectedRole = uiState.role,
+                enabled = enabled,
+                onRoleSelected = onRoleSelected
+            )
 
             FieldLabel(text = stringResource(R.string.add_user_permissions_label))
             Column {
@@ -289,12 +283,6 @@ fun AddUserScreen(
             uiState.error?.let { error ->
                 AuthErrorMessage(text = stringResource(error.messageRes()))
             }
-
-            AuthPrimaryButton(
-                text = stringResource(R.string.add_user_submit),
-                onClick = onSendInvitation,
-                isLoading = uiState.isSubmitting
-            )
         }
     }
 }
@@ -307,6 +295,66 @@ private fun FieldLabel(text: String) {
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
+}
+
+/**
+ * Selector segmentado del rol, con el mismo aspecto que el de rango del
+ * Historial Térmico: opción activa blanca sobre fondo gris. Cada segmento se
+ * anuncia como seleccionado o no, para que no dependa solo del color.
+ */
+@Composable
+private fun RoleSelector(
+    selectedRole: UserRole,
+    enabled: Boolean,
+    onRoleSelected: (UserRole) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Row(
+            modifier = Modifier
+                .selectableGroup()
+                .padding(4.dp)
+        ) {
+            for (role in AssignableRoles) {
+                val isSelected = role == selectedRole
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 40.dp)
+                        .clip(SegmentShape)
+                        .selectable(
+                            selected = isSelected,
+                            enabled = enabled,
+                            role = Role.RadioButton,
+                            onClick = { onRoleSelected(role) }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        modifier = Modifier.matchParentSize(),
+                        shape = SegmentShape,
+                        color = if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent
+                    ) {}
+                    Text(
+                        text = stringResource(role.labelRes()),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 6.dp)
+                    )
+                }
+            }
+        }
+    }
 }
 
 /** Toda la fila es la casilla, para que sea fácil de tocar y se lea como una sola cosa. */
