@@ -8,8 +8,10 @@ object SecondaryRoutes {
     const val GEOFENCE_CONFIG = "geofence_config"
     const val LOSS_MODE = "loss_mode"
     const val ADD_USER = "add_user"
+    const val AUTHORIZED_USERS = "authorized_users"
 
     private val parentTab: Map<String, TopLevelDestination> = mapOf(
+        AUTHORIZED_USERS to TopLevelDestination.SECURITY,
         NOTIFICATION_SETTINGS to TopLevelDestination.SECURITY,
         GEOFENCE_CONFIG to TopLevelDestination.MAP,
         LOSS_MODE to TopLevelDestination.MAP,

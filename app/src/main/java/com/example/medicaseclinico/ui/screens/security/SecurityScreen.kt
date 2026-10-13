@@ -73,6 +73,7 @@ import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.model.UserRole
 import com.example.medicaseclinico.ui.components.MediCaseLoadingState
 import com.example.medicaseclinico.ui.components.MediCaseMessageState
+import com.example.medicaseclinico.ui.components.labelRes
 import com.example.medicaseclinico.ui.screens.security.components.ChangeCasePinDialog
 import com.example.medicaseclinico.ui.screens.security.components.ConfirmCasePinDialog
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
@@ -90,6 +91,7 @@ private val ButtonShape = RoundedCornerShape(12.dp)
  */
 @Composable
 fun SecurityRoute(
+    onOpenUsers: () -> Unit,
     onAddUser: () -> Unit,
     onOpenNotifications: () -> Unit,
     onSignOut: (() -> Unit)?,
@@ -116,6 +118,7 @@ fun SecurityRoute(
         onSetPinRequired = viewModel::setPinRequired,
         onChangePin = viewModel::changePin,
         onRemoveUser = viewModel::removeUser,
+        onOpenUsers = onOpenUsers,
         onAddUser = onAddUser,
         onOpenNotifications = onOpenNotifications,
         onSignOut = onSignOut,
@@ -135,6 +138,7 @@ fun SecurityScreen(
     onSetPinRequired: (required: Boolean, currentPin: String) -> Unit,
     onChangePin: (currentPin: String, newPin: String) -> Unit,
     onRemoveUser: (userId: String) -> Unit,
+    onOpenUsers: () -> Unit,
     onAddUser: () -> Unit,
     onOpenNotifications: () -> Unit,
     onSignOut: (() -> Unit)?,
@@ -183,6 +187,7 @@ fun SecurityScreen(
                         onSetPinRequired = onSetPinRequired,
                         onChangePin = onChangePin,
                         onRemoveUser = onRemoveUser,
+                        onOpenUsers = onOpenUsers,
                         onAddUser = onAddUser,
                         onOpenNotifications = onOpenNotifications,
                         onSignOut = onSignOut,
@@ -213,6 +218,7 @@ private fun SecurityContent(
     onSetPinRequired: (required: Boolean, currentPin: String) -> Unit,
     onChangePin: (currentPin: String, newPin: String) -> Unit,
     onRemoveUser: (userId: String) -> Unit,
+    onOpenUsers: () -> Unit,
     onAddUser: () -> Unit,
     onOpenNotifications: () -> Unit,
     onSignOut: (() -> Unit)?,
@@ -278,7 +284,19 @@ private fun SecurityContent(
             onChangeClick = { pinDialog = PinDialog.CHANGE_PIN }
         )
 
-        SectionHeader(text = stringResource(R.string.security_users_section))
+        // "Ver todos" no está en el diseño: es la entrada a Usuarios Autorizados.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SectionHeader(
+                text = stringResource(R.string.security_users_section),
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onOpenUsers) {
+                Text(
+                    text = stringResource(R.string.security_users_see_all),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
         when {
             state.usersFailed -> UsersFailed(onRetry = onRetry)
             state.users.isEmpty() ->
@@ -316,12 +334,12 @@ private fun SecurityContent(
 }
 
 @Composable
-private fun SectionHeader(text: String) {
+private fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 8.dp)
+        modifier = modifier.padding(top = 8.dp)
     )
 }
 
@@ -651,13 +669,6 @@ private fun CasePinAvailability.unavailableRes(): Int? = when (this) {
 }
 
 @StringRes
-private fun UserRole.labelRes(): Int = when (this) {
-    UserRole.PRINCIPAL -> R.string.user_role_principal
-    UserRole.CAREGIVER -> R.string.user_role_caregiver
-    UserRole.SECONDARY_ADMIN -> R.string.user_role_secondary_admin
-}
-
-@StringRes
 private fun SecurityMessage.textRes(): Int = when (this) {
     SecurityMessage.PIN_CHANGED -> R.string.security_msg_pin_changed
     SecurityMessage.LOCK_ENABLED -> R.string.security_msg_lock_enabled
@@ -686,6 +697,7 @@ private fun SecurityScreenPreview(uiState: SecurityUiState) {
                 onSetPinRequired = { _, _ -> },
                 onChangePin = { _, _ -> },
                 onRemoveUser = {},
+                onOpenUsers = {},
                 onAddUser = {},
                 onOpenNotifications = {},
                 onSignOut = {},

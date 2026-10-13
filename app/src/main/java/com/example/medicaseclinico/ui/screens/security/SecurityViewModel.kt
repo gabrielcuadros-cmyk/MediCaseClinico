@@ -14,6 +14,7 @@ import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.repository.AuthRepository
 import com.example.medicaseclinico.domain.repository.AuthorizedUsersRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
+import com.example.medicaseclinico.domain.user.initialsOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -208,17 +209,8 @@ class SecurityViewModel(
         CaseCommandError.FAILED -> SecurityMessage.CASE_FAILED
     }
 
-    /** "Sofía Martínez" → "SM". Sustituye a la foto del diseño, que no existe como dato. */
-    private fun initialsOf(name: String): String =
-        name.trim()
-            .split(Regex("\\s+"))
-            .filter { it.isNotEmpty() }
-            .take(MAX_INITIALS)
-            .joinToString(separator = "") { it.first().uppercase() }
-
     companion object {
         private const val STOP_TIMEOUT_MS = 5_000L
-        private const val MAX_INITIALS = 2
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

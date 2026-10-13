@@ -15,6 +15,7 @@ import com.example.medicaseclinico.ui.screens.history.TemperatureHistoryRoute
 import com.example.medicaseclinico.ui.screens.map.MapRoute
 import com.example.medicaseclinico.ui.screens.notifications.NotificationSettingsRoute
 import com.example.medicaseclinico.ui.screens.security.SecurityRoute
+import com.example.medicaseclinico.ui.screens.users.AuthorizedUsersRoute
 
 /**
  * Grafo de navegación principal de MediCase Clínico.
@@ -59,9 +60,16 @@ fun MediCaseNavGraph(
         }
         composable(TopLevelDestination.SECURITY.route) {
             SecurityRoute(
+                onOpenUsers = { navController.navigate(SecondaryRoutes.AUTHORIZED_USERS) },
                 onAddUser = { navController.navigate(SecondaryRoutes.ADD_USER) },
                 onOpenNotifications = { navController.navigate(SecondaryRoutes.NOTIFICATION_SETTINGS) },
                 onSignOut = onSignOut
+            )
+        }
+        composable(SecondaryRoutes.AUTHORIZED_USERS) {
+            AuthorizedUsersRoute(
+                onBack = { navController.popBackStack() },
+                onAddUser = { navController.navigate(SecondaryRoutes.ADD_USER) }
             )
         }
         composable(SecondaryRoutes.ADD_USER) {

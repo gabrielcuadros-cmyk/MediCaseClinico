@@ -439,4 +439,17 @@
     <string name="user_role_caregiver">Cuidador</string>
     <string name="user_role_secondary_admin">Administrador Secundario</string>
     <string name="add_user_title">Nuevo Usuario</string>
+
+    <!-- Usuarios Autorizados -->
+    <string name="security_users_see_all">Ver todos</string>
+    <string name="users_title">Usuarios Autorizados</string>
+    <string name="users_subtitle">Administra quién puede desbloquear o monitorear el estuche.</string>
+    <string name="users_loading">Consultando los usuarios autorizados…</string>
+    <string name="users_empty_title">Sin sesión iniciada</string>
+    <string name="users_empty_message">Inicia sesión con tu cuenta para ver y administrar quién tiene acceso al estuche.</string>
+    <string name="users_error_title">No se pudo cargar la lista</string>
+    <string name="users_error_message">Revisa tu conexión a internet y vuelve a intentarlo.</string>
+    <string name="users_last_access">Último acceso: %1$s</string>
+    <string name="users_last_access_today">Hoy, %1$s</string>
+    <string name="users_last_access_yesterday">Ayer, %1$s</string>
 </resources>
