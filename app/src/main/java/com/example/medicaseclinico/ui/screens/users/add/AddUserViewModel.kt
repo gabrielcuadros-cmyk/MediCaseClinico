@@ -20,12 +20,14 @@ import com.example.medicaseclinico.domain.model.UserRole
 import com.example.medicaseclinico.domain.model.with
 import com.example.medicaseclinico.domain.repository.AuthRepository
 import com.example.medicaseclinico.domain.repository.AuthorizedUsersRepository
+import com.example.medicaseclinico.domain.user.isEmailAlreadyInvited
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.cancellation.CancellationException
 
 /** Errores de un campo que se detectan en el teléfono, antes de guardar. */
@@ -33,6 +35,9 @@ enum class AddUserFieldError {
     NAME_REQUIRED,
     EMAIL_REQUIRED,
     EMAIL_INVALID,
+
+    /** Ya hay alguien en la lista con ese correo. Solo se sabe tras consultar la nube. */
+    EMAIL_ALREADY_INVITED,
     PHONE_REQUIRED,
     PHONE_INVALID
 }
@@ -173,24 +178,49 @@ class AddUserViewModel(
                 status = AccessStatus.INVITATION_PENDING
             )
             val ownerId = currentOwnerId()
-            val failure = when {
-                ownerId == null -> AddUserError.NO_SESSION
-                authorizedUsersRepository.saveUser(ownerId = ownerId, user = user).isFailure ->
-                    AddUserError.SAVE_FAILED
-                else -> null
+            if (ownerId == null) {
+                _uiState.update { it.copy(isSubmitting = false, error = AddUserError.NO_SESSION) }
+                return@launch
             }
+            // Si no se puede leer la lista no se guarda: no hay forma de saber
+            // si la persona ya estaba invitada.
+            val invited = currentUsers(ownerId)
+            if (invited == null) {
+                _uiState.update { it.copy(isSubmitting = false, error = AddUserError.SAVE_FAILED) }
+                return@launch
+            }
+            if (isEmailAlreadyInvited(email = user.email, users = invited)) {
+                _uiState.update {
+                    it.copy(isSubmitting = false, emailError = AddUserFieldError.EMAIL_ALREADY_INVITED)
+                }
+                return@launch
+            }
+
+            val saved = authorizedUsersRepository.saveUser(ownerId = ownerId, user = user)
             _uiState.update {
-                if (failure == null) {
+                if (saved.isSuccess) {
                     it.copy(
                         isSubmitting = false,
                         invitation = PendingInvitation(name = user.name, role = user.role)
                     )
                 } else {
-                    it.copy(isSubmitting = false, error = failure)
+                    it.copy(isSubmitting = false, error = AddUserError.SAVE_FAILED)
                 }
             }
         }
     }
+
+    /** Lista actual del dueño, o null si no se pudo leer a tiempo. */
+    private suspend fun currentUsers(ownerId: String): List<AuthorizedUser>? =
+        try {
+            withTimeoutOrNull(READ_TIMEOUT_MS) {
+                authorizedUsersRepository.observeUsers(ownerId).first()
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
 
     /** La pantalla ya abrió el menú de compartir: no debe repetirse al girar el teléfono. */
     fun onInvitationHandled() {
@@ -207,6 +237,9 @@ class AddUserViewModel(
         }
 
     companion object {
+        /** Cuánto se espera la lista antes de dar el guardado por fallido. */
+        private const val READ_TIMEOUT_MS = 8_000L
+
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = checkNotNull(this[APPLICATION_KEY]) as MediCaseApplication

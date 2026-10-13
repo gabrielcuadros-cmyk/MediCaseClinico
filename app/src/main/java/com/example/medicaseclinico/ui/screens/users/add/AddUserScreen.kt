@@ -403,6 +403,7 @@ private fun AddUserFieldError.messageRes(): Int = when (this) {
     AddUserFieldError.NAME_REQUIRED -> R.string.add_user_field_name_required
     AddUserFieldError.EMAIL_REQUIRED -> R.string.add_user_field_email_required
     AddUserFieldError.EMAIL_INVALID -> R.string.auth_error_invalid_email
+    AddUserFieldError.EMAIL_ALREADY_INVITED -> R.string.add_user_field_email_already_invited
     AddUserFieldError.PHONE_REQUIRED -> R.string.add_user_field_phone_required
     AddUserFieldError.PHONE_INVALID -> R.string.auth_field_phone_invalid
 }

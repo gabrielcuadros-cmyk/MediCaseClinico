@@ -468,6 +468,7 @@
     <string name="add_user_submit">Enviar Invitación de Acceso</string>
     <string name="add_user_field_name_required">Escribe el nombre completo de la persona.</string>
     <string name="add_user_field_email_required">Escribe su correo electrónico.</string>
+    <string name="add_user_field_email_already_invited">Ya invitaste a una persona con ese correo.</string>
     <string name="add_user_field_phone_required">Escribe su teléfono móvil.</string>
     <string name="add_user_error_no_session">Inicia sesión con tu cuenta para invitar a otras personas.</string>
     <string name="add_user_error_save_failed">No se pudo registrar a la persona. Revisa tu conexión e inténtalo de nuevo.</string>
@@ -479,6 +480,7 @@
     <string name="user_permissions_empty_title">Persona no encontrada</string>
     <string name="user_permissions_empty_message">Esta persona ya no está en tu lista de usuarios autorizados.</string>
     <string name="user_permissions_role">Rol: %1$s</string>
+    <string name="user_permissions_revoke">Revocar Acceso Completo</string>
     <string name="users_open_permissions">Ver los permisos de %1$s</string>
     <string name="user_permission_temperature_title">Monitorear temperatura</string>
     <string name="user_permission_temperature_description">Permite ver rangos históricos de la insulina.</string>
