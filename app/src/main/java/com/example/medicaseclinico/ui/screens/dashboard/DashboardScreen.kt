@@ -54,10 +54,12 @@ import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardErro
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardLoadingContent
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardTopBar
 import com.example.medicaseclinico.ui.screens.dashboard.components.DeviceIssueBanner
+import com.example.medicaseclinico.ui.screens.dashboard.components.LossModeBanner
 import com.example.medicaseclinico.ui.screens.dashboard.components.TemperatureCard
 
 @Composable
 fun DashboardRoute(
+    onOpenLossMode: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
 ) {
@@ -65,6 +67,7 @@ fun DashboardRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val deviceIssue by viewModel.deviceIssue.collectAsStateWithLifecycle()
     val userName by viewModel.userName.collectAsStateWithLifecycle()
+    val lossModeActive by viewModel.lossModeActive.collectAsStateWithLifecycle()
 
     var permissionsPermanentlyDenied by rememberSaveable { mutableStateOf(false) }
 
@@ -118,6 +121,8 @@ fun DashboardRoute(
         uiState = uiState,
         deviceIssue = deviceIssue,
         userName = userName,
+        lossModeActive = lossModeActive,
+        onOpenLossMode = onOpenLossMode,
         permissionsPermanentlyDenied = permissionsPermanentlyDenied,
         onRetry = viewModel::retry,
         onIssueAction = { issue ->
@@ -151,7 +156,9 @@ fun DashboardScreen(
     onRetry: () -> Unit,
     onIssueAction: (DeviceIssue) -> Unit,
     modifier: Modifier = Modifier,
-    userName: String? = null
+    userName: String? = null,
+    lossModeActive: Boolean = false,
+    onOpenLossMode: () -> Unit = {}
 ) {
     Scaffold(
         modifier = modifier,
@@ -166,6 +173,17 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            AnimatedVisibility(
+                visible = lossModeActive,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                LossModeBanner(
+                    onClick = onOpenLossMode,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+
             AnimatedVisibility(
                 visible = deviceIssue != null,
                 enter = expandVertically() + fadeIn(),

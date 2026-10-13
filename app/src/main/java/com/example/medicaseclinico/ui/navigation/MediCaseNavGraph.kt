@@ -38,7 +38,9 @@ fun MediCaseNavGraph(
         modifier = modifier
     ) {
         composable(TopLevelDestination.HOME.route) {
-            DashboardRoute()
+            DashboardRoute(
+                onOpenLossMode = { navController.navigate(SecondaryRoutes.LOSS_MODE) }
+            )
         }
         composable(TopLevelDestination.TEMPERATURE.route) {
             TemperatureHistoryRoute(onBack = { navController.popBackStack() })

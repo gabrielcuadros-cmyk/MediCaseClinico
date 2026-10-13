@@ -15,6 +15,7 @@ import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.AuthRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
+import com.example.medicaseclinico.domain.repository.LossModeRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -45,6 +46,7 @@ class DashboardViewModel(
     private val temperatureRepository: TemperatureRepository,
     private val deviceRepository: CaseDeviceRepository,
     authRepository: AuthRepository,
+    lossModeRepository: LossModeRepository,
     private val clock: () -> Long = System::currentTimeMillis,
     private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS
 ) : ViewModel() {
@@ -76,6 +78,24 @@ class DashboardViewModel(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
                 initialValue = null
+            )
+
+    /**
+     * true mientras el Modo Pérdida está activo: el Inicio lo avisa arriba del
+     * todo. Si el estado guardado no se puede leer, no se avisa de algo que no
+     * se sabe.
+     */
+    val lossModeActive: StateFlow<Boolean> =
+        lossModeRepository.state
+            .map { it.isActive }
+            .catch { throwable ->
+                if (throwable is CancellationException) throw throwable
+                emit(false)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                initialValue = false
             )
 
     /** Motivo actual por el que no hay enlace con el estuche (o null). */
@@ -183,7 +203,8 @@ class DashboardViewModel(
                 DashboardViewModel(
                     temperatureRepository = application.container.temperatureRepository,
                     deviceRepository = application.container.caseDeviceRepository,
-                    authRepository = application.container.authRepository
+                    authRepository = application.container.authRepository,
+                    lossModeRepository = application.container.lossModeRepository
                 )
             }
         }
