@@ -19,14 +19,21 @@ sealed interface UserPermissionsUiState {
     /**
      * @param permissions un interruptor por permiso, en el orden del diseño.
      * @param saveFailed el último cambio no se pudo guardar; aviso pendiente.
+     * @param isRevoking se está quitando el acceso: no se admiten más cambios.
+     * @param revokeFailed no se pudo quitar el acceso; aviso pendiente.
      */
     data class Success(
         val name: String,
         val initials: String,
         val role: UserRole,
         val permissions: List<PermissionItem>,
-        val saveFailed: Boolean
+        val saveFailed: Boolean,
+        val isRevoking: Boolean,
+        val revokeFailed: Boolean
     ) : UserPermissionsUiState
+
+    /** Se quitó el acceso a la persona: la pantalla debe salir. */
+    data object Revoked : UserPermissionsUiState
 
     /** No se pudo leer a la persona. Se ofrece reintentar. */
     data object Error : UserPermissionsUiState

@@ -52,8 +52,16 @@ class UserPermissionsViewModel(
     /** La persona tal como está guardada, junto a su dueño, para poder reescribirla. */
     private data class Owned(val ownerId: String, val user: AuthorizedUser)
 
+    /** Lo que no viene de los repositorios: avisos pendientes y la revocación. */
+    private data class Local(
+        val saveFailed: Boolean = false,
+        val isRevoking: Boolean = false,
+        val revokeFailed: Boolean = false,
+        val revoked: Boolean = false
+    )
+
     private var latest: Owned? = null
-    private val saveFailed = MutableStateFlow(false)
+    private val local = MutableStateFlow(Local())
     private val retryTrigger = MutableStateFlow(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -72,6 +80,7 @@ class UserPermissionsViewModel(
      */
     fun setPermission(permission: UserPermission, granted: Boolean) {
         val current = latest ?: return
+        if (local.value.isRevoking || local.value.revoked) return
         if (current.user.permissions.isGranted(permission) == granted) return
 
         val updated = current.user.copy(
@@ -81,13 +90,41 @@ class UserPermissionsViewModel(
         latest = current.copy(user = updated)
         viewModelScope.launch {
             val result = authorizedUsersRepository.saveUser(ownerId = current.ownerId, user = updated)
-            if (result.isFailure) saveFailed.value = true
+            if (result.isFailure) local.update { it.copy(saveFailed = true) }
+        }
+    }
+
+    /**
+     * Quita por completo el acceso a la persona. La pantalla ya pidió
+     * confirmación, porque no se puede deshacer.
+     */
+    fun revokeAccess() {
+        val current = latest ?: return
+        if (local.value.isRevoking || local.value.revoked) return
+
+        local.update { it.copy(isRevoking = true) }
+        viewModelScope.launch {
+            val result = authorizedUsersRepository.deleteUser(
+                ownerId = current.ownerId,
+                userId = current.user.id
+            )
+            local.update {
+                if (result.isSuccess) {
+                    it.copy(isRevoking = false, revoked = true)
+                } else {
+                    it.copy(isRevoking = false, revokeFailed = true)
+                }
+            }
         }
     }
 
     /** La pantalla ya mostró el aviso: no debe repetirse al girar el teléfono. */
     fun onSaveErrorShown() {
-        saveFailed.value = false
+        local.update { it.copy(saveFailed = false) }
+    }
+
+    fun onRevokeErrorShown() {
+        local.update { it.copy(revokeFailed = false) }
     }
 
     /** Vuelve a leer a la persona tras un error. */
@@ -96,8 +133,11 @@ class UserPermissionsViewModel(
     }
 
     private fun observeScreen(): Flow<UserPermissionsUiState> =
-        combine(observeOwned(), saveFailed) { owned, saveFailed ->
-            if (owned == null) {
+        combine(observeOwned(), local) { owned, local ->
+            if (local.revoked) {
+                // Antes que "no encontrada": la persona falta porque se acaba de quitar.
+                UserPermissionsUiState.Revoked
+            } else if (owned == null) {
                 UserPermissionsUiState.Empty
             } else {
                 UserPermissionsUiState.Success(
@@ -110,7 +150,9 @@ class UserPermissionsViewModel(
                             granted = owned.user.permissions.isGranted(permission)
                         )
                     },
-                    saveFailed = saveFailed
+                    saveFailed = local.saveFailed,
+                    isRevoking = local.isRevoking,
+                    revokeFailed = local.revokeFailed
                 )
             }
         }

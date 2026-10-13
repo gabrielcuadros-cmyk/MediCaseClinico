@@ -1,5 +1,6 @@
 package com.example.medicaseclinico.ui.screens.users.permissions
 
+import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,22 +24,33 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.PersonOff
+import androidx.compose.material.icons.outlined.PersonRemove
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -59,6 +72,7 @@ import com.example.medicaseclinico.ui.theme.MediCaseTheme
 
 private val ScreenPadding = 16.dp
 private val CardShape = RoundedCornerShape(14.dp)
+private val ButtonShape = RoundedCornerShape(12.dp)
 
 /**
  * Entrada de "Permisos de Usuario": conecta el ViewModel con la pantalla sin
@@ -67,16 +81,30 @@ private val CardShape = RoundedCornerShape(14.dp)
 @Composable
 fun UserPermissionsRoute(
     onBack: () -> Unit,
+    onRevoked: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: UserPermissionsViewModel = viewModel(factory = UserPermissionsViewModel.Factory)
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val revoked = uiState is UserPermissionsUiState.Revoked
+    val revokedMessage = stringResource(R.string.security_msg_user_removed)
+    LaunchedEffect(revoked) {
+        if (revoked) {
+            // La pantalla se cierra: el aviso tiene que sobrevivirla.
+            Toast.makeText(context, revokedMessage, Toast.LENGTH_SHORT).show()
+            onRevoked()
+        }
+    }
 
     UserPermissionsScreen(
         uiState = uiState,
         onBack = onBack,
         onPermissionToggled = viewModel::setPermission,
+        onRevokeAccess = viewModel::revokeAccess,
         onSaveErrorShown = viewModel::onSaveErrorShown,
+        onRevokeErrorShown = viewModel::onRevokeErrorShown,
         onRetry = viewModel::retry,
         modifier = modifier
     )
@@ -92,19 +120,43 @@ fun UserPermissionsScreen(
     uiState: UserPermissionsUiState,
     onBack: () -> Unit,
     onPermissionToggled: (UserPermission, Boolean) -> Unit,
+    onRevokeAccess: () -> Unit,
     onSaveErrorShown: () -> Unit,
+    onRevokeErrorShown: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val saveErrorMessage = stringResource(R.string.settings_save_error)
-    val saveFailed = (uiState as? UserPermissionsUiState.Success)?.saveFailed == true
+    val revokeErrorMessage = stringResource(R.string.security_msg_user_remove_failed)
+    val success = uiState as? UserPermissionsUiState.Success
+    val saveFailed = success?.saveFailed == true
+    val revokeFailed = success?.revokeFailed == true
+    // Estado solo visual: si el diálogo de confirmación está abierto.
+    var confirmingRevoke by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(saveFailed) {
         if (saveFailed) {
             snackbarHostState.showSnackbar(saveErrorMessage)
             onSaveErrorShown()
         }
+    }
+    LaunchedEffect(revokeFailed) {
+        if (revokeFailed) {
+            snackbarHostState.showSnackbar(revokeErrorMessage)
+            onRevokeErrorShown()
+        }
+    }
+
+    if (confirmingRevoke && success != null) {
+        RevokeAccessDialog(
+            userName = success.name,
+            onConfirm = {
+                confirmingRevoke = false
+                onRevokeAccess()
+            },
+            onDismiss = { confirmingRevoke = false }
+        )
     }
 
     Scaffold(
@@ -130,6 +182,16 @@ fun UserPermissionsScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
+        },
+        bottomBar = {
+            // Fuera del scroll, como en el diseño: siempre al pie de la pantalla.
+            if (success != null) {
+                RevokeAccessButton(
+                    isRevoking = success.isRevoking,
+                    onClick = { confirmingRevoke = true },
+                    modifier = Modifier.padding(horizontal = ScreenPadding, vertical = 12.dp)
+                )
+            }
         }
     ) { innerPadding ->
         val contentModifier = Modifier
@@ -137,7 +199,8 @@ fun UserPermissionsScreen(
             .padding(innerPadding)
 
         when (uiState) {
-            UserPermissionsUiState.Loading ->
+            // Revocado: se sigue viendo la carga el instante que tarda en cerrarse.
+            UserPermissionsUiState.Loading, UserPermissionsUiState.Revoked ->
                 MediCaseLoadingState(
                     message = stringResource(R.string.user_permissions_loading),
                     modifier = contentModifier
@@ -200,6 +263,7 @@ private fun PermissionsContent(
                 title = stringResource(item.permission.titleRes()),
                 description = stringResource(item.permission.descriptionRes()),
                 checked = item.granted,
+                enabled = !state.isRevoking,
                 onCheckedChange = { granted -> onPermissionToggled(item.permission, granted) }
             )
         }
@@ -252,6 +316,7 @@ private fun PermissionSwitchCard(
     title: String,
     description: String,
     checked: Boolean,
+    enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Surface(
@@ -264,6 +329,7 @@ private fun PermissionSwitchCard(
             modifier = Modifier
                 .toggleable(
                     value = checked,
+                    enabled = enabled,
                     role = Role.Switch,
                     onValueChange = onCheckedChange
                 )
@@ -285,9 +351,86 @@ private fun PermissionSwitchCard(
             }
             Spacer(modifier = Modifier.width(12.dp))
             // onCheckedChange = null: el toque lo gestiona la fila entera.
-            Switch(checked = checked, onCheckedChange = null)
+            Switch(checked = checked, onCheckedChange = null, enabled = enabled)
         }
     }
+}
+
+/**
+ * Acción destructiva del diseño: fondo rojo tenue, borde y texto en Rojo de
+ * Alerta. Mientras se quita el acceso se desactiva, para que un doble toque
+ * no lance dos borrados.
+ */
+@Composable
+private fun RevokeAccessButton(
+    isRevoking: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = !isRevoking,
+        shape = ButtonShape,
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.error
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+    ) {
+        if (isRevoking) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.error
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Outlined.PersonRemove,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.user_permissions_revoke),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+/**
+ * Quitar el acceso no se puede deshacer desde la app: se pregunta antes,
+ * diciendo de quién se trata.
+ */
+@Composable
+private fun RevokeAccessDialog(
+    userName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.security_remove_user_title)) },
+        text = { Text(text = stringResource(R.string.security_remove_user_message, userName)) },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text(
+                    text = stringResource(R.string.security_remove_user_confirm),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(text = stringResource(R.string.action_cancel)) }
+        }
+    )
 }
 
 @StringRes
@@ -321,7 +464,9 @@ private fun UserPermissionsScreenPreview(uiState: UserPermissionsUiState) {
                 uiState = uiState,
                 onBack = {},
                 onPermissionToggled = { _, _ -> },
+                onRevokeAccess = {},
                 onSaveErrorShown = {},
+                onRevokeErrorShown = {},
                 onRetry = {}
             )
         }
@@ -339,7 +484,9 @@ private fun UserPermissionsSuccessPreview() {
             permissions = UserPermission.entries.mapIndexed { index, permission ->
                 PermissionItem(permission = permission, granted = index % 2 == 0)
             },
-            saveFailed = false
+            saveFailed = false,
+            isRevoking = false,
+            revokeFailed = false
         )
     )
 }

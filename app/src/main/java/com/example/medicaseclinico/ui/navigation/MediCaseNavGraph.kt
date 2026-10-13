@@ -78,7 +78,10 @@ fun MediCaseNavGraph(
             )
         }
         composable(SecondaryRoutes.USER_PERMISSIONS) {
-            UserPermissionsRoute(onBack = { navController.popBackStack() })
+            UserPermissionsRoute(
+                onBack = { navController.popBackStack() },
+                onRevoked = { navController.popBackStack() }
+            )
         }
         composable(SecondaryRoutes.ADD_USER) {
             AddUserRoute(
