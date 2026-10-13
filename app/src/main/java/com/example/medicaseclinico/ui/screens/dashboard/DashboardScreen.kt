@@ -60,11 +60,13 @@ import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardTopB
 import com.example.medicaseclinico.ui.screens.dashboard.components.DeviceIssueBanner
 import com.example.medicaseclinico.ui.screens.dashboard.components.LockCard
 import com.example.medicaseclinico.ui.screens.dashboard.components.LossModeBanner
+import com.example.medicaseclinico.ui.screens.dashboard.components.QuickSections
 import com.example.medicaseclinico.ui.screens.dashboard.components.TemperatureCard
 
 @Composable
 fun DashboardRoute(
     onOpenLossMode: () -> Unit,
+    onOpenSection: (DashboardSection) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
 ) {
@@ -128,6 +130,7 @@ fun DashboardRoute(
         userName = userName,
         lossModeActive = lossModeActive,
         onOpenLossMode = onOpenLossMode,
+        onOpenSection = onOpenSection,
         permissionsPermanentlyDenied = permissionsPermanentlyDenied,
         onRetry = viewModel::retry,
         onIssueAction = { issue ->
@@ -163,7 +166,8 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     userName: String? = null,
     lossModeActive: Boolean = false,
-    onOpenLossMode: () -> Unit = {}
+    onOpenLossMode: () -> Unit = {},
+    onOpenSection: (DashboardSection) -> Unit = {}
 ) {
     Scaffold(
         modifier = modifier,
@@ -219,7 +223,10 @@ fun DashboardScreen(
                         canRetry = state.canRetry,
                         onRetry = onRetry
                     )
-                    is DashboardUiState.Success -> DashboardSuccessContent(state = state)
+                    is DashboardUiState.Success -> DashboardSuccessContent(
+                        state = state,
+                        onOpenSection = onOpenSection
+                    )
                 }
             }
         }
@@ -229,6 +236,7 @@ fun DashboardScreen(
 @Composable
 private fun DashboardSuccessContent(
     state: DashboardUiState.Success,
+    onOpenSection: (DashboardSection) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -264,6 +272,7 @@ private fun DashboardSuccessContent(
                     .fillMaxHeight()
             )
         }
+        QuickSections(state = state.quickSections, onSectionClick = onOpenSection)
         // El tiempo va en medio de la frase: "…vía Bluetooth hace 5 min".
         val relativeTime = relativeTimeLabel(state.lastReadingElapsed)
             .replaceFirstChar { it.lowercase() }

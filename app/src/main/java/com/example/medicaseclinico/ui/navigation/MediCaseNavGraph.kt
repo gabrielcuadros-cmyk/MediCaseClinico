@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.medicaseclinico.ui.screens.alerts.AlertsRoute
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardRoute
+import com.example.medicaseclinico.ui.screens.dashboard.DashboardSection
 import com.example.medicaseclinico.ui.screens.geofence.GeofenceConfigRoute
 import com.example.medicaseclinico.ui.screens.history.TemperatureHistoryRoute
 import com.example.medicaseclinico.ui.screens.lossmode.LossModeRoute
@@ -39,7 +40,18 @@ fun MediCaseNavGraph(
     ) {
         composable(TopLevelDestination.HOME.route) {
             DashboardRoute(
-                onOpenLossMode = { navController.navigate(SecondaryRoutes.LOSS_MODE) }
+                onOpenLossMode = { navController.navigate(SecondaryRoutes.LOSS_MODE) },
+                // Los atajos equivalen a tocar la pestaña en la barra inferior.
+                onOpenSection = { section ->
+                    navController.navigateToTopLevel(
+                        when (section) {
+                            DashboardSection.HISTORY -> TopLevelDestination.TEMPERATURE
+                            DashboardSection.LOCATION -> TopLevelDestination.MAP
+                            DashboardSection.ALERTS -> TopLevelDestination.ALERTS
+                            DashboardSection.SETTINGS -> TopLevelDestination.SECURITY
+                        }
+                    )
+                }
             )
         }
         composable(TopLevelDestination.TEMPERATURE.route) {

@@ -46,6 +46,8 @@ sealed interface DashboardUiState {
         val batteryLevel: Int?,
         /** Posición del cierre según el estuche, o por qué no se conoce. */
         val lockStatus: CaseLockStatus,
+        /** Datos reales de las "Secciones rápidas". */
+        val quickSections: QuickSectionsState,
         /**
          * Tiempo desde la última lectura, para el pie "Última lectura recibida
          * vía Bluetooth hace 2 min". Lo calcula el ViewModel para que la UI no
@@ -84,6 +86,32 @@ enum class CaseLockStatus {
     /** El estuche conectado no informa de su cierre. */
     NOT_SUPPORTED
 }
+
+/**
+ * Lo que enseña cada atajo de "Secciones rápidas".
+ *
+ * @param lastLocationElapsed cuánto hace de la última posición del estuche (en
+ * vivo o guardada), o null si nunca se ha recibido ninguna.
+ * @param unreadAlerts alertas que el usuario aún no ha visto.
+ */
+@Immutable
+data class QuickSectionsState(
+    val lastLocationElapsed: RelativeTime?,
+    val unreadAlerts: Int,
+    val pinLock: PinLockStatus
+)
+
+/** Si el estuche pide PIN para abrirse, según él mismo. */
+enum class PinLockStatus {
+    ENABLED,
+    DISABLED,
+
+    /** Sin enlace, estuche no compatible o aún sin informar: se muestra "--". */
+    UNKNOWN
+}
+
+/** Pestañas a las que llevan las "Secciones rápidas". */
+enum class DashboardSection { HISTORY, LOCATION, ALERTS, SETTINGS }
 
 /**
  * Causa del error expresada como tipo, no como texto.

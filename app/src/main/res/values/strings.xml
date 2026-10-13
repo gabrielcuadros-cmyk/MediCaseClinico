@@ -337,6 +337,23 @@
     <string name="lock_detail_locked">Bloqueo electrónico activo</string>
     <string name="lock_detail_open">El estuche está abierto</string>
     <string name="lock_detail_unknown">Sin conexión con el estuche</string>
+    <string name="quick_sections_header">SECCIONES RÁPIDAS</string>
+    <string name="quick_history_title">Historial Temp</string>
+    <string name="quick_history_description">Ver gráfica y eventos</string>
+    <string name="quick_location_title">Ubicación GPS</string>
+    <string name="quick_location_description">Seguimiento en vivo</string>
+    <string name="quick_alerts_title">Alertas Activas</string>
+    <string name="quick_alerts_description">Historial de avisos</string>
+    <string name="quick_alerts_none">Sin alertas nuevas</string>
+    <plurals name="quick_alerts_unread">
+        <item quantity="one">%1$d alerta nueva</item>
+        <item quantity="many">%1$d alertas nuevas</item>
+        <item quantity="other">%1$d alertas nuevas</item>
+    </plurals>
+    <string name="quick_settings_title">Ajustes</string>
+    <string name="quick_settings_description">Configura el estuche</string>
+    <string name="quick_settings_pin_enabled">PIN activado</string>
+    <string name="quick_settings_pin_disabled">PIN desactivado</string>
     <string name="dashboard_loss_mode_title">Modo Pérdida activado</string>
     <string name="dashboard_loss_mode_message">Tu estuche está marcado como perdido. Toca para ver su ubicación y las herramientas para recuperarlo.</string>
     <string name="dashboard_loss_mode_open">Abrir el Modo Pérdida</string>

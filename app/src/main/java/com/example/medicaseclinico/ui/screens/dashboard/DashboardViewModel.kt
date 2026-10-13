@@ -9,14 +9,18 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
 import com.example.medicaseclinico.domain.model.CaseControlState
+import com.example.medicaseclinico.domain.model.CaseGpsReading
+import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.domain.model.LockState
 import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
+import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import com.example.medicaseclinico.domain.repository.AuthRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
+import com.example.medicaseclinico.domain.repository.CaseLocationRepository
 import com.example.medicaseclinico.domain.repository.LossModeRepository
 import com.example.medicaseclinico.domain.repository.TemperatureRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -47,11 +51,18 @@ import kotlin.coroutines.cancellation.CancellationException
 class DashboardViewModel(
     private val temperatureRepository: TemperatureRepository,
     private val deviceRepository: CaseDeviceRepository,
+    private val caseLocationRepository: CaseLocationRepository,
+    private val alertEventRepository: AlertEventRepository,
     authRepository: AuthRepository,
     lossModeRepository: LossModeRepository,
     private val clock: () -> Long = System::currentTimeMillis,
     private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS
 ) : ViewModel() {
+
+    /** Última lectura de temperatura y de batería guardadas. */
+    private data class Readings(val latest: TemperatureReading?, val batteryLevel: Int?)
+
+    private data class QuickData(val lastLocationAt: Long?, val unreadAlerts: Int)
 
     private val retryTrigger = MutableStateFlow(0)
 
@@ -122,13 +133,13 @@ class DashboardViewModel(
 
     private fun observeDashboard(): Flow<DashboardUiState> =
         combine(
-            temperatureRepository.observeLatestReading(),
-            temperatureRepository.observeLatestBatteryLevel(),
+            observeReadings(),
             deviceRepository.connectionStatus,
             deviceRepository.controlState,
+            observeQuickData(),
             currentTime()
-        ) { latestReading, batteryLevel, connectionStatus, controlState, now ->
-            buildUiState(latestReading, batteryLevel, connectionStatus, controlState, now)
+        ) { readings, connectionStatus, controlState, quickData, now ->
+            buildUiState(readings, connectionStatus, controlState, quickData, now)
         }
             .onStart {
                 emit(DashboardUiState.Loading(connectionStatus = deviceRepository.connectionStatus.value))
@@ -153,6 +164,28 @@ class DashboardViewModel(
                 )
             }
 
+    private fun observeReadings(): Flow<Readings> =
+        combine(
+            temperatureRepository.observeLatestReading(),
+            temperatureRepository.observeLatestBatteryLevel()
+        ) { latest, batteryLevel -> Readings(latest = latest, batteryLevel = batteryLevel) }
+
+    /** Lo que alimenta las "Secciones rápidas" que no está ya en el resto del Inicio. */
+    private fun observeQuickData(): Flow<QuickData> =
+        combine(
+            deviceRepository.caseLocation,
+            caseLocationRepository.observeLastKnownLocation(),
+            alertEventRepository.observeUnreadCount()
+        ) { liveLocation, lastKnown, unreadAlerts ->
+            val live = liveLocation as? CaseLocationState.Reported
+            QuickData(
+                // La posición en vivo es siempre más reciente que la guardada.
+                lastLocationAt = live?.takeIf { it.reading is CaseGpsReading.Fix }?.receivedAt
+                    ?: lastKnown?.timestamp,
+                unreadAlerts = unreadAlerts
+            )
+        }
+
     /**
      * Sin esto, con el estuche desconectado no llegan lecturas nuevas y el pie
      * se quedaría diciendo "hace 2 min" para siempre.
@@ -165,12 +198,13 @@ class DashboardViewModel(
     }
 
     private fun buildUiState(
-        latestReading: TemperatureReading?,
-        batteryLevel: Int?,
+        readings: Readings,
         connectionStatus: ConnectionStatus,
         controlState: CaseControlState,
+        quickData: QuickData,
         now: Long
     ): DashboardUiState {
+        val latestReading = readings.latest
         if (latestReading == null) {
             return DashboardUiState.Empty(connectionStatus = connectionStatus)
         }
@@ -178,8 +212,15 @@ class DashboardViewModel(
             connectionStatus = connectionStatus,
             currentTemperature = latestReading.temperatureCelsius,
             temperatureStatus = TemperatureStatus.fromCelsius(latestReading.temperatureCelsius),
-            batteryLevel = batteryLevel?.coerceIn(0, 100),
+            batteryLevel = readings.batteryLevel?.coerceIn(0, 100),
             lockStatus = controlState.toLockStatus(),
+            quickSections = QuickSectionsState(
+                lastLocationElapsed = quickData.lastLocationAt?.let { at ->
+                    RelativeTime.between(timestamp = at, now = now)
+                },
+                unreadAlerts = quickData.unreadAlerts,
+                pinLock = controlState.toPinLockStatus()
+            ),
             lastReadingElapsed = RelativeTime.between(
                 timestamp = latestReading.timestamp,
                 now = now
@@ -196,6 +237,13 @@ class DashboardViewModel(
             null -> CaseLockStatus.UNKNOWN
         }
     }
+
+    private fun CaseControlState.toPinLockStatus(): PinLockStatus =
+        when ((this as? CaseControlState.Ready)?.pinRequired) {
+            true -> PinLockStatus.ENABLED
+            false -> PinLockStatus.DISABLED
+            null -> PinLockStatus.UNKNOWN
+        }
 
     private fun mapToErrorReason(throwable: Throwable): ErrorReason = when (throwable) {
         is SQLiteException -> ErrorReason.DATABASE
@@ -218,6 +266,8 @@ class DashboardViewModel(
                 DashboardViewModel(
                     temperatureRepository = application.container.temperatureRepository,
                     deviceRepository = application.container.caseDeviceRepository,
+                    caseLocationRepository = application.container.caseLocationRepository,
+                    alertEventRepository = application.container.alertEventRepository,
                     authRepository = application.container.authRepository,
                     lossModeRepository = application.container.lossModeRepository
                 )
