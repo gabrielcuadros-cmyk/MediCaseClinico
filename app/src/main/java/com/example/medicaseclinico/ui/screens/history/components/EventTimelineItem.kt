@@ -37,15 +37,11 @@ import com.example.medicaseclinico.R
 import com.example.medicaseclinico.common.HistoryEventTextFormatter
 import com.example.medicaseclinico.domain.model.HistoryEvent
 import com.example.medicaseclinico.domain.model.TemperatureExcursion
+import com.example.medicaseclinico.domain.time.DateTimeLabels
+import com.example.medicaseclinico.domain.time.EventTimeLabel
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 
 private val IconCircleSize = 32.dp
-private const val EVENT_DATE_PATTERN = "d MMM"
 
 /**
  * Fila de la "Línea de eventos": ícono en círculo, título, descripción y hora.
@@ -171,25 +167,13 @@ private fun HistoryEvent.timelineStyle(): TimelineStyle {
 /** Hora del evento como en el diseño: "09:30", "Ayer 22:11" o "5 oct, 22:11". */
 @Composable
 private fun eventTimeLabel(timestamp: Long, referenceTime: Long): String {
-    val zone = remember { ZoneId.systemDefault() }
-    val timeFormatter = remember {
-        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
-    }
-    val dateFormatter = remember {
-        DateTimeFormatter.ofPattern(EVENT_DATE_PATTERN, Locale.getDefault())
-    }
-    val eventTime = Instant.ofEpochMilli(timestamp).atZone(zone)
-    val referenceDate = Instant.ofEpochMilli(referenceTime).atZone(zone).toLocalDate()
-    val timeText = timeFormatter.format(eventTime)
+    val dateTimeLabels = remember { DateTimeLabels.system() }
 
-    return when (eventTime.toLocalDate()) {
-        referenceDate -> timeText
-        referenceDate.minusDays(1) -> stringResource(R.string.history_event_yesterday, timeText)
-        else -> stringResource(
-            R.string.history_event_date_time,
-            dateFormatter.format(eventTime),
-            timeText
-        )
+    return when (val label = dateTimeLabels.eventTime(timestamp, referenceTime)) {
+        is EventTimeLabel.Today -> label.time
+        is EventTimeLabel.Yesterday -> stringResource(R.string.history_event_yesterday, label.time)
+        is EventTimeLabel.Earlier ->
+            stringResource(R.string.history_event_date_time, label.date, label.time)
     }
 }
 

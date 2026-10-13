@@ -16,15 +16,12 @@ import com.example.medicaseclinico.domain.model.HistoryRange
 import com.example.medicaseclinico.domain.model.MedicalReport
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.MedicalReportExporter
+import com.example.medicaseclinico.domain.time.DateTimeLabels
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -38,10 +35,13 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * @param ioDispatcher hilo de fondo para escribir el archivo; se inyecta para
  * poder reemplazarlo en tests.
+ * @param dateTimeLabels de dónde salen las fechas del reporte. Se pide en cada
+ * exportación para respetar la zona horaria que tenga el teléfono en ese momento.
  */
 class PdfMedicalReportExporter(
     context: Context,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val dateTimeLabels: () -> DateTimeLabels = DateTimeLabels::system
 ) : MedicalReportExporter {
 
     private val appContext = context.applicationContext
@@ -64,7 +64,8 @@ class PdfMedicalReportExporter(
         }
         deleteOldReports(directory, now = report.generatedAt)
 
-        val file = File(directory, fileNameFor(report.generatedAt))
+        val labels = dateTimeLabels()
+        val file = File(directory, fileNameFor(labels, report.generatedAt))
         val document = PdfDocument()
         try {
             val writer = ReportWriter(
@@ -72,7 +73,7 @@ class PdfMedicalReportExporter(
                 footerText = appContext.getString(R.string.report_footer),
                 pageLabel = { number -> appContext.getString(R.string.report_page, number) }
             )
-            drawReport(writer, report)
+            drawReport(writer, report, labels)
             writer.finish()
             file.outputStream().use { output -> document.writeTo(output) }
         } finally {
@@ -94,22 +95,16 @@ class PdfMedicalReportExporter(
             ?.forEach { it.delete() }
     }
 
-    private fun fileNameFor(generatedAt: Long): String {
-        val stamp = DateTimeFormatter.ofPattern(FILE_STAMP_PATTERN, Locale.ROOT)
-            .withZone(ZoneId.systemDefault())
-            .format(Instant.ofEpochMilli(generatedAt))
-        return "$FILE_PREFIX$stamp$FILE_EXTENSION"
-    }
+    private fun fileNameFor(labels: DateTimeLabels, generatedAt: Long): String =
+        "$FILE_PREFIX${labels.fileStamp(generatedAt)}$FILE_EXTENSION"
 
     // ------------------------------------------------------------------
     //  Contenido del documento
     // ------------------------------------------------------------------
-    private fun drawReport(writer: ReportWriter, report: MedicalReport) {
+    private fun drawReport(writer: ReportWriter, report: MedicalReport, labels: DateTimeLabels) {
         val style = ReportStyle()
         val eventTexts = HistoryEventTextFormatter(appContext.resources)
-        val dateTime = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN, Locale.getDefault())
-            .withZone(ZoneId.systemDefault())
-        fun formatDateTime(timestamp: Long) = dateTime.format(Instant.ofEpochMilli(timestamp))
+        fun formatDateTime(timestamp: Long) = labels.reportDateTime(timestamp)
         fun formatCelsius(celsius: Float) = appContext.getString(R.string.temperature_value, celsius)
 
         // Cabecera: qué es, cuándo se generó y qué periodo cubre.
@@ -196,7 +191,12 @@ class PdfMedicalReportExporter(
                 canvas = canvas,
                 area = RectF(MARGIN, top, PAGE_WIDTH - MARGIN, top + CHART_HEIGHT),
                 model = chartModel,
-                axisLabels = axisLabels(report)
+                axisLabels = labels.axisLabels(
+                    range = report.range,
+                    rangeStart = report.rangeStart,
+                    rangeEnd = report.rangeEnd,
+                    count = AXIS_LABEL_COUNT
+                )
             )
         }
         writer.space(SECTION_SPACING)
@@ -219,17 +219,6 @@ class PdfMedicalReportExporter(
                 spacingAfter = 1f
             )
             writer.text(eventTexts.description(event), style.body, spacingAfter = 7f)
-        }
-    }
-
-    private fun axisLabels(report: MedicalReport): List<String> {
-        val pattern = if (report.range == HistoryRange.LAST_24_HOURS) HOUR_PATTERN else DAY_PATTERN
-        val formatter = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
-            .withZone(ZoneId.systemDefault())
-        val lastIndex = AXIS_LABEL_COUNT - 1
-        return List(AXIS_LABEL_COUNT) { index ->
-            val timestamp = report.rangeStart + (report.rangeEnd - report.rangeStart) * index / lastIndex
-            formatter.format(Instant.ofEpochMilli(timestamp))
         }
     }
 
@@ -348,12 +337,8 @@ class PdfMedicalReportExporter(
         const val AUTHORITY_SUFFIX = ".fileprovider"
         const val FILE_PREFIX = "reporte-medicase-"
         const val FILE_EXTENSION = ".pdf"
-        const val FILE_STAMP_PATTERN = "yyyyMMdd-HHmmss"
         val REPORT_RETENTION_MS: Long = TimeUnit.HOURS.toMillis(1)
 
-        const val DATE_TIME_PATTERN = "d MMM yyyy, HH:mm"
-        const val HOUR_PATTERN = "HH:mm"
-        const val DAY_PATTERN = "d MMM"
         const val AXIS_LABEL_COUNT = 5
         const val MINUTES_PER_HOUR = 60L
 

@@ -43,11 +43,8 @@ import com.example.medicaseclinico.domain.model.HistoryRange
 import com.example.medicaseclinico.domain.model.TemperatureBucket
 import com.example.medicaseclinico.domain.model.TemperatureStats
 import com.example.medicaseclinico.domain.model.TemperatureStatus
+import com.example.medicaseclinico.domain.time.DateTimeLabels
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 private val ChartHeight = 150.dp
 private val LineWidth = 2.dp
@@ -64,9 +61,6 @@ private const val MAX_POINTS_WITH_DOTS = 12
 
 /** Marcas del eje de tiempo: inicio, tres intermedias y "Ahora". */
 private const val AXIS_LABEL_COUNT = 5
-
-private const val HOUR_PATTERN = "HH:mm"
-private const val DAY_PATTERN = "d MMM"
 
 /**
  * Tarjeta "Gráfica de estabilidad (2-8 °C)" del Historial Térmico.
@@ -282,21 +276,12 @@ private fun TimeAxisLabels(
     rangeEnd: Long,
     modifier: Modifier = Modifier
 ) {
-    val formatter = remember(range) {
-        val pattern = if (range == HistoryRange.LAST_24_HOURS) HOUR_PATTERN else DAY_PATTERN
-        DateTimeFormatter.ofPattern(pattern, Locale.getDefault()).withZone(ZoneId.systemDefault())
-    }
+    val dateTimeLabels = remember { DateTimeLabels.system() }
     val nowLabel = stringResource(R.string.history_chart_now)
-    val labels = remember(formatter, rangeStart, rangeEnd, nowLabel) {
-        val lastIndex = AXIS_LABEL_COUNT - 1
-        List(AXIS_LABEL_COUNT) { index ->
-            if (index == lastIndex) {
-                nowLabel
-            } else {
-                val timestamp = rangeStart + (rangeEnd - rangeStart) * index / lastIndex
-                formatter.format(Instant.ofEpochMilli(timestamp))
-            }
-        }
+    val labels = remember(dateTimeLabels, range, rangeStart, rangeEnd, nowLabel) {
+        // La última marca es el presente: se dice "Ahora" en lugar de su hora.
+        dateTimeLabels.axisLabels(range, rangeStart, rangeEnd, count = AXIS_LABEL_COUNT)
+            .dropLast(1) + nowLabel
     }
 
     Row(

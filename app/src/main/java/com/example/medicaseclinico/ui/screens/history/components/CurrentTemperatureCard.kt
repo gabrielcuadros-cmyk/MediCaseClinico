@@ -32,15 +32,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.model.TemperatureStatus
+import com.example.medicaseclinico.domain.time.DateTimeLabels
 import com.example.medicaseclinico.ui.screens.history.CurrentTemperature
 import com.example.medicaseclinico.ui.theme.MediCaseStatusColors
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
-private const val READING_TIME_PATTERN = "d MMM, HH:mm"
 
 /**
  * Tarjeta "Temperatura actual" del Historial Térmico con su chip de estado.
@@ -64,14 +59,11 @@ fun CurrentTemperatureCard(
         stringResource(R.string.history_value_unknown)
     }
     val statusText = style?.let { stringResource(it.labelRes) }
-    val timeFormatter = remember {
-        DateTimeFormatter.ofPattern(READING_TIME_PATTERN, Locale.getDefault())
-            .withZone(ZoneId.systemDefault())
-    }
+    val dateTimeLabels = remember { DateTimeLabels.system() }
     val readingTimeText = current?.let {
         stringResource(
             R.string.history_current_reading_time,
-            timeFormatter.format(Instant.ofEpochMilli(it.timestamp))
+            dateTimeLabels.readingTime(it.timestamp)
         )
     }
     val accessibilityText = if (statusText != null && readingTimeText != null) {
