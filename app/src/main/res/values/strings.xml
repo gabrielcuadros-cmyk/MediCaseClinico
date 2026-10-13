@@ -10,7 +10,6 @@
     <string name="nav_security">Seguridad</string>
 
     <!-- Módulos pendientes -->
-    <string name="pending_feature_message">Este módulo está en desarrollo y estará disponible en una próxima versión.</string>
 
     <!-- Dashboard: cabecera -->
     <string name="dashboard_title">MediCase Clínico</string>
@@ -332,6 +331,9 @@
     <string name="geofence_delete_confirm">Borrar</string>
     <string name="geofence_deleted_message">Zona de seguridad borrada.</string>
     <string name="geofence_delete_failed">No se pudo borrar la zona. Inténtalo de nuevo.</string>
+    <string name="dashboard_loss_mode_title">Modo Pérdida activado</string>
+    <string name="dashboard_loss_mode_message">Tu estuche está marcado como perdido. Toca para ver su ubicación y las herramientas para recuperarlo.</string>
+    <string name="dashboard_loss_mode_open">Abrir el Modo Pérdida</string>
     <string name="loss_mode_title">Modo Pérdida</string>
     <string name="loss_mode_subtitle">Herramientas críticas para recuperar tu MediCase de inmediato.</string>
     <string name="loss_mode_error_title">No se pudo abrir el Modo Pérdida</string>
