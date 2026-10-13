@@ -44,6 +44,8 @@ sealed interface DashboardUiState {
          * null si el estuche aún no lo ha reportado → la tarjeta muestra "--".
          */
         val batteryLevel: Int?,
+        /** Posición del cierre según el estuche, o por qué no se conoce. */
+        val lockStatus: CaseLockStatus,
         /**
          * Tiempo desde la última lectura, para el pie "Última lectura recibida
          * vía Bluetooth hace 2 min". Lo calcula el ViewModel para que la UI no
@@ -69,6 +71,18 @@ sealed interface DashboardUiState {
         val reason: ErrorReason,
         val canRetry: Boolean = true
     ) : DashboardUiState
+}
+
+/** Lo que se sabe del cierre electrónico del estuche, para la tarjeta "Cierre". */
+enum class CaseLockStatus {
+    LOCKED,
+    OPEN,
+
+    /** Sin enlace, o el estuche aún no lo ha informado: la tarjeta muestra "--". */
+    UNKNOWN,
+
+    /** El estuche conectado no informa de su cierre. */
+    NOT_SUPPORTED
 }
 
 /**

@@ -18,9 +18,13 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -54,6 +58,7 @@ import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardErro
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardLoadingContent
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardTopBar
 import com.example.medicaseclinico.ui.screens.dashboard.components.DeviceIssueBanner
+import com.example.medicaseclinico.ui.screens.dashboard.components.LockCard
 import com.example.medicaseclinico.ui.screens.dashboard.components.LossModeBanner
 import com.example.medicaseclinico.ui.screens.dashboard.components.TemperatureCard
 
@@ -238,11 +243,27 @@ private fun DashboardSuccessContent(
             status = state.temperatureStatus,
             isLiveData = state.isLiveData
         )
-        BatteryCard(
-            batteryLevel = state.batteryLevel,
-            isLow = state.isBatteryLow,
-            modifier = Modifier.fillMaxWidth()
-        )
+        // Como en el diseño: batería y cierre lado a lado, a la misma altura.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            BatteryCard(
+                batteryLevel = state.batteryLevel,
+                isLow = state.isBatteryLow,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            )
+            LockCard(
+                status = state.lockStatus,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            )
+        }
         // El tiempo va en medio de la frase: "…vía Bluetooth hace 5 min".
         val relativeTime = relativeTimeLabel(state.lastReadingElapsed)
             .replaceFirstChar { it.lowercase() }

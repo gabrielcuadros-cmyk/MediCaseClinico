@@ -331,6 +331,12 @@
     <string name="geofence_delete_confirm">Borrar</string>
     <string name="geofence_deleted_message">Zona de seguridad borrada.</string>
     <string name="geofence_delete_failed">No se pudo borrar la zona. Inténtalo de nuevo.</string>
+    <string name="lock_card_title">Cierre</string>
+    <string name="lock_value_locked">Cerrado</string>
+    <string name="lock_value_open">Abierto</string>
+    <string name="lock_detail_locked">Bloqueo electrónico activo</string>
+    <string name="lock_detail_open">El estuche está abierto</string>
+    <string name="lock_detail_unknown">Sin conexión con el estuche</string>
     <string name="dashboard_loss_mode_title">Modo Pérdida activado</string>
     <string name="dashboard_loss_mode_message">Tu estuche está marcado como perdido. Toca para ver su ubicación y las herramientas para recuperarlo.</string>
     <string name="dashboard_loss_mode_open">Abrir el Modo Pérdida</string>

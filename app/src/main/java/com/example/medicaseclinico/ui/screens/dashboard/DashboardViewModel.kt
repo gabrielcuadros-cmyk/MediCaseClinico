@@ -8,8 +8,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
+import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
+import com.example.medicaseclinico.domain.model.LockState
 import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.model.TemperatureReading
 import com.example.medicaseclinico.domain.model.TemperatureStatus
@@ -123,9 +125,10 @@ class DashboardViewModel(
             temperatureRepository.observeLatestReading(),
             temperatureRepository.observeLatestBatteryLevel(),
             deviceRepository.connectionStatus,
+            deviceRepository.controlState,
             currentTime()
-        ) { latestReading, batteryLevel, connectionStatus, now ->
-            buildUiState(latestReading, batteryLevel, connectionStatus, now)
+        ) { latestReading, batteryLevel, connectionStatus, controlState, now ->
+            buildUiState(latestReading, batteryLevel, connectionStatus, controlState, now)
         }
             .onStart {
                 emit(DashboardUiState.Loading(connectionStatus = deviceRepository.connectionStatus.value))
@@ -165,6 +168,7 @@ class DashboardViewModel(
         latestReading: TemperatureReading?,
         batteryLevel: Int?,
         connectionStatus: ConnectionStatus,
+        controlState: CaseControlState,
         now: Long
     ): DashboardUiState {
         if (latestReading == null) {
@@ -175,11 +179,22 @@ class DashboardViewModel(
             currentTemperature = latestReading.temperatureCelsius,
             temperatureStatus = TemperatureStatus.fromCelsius(latestReading.temperatureCelsius),
             batteryLevel = batteryLevel?.coerceIn(0, 100),
+            lockStatus = controlState.toLockStatus(),
             lastReadingElapsed = RelativeTime.between(
                 timestamp = latestReading.timestamp,
                 now = now
             )
         )
+    }
+
+    private fun CaseControlState.toLockStatus(): CaseLockStatus = when (this) {
+        CaseControlState.Unavailable -> CaseLockStatus.UNKNOWN
+        CaseControlState.NotSupported -> CaseLockStatus.NOT_SUPPORTED
+        is CaseControlState.Ready -> when (lockState) {
+            LockState.LOCKED -> CaseLockStatus.LOCKED
+            LockState.OPEN -> CaseLockStatus.OPEN
+            null -> CaseLockStatus.UNKNOWN
+        }
     }
 
     private fun mapToErrorReason(throwable: Throwable): ErrorReason = when (throwable) {
