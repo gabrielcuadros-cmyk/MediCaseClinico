@@ -1,5 +1,8 @@
 package com.example.medicaseclinico.ui.theme
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -8,8 +11,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 // ============================================================
 //  Esquemas de color Material 3
@@ -117,6 +126,44 @@ fun MediCaseTheme(
             content = content
         )
     }
+}
+
+/**
+ * Tema de la app en marcha: aplica la apariencia que eligió el usuario
+ * (Sistema / Claro / Oscuro) y pone los íconos de las barras del sistema en
+ * el tono que se lee sobre ella.
+ *
+ * Las barras siguen por defecto al teléfono, no a la app: sin este ajuste, la
+ * app en oscuro sobre un teléfono en claro dejaría la hora y la batería en
+ * negro sobre negro.
+ */
+@Composable
+fun MediCaseAppearanceTheme(
+    viewModel: AppearanceViewModel = viewModel(factory = AppearanceViewModel.Factory),
+    content: @Composable () -> Unit
+) {
+    val mode by viewModel.mode.collectAsStateWithLifecycle()
+    val darkTheme = mode.isDark(systemIsDark = isSystemInDarkTheme())
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = view.context.findActivity()?.window ?: return@SideEffect
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
+    }
+
+    MediCaseTheme(darkTheme = darkTheme, content = content)
+}
+
+/** La Activity que hay detrás de un contexto, que puede venir envuelto. */
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 /** Acceso a los colores de estado: MediCaseTheme.statusColors.critical */

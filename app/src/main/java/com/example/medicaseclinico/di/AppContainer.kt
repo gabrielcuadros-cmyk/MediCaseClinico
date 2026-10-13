@@ -5,6 +5,7 @@ import com.example.medicaseclinico.data.auth.FirebaseAuthRepository
 import com.example.medicaseclinico.data.ble.AndroidCaseDeviceRepository
 import com.example.medicaseclinico.data.local.AppDatabase
 import com.example.medicaseclinico.data.notification.SystemAlertPublisher
+import com.example.medicaseclinico.data.preferences.DataStoreAppearanceRepository
 import com.example.medicaseclinico.data.preferences.DataStoreNotificationPreferencesRepository
 import com.example.medicaseclinico.data.report.PdfMedicalReportExporter
 import com.example.medicaseclinico.data.repository.AlertEventRepositoryImpl
@@ -18,6 +19,7 @@ import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.alert.RecordingAlertPublisher
 import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
+import com.example.medicaseclinico.domain.repository.AppearanceRepository
 import com.example.medicaseclinico.domain.repository.AuthRepository
 import com.example.medicaseclinico.domain.repository.AuthorizedUsersRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
@@ -84,6 +86,10 @@ class AppContainer(context: Context) {
 
     val notificationPreferencesRepository: NotificationPreferencesRepository by lazy {
         DataStoreNotificationPreferencesRepository(appContext)
+    }
+
+    val appearanceRepository: AppearanceRepository by lazy {
+        DataStoreAppearanceRepository(context = appContext)
     }
 
     private val notificationPreferences: StateFlow<NotificationPreferences> by lazy {
