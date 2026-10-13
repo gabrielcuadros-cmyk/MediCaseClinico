@@ -8,7 +8,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -17,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
+import com.example.medicaseclinico.ui.theme.PureWhite
 
 /**
  * Logotipo de MediCase (maletín con la gota de insulina, la marca y el lema)
@@ -25,8 +25,9 @@ import com.example.medicaseclinico.ui.theme.MediCaseTheme
  * La imagen ya incluye la marca y el lema como dibujo, así que se describe
  * entera para los lectores de pantalla.
  *
- * La tarjeta es siempre clara: el logotipo tiene letras azul oscuro que no se
- * leerían sobre el fondo del tema oscuro.
+ * La tarjeta es blanca pura en los dos temas: el logotipo tiene letras azul
+ * oscuro que no se leerían sobre el fondo del tema oscuro, y sobre cualquier
+ * otro tono claro sus colores de marca se ven teñidos.
  *
  * @param logoWidth ancho de la imagen; el alto sale de su proporción.
  */
@@ -35,13 +36,10 @@ fun MediCaseLogo(
     modifier: Modifier = Modifier,
     logoWidth: Dp = 200.dp
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val isDarkTheme = colorScheme.surface.luminance() < 0.5f
-
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        color = if (isDarkTheme) colorScheme.inverseSurface else colorScheme.surface
+        color = PureWhite
     ) {
         Image(
             painter = painterResource(R.drawable.logo_medicase),
