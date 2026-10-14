@@ -1,6 +1,7 @@
 // ============================================================
 //  MediCase Clínico - app/build.gradle.kts (nivel módulo)
 // ============================================================
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -13,6 +14,27 @@ plugins {
 
 if (file("google-services.json").exists()) {
     apply(plugin = libs.plugins.google.services.get().pluginId)
+}
+
+// UUID del estuche que local.properties puede sobrescribir. Se pasan a BuildConfig a
+// mano y no con el Secrets Gradle Plugin porque este escribe una clave vacía como
+// `String X = ;`, que no compila: así una copia limpia, sin local.properties o con
+// las claves en blanco, compila y GattSpec usa los UUID estándar de Bluetooth SIG.
+val bleUuidOverrideKeys = listOf(
+    "BLE_SERVICE_UUID",
+    "BLE_TEMPERATURE_CHAR_UUID",
+    "BLE_BATTERY_CHAR_UUID",
+)
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+/** Valor de [key] como literal Java entre comillas; cadena vacía si falta o está en blanco. */
+fun optionalLocalProperty(key: String): String {
+    val value = localProperties.getProperty(key).orEmpty().trim().filterNot { it == '"' || it == '\\' }
+    return "\"$value\""
 }
 
 android {
@@ -28,6 +50,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+
+        bleUuidOverrideKeys.forEach { key ->
+            buildConfigField("String", key, optionalLocalProperty(key))
+        }
     }
 
     buildTypes {
@@ -65,6 +91,11 @@ room {
 secrets {
     propertiesFileName = "local.properties"
     defaultPropertiesFileName = "local.properties.example"
+    // Los UUID del estuche se declaran arriba; las claves FIREBASE_* no se leen desde
+    // el código (Firebase se configura con google-services.json). Ignorarlas evita que
+    // una clave vacía rompa la compilación.
+    ignoreList.add("BLE_.*")
+    ignoreList.add("FIREBASE_.*")
 }
 
 dependencies {

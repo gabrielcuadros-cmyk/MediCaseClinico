@@ -7,12 +7,17 @@
 # Ruta del Android SDK
 sdk.dir=/ruta/a/tu/Android/Sdk
 
+# Todas las claves de abajo son opcionales: el proyecto compila con ellas vacías
+# o sin este archivo.
+
 # --- Firebase ---
 FIREBASE_PROJECT_ID=
 FIREBASE_API_KEY=
 FIREBASE_APP_ID=
 
 # --- Estuche BLE MediCase ---
+# Vacías: se usan los UUID estándar de Bluetooth SIG (ver hardware/ble-protocol.md):
+# servicio 0x1809, temperatura 0x2A1C y batería 0x2A19.
 BLE_SERVICE_UUID=
 BLE_TEMPERATURE_CHAR_UUID=
 BLE_BATTERY_CHAR_UUID=
