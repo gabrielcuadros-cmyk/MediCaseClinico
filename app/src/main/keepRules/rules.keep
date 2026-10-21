@@ -10,3 +10,8 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+# --- MQTT (HiveMQ MQTT Client + Netty) ---
+# Netty registra una integracion con BlockHound, un detector de llamadas bloqueantes
+# para servidores que no existe en Android ni se usa en la app.
+-dontwarn reactor.blockhound.integration.BlockHoundIntegration

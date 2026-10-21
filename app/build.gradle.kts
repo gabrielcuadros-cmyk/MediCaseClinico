@@ -92,7 +92,16 @@ android {
     }
 
     packaging {
-        resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+        // Cada módulo de Netty (dependencia de HiveMQ) trae su propia copia de estos dos
+        // archivos de metadatos; en el APK no se usan y duplicados impiden empaquetar.
+        // El registro de BlockHound (detector para servidores) apunta a una clase que
+        // no existe en Android.
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/io.netty.versions.properties"
+            excludes += "/META-INF/services/reactor.blockhound.integration.BlockHoundIntegration"
+        }
     }
 }
 
@@ -151,6 +160,9 @@ dependencies {
     // --- Mapa (MapLibre + OpenStreetMap, sin API key) ---
     implementation(libs.maplibre.android.sdk)
 
+    // --- MQTT (broker del estuche; ver hardware/mqtt-protocol.md) ---
+    implementation(libs.hivemq.mqtt.client)
+
     // --- Firebase ---
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
@@ -160,6 +172,9 @@ dependencies {
     // --- Testing ---
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // org.json de Android en los tests JVM es solo un esqueleto ("Stub!"): esta es la
+    // implementación real, para probar el codec MQTT. No entra en el APK.
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.room.testing)
