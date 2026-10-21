@@ -4,6 +4,7 @@ import com.example.medicaseclinico.domain.model.AccessEvent
 import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.CaseTelemetry
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * Responsabilidades separadas:
  *  - TemperatureRepository → historial persistente (Room).
- *  - CaseDeviceRepository  → enlace vivo con el hardware (BLE).
+ *  - CaseDeviceRepository  → enlace vivo con el hardware (MQTT o, de respaldo, BLE).
  *
  * Regla del contrato: ningún método lanza excepciones hacia afuera.
  * Los fallos se reflejan en [connectionStatus] y [deviceIssue]; los de una
@@ -22,6 +23,9 @@ import kotlinx.coroutines.flow.StateFlow
  * [com.example.medicaseclinico.domain.model.CaseCommandException].
  */
 interface CaseDeviceRepository {
+    /** Por dónde llegan los datos: no cambia mientras la app está abierta. */
+    val transport: CaseTransport
+
     /** Estado real del enlace BLE. */
     val connectionStatus: StateFlow<ConnectionStatus>
 

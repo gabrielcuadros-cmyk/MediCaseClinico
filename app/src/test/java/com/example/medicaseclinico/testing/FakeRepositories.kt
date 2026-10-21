@@ -10,6 +10,7 @@ import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.model.CaseLocation
 import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.CaseTelemetry
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.domain.model.Geofence
@@ -95,6 +96,7 @@ class FakeAuthorizedUsersRepository(
  * responden con [commandError] si se le pone uno.
  */
 class FakeCaseDeviceRepository : CaseDeviceRepository {
+    override var transport = CaseTransport.BLUETOOTH
     override val connectionStatus = MutableStateFlow(ConnectionStatus.DISCONNECTED)
     override val deviceIssue = MutableStateFlow<DeviceIssue?>(null)
     override val telemetry: Flow<CaseTelemetry> = emptyFlow()

@@ -11,6 +11,7 @@ import com.example.medicaseclinico.MediCaseApplication
 import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.model.CaseGpsReading
 import com.example.medicaseclinico.domain.model.CaseLocationState
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.domain.model.LockState
@@ -110,6 +111,9 @@ class DashboardViewModel(
                 started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
                 initialValue = false
             )
+
+    /** Por dónde llegan los datos del estuche, para el pie "Sincronizado vía…". */
+    val transport: CaseTransport = deviceRepository.transport
 
     /** Motivo actual por el que no hay enlace con el estuche (o null). */
     val deviceIssue: StateFlow<DeviceIssue?> = deviceRepository.deviceIssue

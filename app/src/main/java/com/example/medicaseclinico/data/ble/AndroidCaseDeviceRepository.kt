@@ -22,6 +22,7 @@ import com.example.medicaseclinico.domain.model.CaseCommandException
 import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.CaseTelemetry
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
@@ -70,6 +71,8 @@ class AndroidCaseDeviceRepository(
     // ------------------------------------------------------------------
     //  Estado público (contrato CaseDeviceRepository)
     // ------------------------------------------------------------------
+    override val transport: CaseTransport = CaseTransport.BLUETOOTH
+
     private val _connectionStatus = MutableStateFlow(ConnectionStatus.DISCONNECTED)
     override val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatus.asStateFlow()
 

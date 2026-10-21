@@ -6,6 +6,7 @@ import com.example.medicaseclinico.domain.model.CaseCommandException
 import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.model.CaseLocationState
 import com.example.medicaseclinico.domain.model.CaseTelemetry
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
@@ -55,6 +56,7 @@ class MqttCaseDeviceRepository(
 
     private val link = MqttCaseLink()
 
+    override val transport: CaseTransport = CaseTransport.MQTT
     override val connectionStatus: StateFlow<ConnectionStatus> = link.connectionStatus
     override val deviceIssue: StateFlow<DeviceIssue?> = link.deviceIssue
     override val telemetry: Flow<CaseTelemetry> = link.telemetry

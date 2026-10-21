@@ -61,6 +61,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.data.ble.BlePermissions
 import com.example.medicaseclinico.data.notification.NotificationPermission
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.ui.components.relativeTimeLabel
 import com.example.medicaseclinico.ui.screens.dashboard.components.BatteryCard
@@ -138,6 +139,7 @@ fun DashboardRoute(
 
     DashboardScreen(
         uiState = uiState,
+        transport = viewModel.transport,
         deviceIssue = deviceIssue,
         userName = userName,
         lossModeActive = lossModeActive,
@@ -172,6 +174,7 @@ fun DashboardRoute(
 @Composable
 fun DashboardScreen(
     uiState: DashboardUiState,
+    transport: CaseTransport,
     deviceIssue: DeviceIssue?,
     permissionsPermanentlyDenied: Boolean,
     onRetry: () -> Unit,
@@ -239,6 +242,7 @@ fun DashboardScreen(
                     )
                     is DashboardUiState.Success -> DashboardSuccessContent(
                         state = state,
+                        transport = transport,
                         onOpenSection = onOpenSection,
                         onOpenAccessLog = onOpenAccessLog
                     )
@@ -251,6 +255,7 @@ fun DashboardScreen(
 @Composable
 private fun DashboardSuccessContent(
     state: DashboardUiState.Success,
+    transport: CaseTransport,
     onOpenSection: (DashboardSection) -> Unit,
     onOpenAccessLog: () -> Unit,
     modifier: Modifier = Modifier
@@ -317,7 +322,13 @@ private fun DashboardSuccessContent(
         // El tiempo va en medio de la frase: "…vía Bluetooth hace 5 min".
         val relativeTime = relativeTimeLabel(state.lastReadingElapsed)
             .replaceFirstChar { it.lowercase() }
-        val lastSync = stringResource(R.string.dashboard_last_sync, relativeTime)
+        val lastSync = stringResource(
+            when (transport) {
+                CaseTransport.BLUETOOTH -> R.string.dashboard_last_sync
+                CaseTransport.MQTT -> R.string.dashboard_last_sync_mqtt
+            },
+            relativeTime
+        )
         Text(
             // La batería solo se menciona si el estuche informó alguna vez de ella.
             text = when {

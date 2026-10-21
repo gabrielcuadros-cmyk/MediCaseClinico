@@ -4,6 +4,9 @@ import android.content.Context
 import com.example.medicaseclinico.data.auth.FirebaseAuthRepository
 import com.example.medicaseclinico.data.ble.AndroidCaseDeviceRepository
 import com.example.medicaseclinico.data.local.AppDatabase
+import com.example.medicaseclinico.data.mqtt.DataStoreMqttClientIdStore
+import com.example.medicaseclinico.data.mqtt.MqttCaseDeviceRepository
+import com.example.medicaseclinico.data.mqtt.MqttConfig
 import com.example.medicaseclinico.data.notification.SystemAlertPublisher
 import com.example.medicaseclinico.data.preferences.DataStoreAppearanceRepository
 import com.example.medicaseclinico.data.preferences.DataStoreLossModeRepository
@@ -82,8 +85,21 @@ class AppContainer(context: Context) {
         PdfMedicalReportExporter(context = appContext)
     }
 
+    /**
+     * MQTT si la app se compiló con un broker (local.properties); si no, Bluetooth de
+     * respaldo. El resto de la app no sabe cuál de los dos usa.
+     */
     val caseDeviceRepository: CaseDeviceRepository by lazy {
-        AndroidCaseDeviceRepository(appContext, applicationScope)
+        val mqttConfig = MqttConfig.fromBuildConfig()
+        if (mqttConfig != null) {
+            MqttCaseDeviceRepository(
+                config = mqttConfig,
+                clientIdStore = DataStoreMqttClientIdStore(context = appContext),
+                scope = applicationScope
+            )
+        } else {
+            AndroidCaseDeviceRepository(context = appContext, scope = applicationScope)
+        }
     }
 
     val notificationPreferencesRepository: NotificationPreferencesRepository by lazy {
