@@ -60,6 +60,17 @@ class MqttCaseLink {
     )
     val accessEvents: Flow<AccessEvent> = _accessEvents.asSharedFlow()
 
+    private val _commandReplies = MutableSharedFlow<MqttCodec.CommandReply>(
+        extraBufferCapacity = COMMAND_REPLY_BUFFER_SIZE,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    /**
+     * Respuestas del estuche a las órdenes (`orden/respuesta`). Quien envía una orden
+     * espera aquí la que lleva su `id`.
+     */
+    val commandReplies: Flow<MqttCodec.CommandReply> = _commandReplies.asSharedFlow()
+
     /** true solo con el estuche online: es cuando acepta órdenes. */
     val isCaseOnline: Boolean
         get() = synchronized(lock) { caseOnline == true }
@@ -149,6 +160,9 @@ class MqttCaseLink {
             MqttTopic.ACCESS -> if (caseOnline == true) {
                 MqttCodec.parseAccessEvent(payload, receivedAt)?.let { _accessEvents.tryEmit(it) }
             }
+            // Sin filtrar por online: si el estuche respondió, la orden se ejecutó o no.
+            MqttTopic.ORDER_REPLY ->
+                MqttCodec.parseCommandReply(payload)?.let { _commandReplies.tryEmit(it) }
         }
     }
 
@@ -190,5 +204,6 @@ class MqttCaseLink {
     private companion object {
         const val TELEMETRY_BUFFER_SIZE = 32
         const val ACCESS_EVENT_BUFFER_SIZE = 16
+        const val COMMAND_REPLY_BUFFER_SIZE = 16
     }
 }

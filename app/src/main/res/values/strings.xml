@@ -500,6 +500,7 @@
     <string name="security_msg_wrong_pin">La contraseña actual no es correcta.</string>
     <string name="security_msg_locked_out">Estuche bloqueado temporalmente por intentos fallidos.</string>
     <string name="security_msg_invalid_pin">La contraseña debe tener 4 dígitos.</string>
+    <string name="security_msg_secure_connection_required">Requiere conexión segura: la contraseña del estuche no se envía por una conexión sin cifrar.</string>
     <string name="security_msg_case_failed">El estuche no respondió. Inténtalo de nuevo.</string>
     <string name="user_role_principal">Principal</string>
     <string name="user_role_caregiver">Cuidador</string>

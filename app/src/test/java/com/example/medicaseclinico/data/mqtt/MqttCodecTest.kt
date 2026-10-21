@@ -141,6 +141,10 @@ class MqttCodecTest {
             CaseCommandError.INVALID_VALUE,
             MqttCodec.parseCommandReply("""{"id": "a1", "ok": false, "error": "valor_invalido"}""")?.error
         )
+        assertEquals(
+            CaseCommandError.SECURE_CONNECTION_REQUIRED,
+            MqttCodec.parseCommandReply("""{"id": "a1", "ok": false, "error": "requiere_tls"}""")?.error
+        )
     }
 
     @Test

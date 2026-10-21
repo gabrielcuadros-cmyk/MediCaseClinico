@@ -83,6 +83,7 @@ enum class SecurityMessage {
     WRONG_PIN,
     CASE_LOCKED_OUT,
     INVALID_PIN,
+    SECURE_CONNECTION_REQUIRED,
     CASE_FAILED,
     APPEARANCE_NOT_SAVED
 }

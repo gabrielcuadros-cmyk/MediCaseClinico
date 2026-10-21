@@ -786,6 +786,7 @@ private fun SecurityMessage.textRes(): Int = when (this) {
     SecurityMessage.WRONG_PIN -> R.string.security_msg_wrong_pin
     SecurityMessage.CASE_LOCKED_OUT -> R.string.security_msg_locked_out
     SecurityMessage.INVALID_PIN -> R.string.security_msg_invalid_pin
+    SecurityMessage.SECURE_CONNECTION_REQUIRED -> R.string.security_msg_secure_connection_required
     SecurityMessage.CASE_FAILED -> R.string.security_msg_case_failed
     SecurityMessage.APPEARANCE_NOT_SAVED -> R.string.settings_save_error
 }

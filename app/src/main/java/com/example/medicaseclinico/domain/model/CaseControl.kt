@@ -75,6 +75,12 @@ enum class CaseCommandError {
     /** El valor no es válido (lo detectó la app o lo rechazó el estuche). */
     INVALID_VALUE,
 
+    /**
+     * La orden lleva el PIN y la conexión no está cifrada (MQTT sin TLS): no se envía,
+     * para que el PIN nunca viaje en claro por el broker.
+     */
+    SECURE_CONNECTION_REQUIRED,
+
     /** El estuche no respondió o respondió con un error desconocido. */
     FAILED
 }

@@ -57,6 +57,7 @@ object MqttCodec {
     private const val ERROR_WRONG_PIN = "pin_incorrecto"
     private const val ERROR_LOCKED_OUT = "bloqueado"
     private const val ERROR_INVALID_VALUE = "valor_invalido"
+    private const val ERROR_SECURE_CONNECTION_REQUIRED = "requiere_tls"
 
     /**
      * Lo que el estuche publica en `cierre`. Cada campo es null si el mensaje no lo
@@ -154,6 +155,7 @@ object MqttCodec {
             ERROR_WRONG_PIN -> CaseCommandError.WRONG_PIN
             ERROR_LOCKED_OUT -> CaseCommandError.LOCKED_OUT
             ERROR_INVALID_VALUE -> CaseCommandError.INVALID_VALUE
+            ERROR_SECURE_CONNECTION_REQUIRED -> CaseCommandError.SECURE_CONNECTION_REQUIRED
             else -> CaseCommandError.FAILED
         }
         return CommandReply(commandId = commandId, error = error)

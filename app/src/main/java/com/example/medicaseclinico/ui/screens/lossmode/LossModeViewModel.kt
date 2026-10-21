@@ -284,6 +284,8 @@ class LossModeViewModel(
                 CaseCommandError.WRONG_PIN -> LossModeMessage.WRONG_PIN
                 CaseCommandError.LOCKED_OUT -> LossModeMessage.CASE_LOCKED_OUT
                 CaseCommandError.INVALID_VALUE -> LossModeMessage.INVALID_PIN
+                // La alarma y el GPS no llevan PIN: nunca se bloquean por falta de TLS.
+                CaseCommandError.SECURE_CONNECTION_REQUIRED,
                 CaseCommandError.FAILED -> LossModeMessage.CASE_FAILED
             }
         }

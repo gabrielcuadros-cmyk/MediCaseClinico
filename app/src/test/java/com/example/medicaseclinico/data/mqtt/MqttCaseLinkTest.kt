@@ -2,6 +2,7 @@ package com.example.medicaseclinico.data.mqtt
 
 import com.example.medicaseclinico.domain.model.AccessEvent
 import com.example.medicaseclinico.domain.model.AccessEventType
+import com.example.medicaseclinico.domain.model.CaseCommandError
 import com.example.medicaseclinico.domain.model.CaseControlState
 import com.example.medicaseclinico.domain.model.CaseGpsReading
 import com.example.medicaseclinico.domain.model.CaseLocationState
@@ -256,5 +257,26 @@ class MqttCaseLinkTest {
         link.onMessage("otro", """{"online": true}""", 0L)
 
         assertEquals(ConnectionStatus.CONNECTING, link.connectionStatus.value)
+    }
+
+    @Test
+    fun `respuestas a ordenes llegan aunque el estado no se conozca`() = runTest {
+        val received = mutableListOf<MqttCodec.CommandReply>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            link.commandReplies.toList(received)
+        }
+        link.onBrokerConnected()
+
+        link.onMessage(MqttTopic.ORDER_REPLY, """{"id": "a1", "ok": true}""", 1L)
+        link.onMessage(MqttTopic.ORDER_REPLY, """{"id": "a2", "ok": false, "error": "pin_incorrecto"}""", 2L)
+        link.onMessage(MqttTopic.ORDER_REPLY, """{"ok": true}""", 3L)
+
+        assertEquals(
+            listOf(
+                MqttCodec.CommandReply(commandId = "a1", error = null),
+                MqttCodec.CommandReply(commandId = "a2", error = CaseCommandError.WRONG_PIN)
+            ),
+            received
+        )
     }
 }

@@ -235,6 +235,7 @@ class SecurityViewModel(
         CaseCommandError.WRONG_PIN -> SecurityMessage.WRONG_PIN
         CaseCommandError.LOCKED_OUT -> SecurityMessage.CASE_LOCKED_OUT
         CaseCommandError.INVALID_VALUE -> SecurityMessage.INVALID_PIN
+        CaseCommandError.SECURE_CONNECTION_REQUIRED -> SecurityMessage.SECURE_CONNECTION_REQUIRED
         CaseCommandError.FAILED -> SecurityMessage.CASE_FAILED
     }
 

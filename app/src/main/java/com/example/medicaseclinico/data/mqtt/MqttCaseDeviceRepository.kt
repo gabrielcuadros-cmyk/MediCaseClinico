@@ -18,14 +18,21 @@ import com.hivemq.client.mqtt.mqtt3.message.publish.Mqtt3Publish
 import com.hivemq.client.mqtt.mqtt3.message.subscribe.Mqtt3Subscribe
 import com.hivemq.client.mqtt.mqtt3.message.subscribe.Mqtt3Subscription
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -80,19 +87,78 @@ class MqttCaseDeviceRepository(
         link.onStopped()
     }
 
-    // Las órdenes por MQTT llegan con orden/respuesta; hasta entonces no se envían.
     override suspend fun setPinRequired(required: Boolean, currentPin: String): Result<Unit> =
-        notSupported()
+        sendCommand(MqttTopic.ORDER_PIN_REQUIRED, carriesPin = true) { commandId ->
+            MqttCodec.encodePinRequired(commandId, required, currentPin)
+        }
 
     override suspend fun changePin(currentPin: String, newPin: String): Result<Unit> =
-        notSupported()
+        sendCommand(MqttTopic.ORDER_PIN, carriesPin = true) { commandId ->
+            MqttCodec.encodePinChange(commandId, currentPin, newPin)
+        }
 
-    override suspend fun setAlarm(on: Boolean): Result<Unit> = notSupported()
+    override suspend fun setAlarm(on: Boolean): Result<Unit> =
+        sendCommand(MqttTopic.ORDER_ALARM, carriesPin = false) { commandId ->
+            MqttCodec.encodeAlarm(commandId, on)
+        }
 
-    override suspend fun setGpsIntervalSeconds(seconds: Int): Result<Unit> = notSupported()
+    override suspend fun setGpsIntervalSeconds(seconds: Int): Result<Unit> =
+        sendCommand(MqttTopic.ORDER_GPS, carriesPin = false) { commandId ->
+            MqttCodec.encodeGpsInterval(commandId, seconds)
+        }
 
-    private fun notSupported(): Result<Unit> =
-        Result.failure(CaseCommandException(CaseCommandError.NOT_SUPPORTED))
+    /**
+     * Publica una orden y espera la respuesta del estuche con su mismo `id`.
+     *
+     * @param carriesPin true si el mensaje lleva el PIN: sin TLS no se envía (el PIN
+     * viajaría en claro por el broker) y la app no llega ni a codificarlo.
+     * @param encode el JSON de la orden para un `id`, o null si un valor no es válido.
+     */
+    private suspend fun sendCommand(
+        topic: String,
+        carriesPin: Boolean,
+        encode: (commandId: String) -> String?
+    ): Result<Unit> {
+        if (carriesPin && !config.useTls) {
+            return commandFailure(CaseCommandError.SECURE_CONNECTION_REQUIRED)
+        }
+        val mqtt = client
+        if (mqtt == null || !mqtt.state.isConnected || !link.isCaseOnline) {
+            return commandFailure(CaseCommandError.NOT_CONNECTED)
+        }
+        val commandId = UUID.randomUUID().toString()
+        val payload = encode(commandId) ?: return commandFailure(CaseCommandError.INVALID_VALUE)
+        return try {
+            val reply = withTimeout(COMMAND_REPLY_TIMEOUT_MS) {
+                coroutineScope {
+                    // Se escucha antes de publicar: la respuesta puede llegar enseguida.
+                    val pendingReply = async(start = CoroutineStart.UNDISPATCHED) {
+                        link.commandReplies.first { it.commandId == commandId }
+                    }
+                    mqtt.publishWith()
+                        .topic(config.topic(topic))
+                        .payload(payload.toByteArray(Charsets.UTF_8))
+                        .qos(MqttQos.AT_LEAST_ONCE)
+                        // Nunca retenida: se ejecutaría otra vez en cada reconexión del
+                        // estuche, y un PIN quedaría guardado en el broker.
+                        .retain(false)
+                        .send()
+                        .await()
+                    pendingReply.await()
+                }
+            }
+            reply.error?.let { commandFailure(it) } ?: Result.success(Unit)
+        } catch (e: TimeoutCancellationException) {
+            commandFailure(CaseCommandError.FAILED)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            commandFailure(CaseCommandError.FAILED)
+        }
+    }
+
+    private fun commandFailure(error: CaseCommandError): Result<Unit> =
+        Result.failure(CaseCommandException(error))
 
     private suspend fun runMonitoring(current: Int) {
         link.onBrokerConnecting()
@@ -221,6 +287,9 @@ class MqttCaseDeviceRepository(
         // lo publicó y se considera desconectado.
         const val CASE_STATE_TIMEOUT_MS = 10_000L
 
+        // Sin respuesta en este tiempo, la orden se da por fallida (protocolo §10.1).
+        const val COMMAND_REPLY_TIMEOUT_MS = 10_000L
+
         const val SUBSCRIBE_RETRY_INITIAL_MS = 1_000L
         const val SUBSCRIBE_RETRY_MAX_MS = 30_000L
 
@@ -231,7 +300,8 @@ class MqttCaseDeviceRepository(
             MqttTopic.BATTERY to MqttQos.AT_LEAST_ONCE,
             MqttTopic.LOCATION to MqttQos.AT_MOST_ONCE,
             MqttTopic.LOCK to MqttQos.AT_LEAST_ONCE,
-            MqttTopic.ACCESS to MqttQos.AT_LEAST_ONCE
+            MqttTopic.ACCESS to MqttQos.AT_LEAST_ONCE,
+            MqttTopic.ORDER_REPLY to MqttQos.AT_LEAST_ONCE
         )
     }
 }
