@@ -15,3 +15,18 @@
 # Netty registra una integracion con BlockHound, un detector de llamadas bloqueantes
 # para servidores que no existe en Android ni se usa en la app.
 -dontwarn reactor.blockhound.integration.BlockHoundIntegration
+
+# Modulos opcionales de Netty que HiveMQ no usa en Android (TLS nativo, WebSocket,
+# proxies, epoll de Linux, ALPN de Jetty y el log slf4j): no se incluyen en el APK.
+-dontwarn io.netty.internal.tcnative.**
+-dontwarn io.netty.channel.epoll.**
+-dontwarn io.netty.handler.codec.http.**
+-dontwarn io.netty.handler.proxy.**
+-dontwarn org.eclipse.jetty.alpn.**
+-dontwarn org.eclipse.jetty.npn.**
+-dontwarn org.slf4j.**
+
+# Netty y JCTools buscan sus propios campos por nombre (reflexion y Unsafe): si R8
+# los renombra, la version release compila pero falla al conectar con el broker.
+-keepclassmembernames class io.netty.** { *; }
+-keepclassmembers class org.jctools.** { *; }
