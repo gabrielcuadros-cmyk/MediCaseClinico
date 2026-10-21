@@ -26,6 +26,20 @@ val bleUuidOverrideKeys = listOf(
     "BLE_BATTERY_CHAR_UUID",
 )
 
+// Broker MQTT del estuche (ver hardware/mqtt-protocol.md). Mismo mecanismo que los UUID:
+// todas opcionales, y MqttConfig las valida en tiempo de ejecución. Sin MQTT_HOST o
+// sin MQTT_TOPIC_PREFIX la app usa Bluetooth. Sus valores reales viven solo en
+// local.properties: nunca en un archivo versionado.
+val mqttConfigKeys = listOf(
+    "MQTT_HOST",
+    "MQTT_PORT",
+    "MQTT_USE_TLS",
+    "MQTT_TOPIC_PREFIX",
+    "MQTT_USERNAME",
+    "MQTT_PASSWORD",
+    "MQTT_CASE_ID",
+)
+
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use { load(it) }
@@ -33,7 +47,9 @@ val localProperties = Properties().apply {
 
 /** Valor de [key] como literal Java entre comillas; cadena vacía si falta o está en blanco. */
 fun optionalLocalProperty(key: String): String {
-    val value = localProperties.getProperty(key).orEmpty().trim().filterNot { it == '"' || it == '\\' }
+    val value = localProperties.getProperty(key).orEmpty().trim()
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
     return "\"$value\""
 }
 
@@ -51,7 +67,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        bleUuidOverrideKeys.forEach { key ->
+        (bleUuidOverrideKeys + mqttConfigKeys).forEach { key ->
             buildConfigField("String", key, optionalLocalProperty(key))
         }
     }
@@ -91,10 +107,11 @@ room {
 secrets {
     propertiesFileName = "local.properties"
     defaultPropertiesFileName = "local.properties.example"
-    // Los UUID del estuche se declaran arriba; las claves FIREBASE_* no se leen desde
-    // el código (Firebase se configura con google-services.json). Ignorarlas evita que
-    // una clave vacía rompa la compilación.
+    // Los UUID y el broker MQTT del estuche se declaran arriba; las claves FIREBASE_* no
+    // se leen desde el código (Firebase se configura con google-services.json).
+    // Ignorarlas evita que una clave vacía rompa la compilación.
     ignoreList.add("BLE_.*")
+    ignoreList.add("MQTT_.*")
     ignoreList.add("FIREBASE_.*")
 }
 

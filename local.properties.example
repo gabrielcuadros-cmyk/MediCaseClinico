@@ -21,3 +21,17 @@ FIREBASE_APP_ID=
 BLE_SERVICE_UUID=
 BLE_TEMPERATURE_CHAR_UUID=
 BLE_BATTERY_CHAR_UUID=
+
+# --- Broker MQTT del estuche (ver hardware/mqtt-protocol.md) ---
+# Con MQTT_HOST y MQTT_TOPIC_PREFIX rellenos, la app recibe los datos por MQTT; vacías,
+# usa Bluetooth. Los valores reales van SOLO en local.properties, nunca aquí.
+# MQTT_PORT vacío: 1883, o 8883 con MQTT_USE_TLS=true.
+# MQTT_USERNAME, MQTT_PASSWORD y MQTT_CASE_ID son para un broker propio: si MQTT_CASE_ID
+# tiene valor, los topics quedan bajo <prefijo>/<id del estuche>/.
+MQTT_HOST=
+MQTT_PORT=
+MQTT_USE_TLS=
+MQTT_TOPIC_PREFIX=
+MQTT_USERNAME=
+MQTT_PASSWORD=
+MQTT_CASE_ID=
