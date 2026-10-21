@@ -73,7 +73,7 @@ Suscripciones:
 
 | | Estuche | App |
 |---|---|---|
-| Client ID | `medicase-esp32-<MAC>` (12 dígitos hex de la MAC Wi-Fi, en minúsculas) | `medicase-app-<UUID>`, generado una vez por instalación |
+| Client ID | `mcesp32<MAC>` (12 dígitos hex de la MAC Wi-Fi, en minúsculas; 19 caracteres) | `mcapp` + 16 dígitos hex aleatorios (21 caracteres), generado una vez por instalación |
 | Clean session | sí | sí |
 | Keep alive | 30 s | 30 s |
 | Reconexión | automática, con espera creciente (1 s → 60 s) | automática, con espera creciente |
@@ -81,6 +81,9 @@ Suscripciones:
 - **Los dos Client ID deben ser distintos y únicos.** El broker desconecta a un cliente
   cuando entra otro con el mismo ID: si el estuche y la app compartieran uno, se
   echarían mutuamente sin parar. Por eso ninguno de los dos se escribe a mano.
+- **Solo letras y dígitos, 23 caracteres como máximo:** es lo único que MQTT 3.1.1
+  obliga a aceptar a todo broker. Sin guiones ni UUID completos, ambos ID funcionan con
+  cualquier broker.
 - El estuche, al conectar: registra su LWT (§4), publica `estado` = online, se suscribe
   a las órdenes y publica `cierre` y, si tiene sensor, `bateria`.
 
