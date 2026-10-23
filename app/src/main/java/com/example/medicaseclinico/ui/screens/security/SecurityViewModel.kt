@@ -37,7 +37,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Prepara la pantalla "Seguridad del Estuche": el seguro y la contraseña del
- * estuche (órdenes por Bluetooth) y las personas con acceso (en la nube).
+ * estuche (órdenes al estuche) y las personas con acceso (en la nube).
  *
  * La contraseña pasa por aquí solo de camino al estuche: no se guarda en el
  * estado, ni en el teléfono, ni en la nube.
@@ -165,7 +165,7 @@ class SecurityViewModel(
         appearance: AppearanceMode,
         local: Local
     ): SecurityUiState = SecurityUiState.Success(
-        pin = control.toPinState(),
+        pin = control.toPinState(canSendPinSecurely = deviceRepository.canSendPinSecurely),
         users = users.list.map { user ->
             AccessUser(
                 id = user.id,
@@ -218,6 +218,19 @@ class SecurityViewModel(
         } catch (e: Exception) {
             null
         }
+
+    /**
+     * Sin enlace cifrado los controles quedan desactivados desde el principio, en
+     * vez de dejar teclear un PIN que luego no se enviaría. La posición del seguro
+     * se sigue mostrando si el estuche la informó: es un dato real, solo de lectura.
+     */
+    private fun CaseControlState.toPinState(canSendPinSecurely: Boolean): CasePinState = when {
+        !canSendPinSecurely -> CasePinState(
+            availability = CasePinAvailability.SECURE_CONNECTION_REQUIRED,
+            pinRequired = (this as? CaseControlState.Ready)?.pinRequired
+        )
+        else -> toPinState()
+    }
 
     private fun CaseControlState.toPinState(): CasePinState = when (this) {
         CaseControlState.Unavailable ->

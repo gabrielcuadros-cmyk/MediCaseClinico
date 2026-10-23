@@ -6,6 +6,8 @@ import com.example.medicaseclinico.domain.model.ConnectionStatus
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -66,6 +68,12 @@ class MqttCaseDeviceRepositoryTest {
             CaseCommandError.NOT_CONNECTED,
             repository.changePin(currentPin = "1234", newPin = "8052").error()
         )
+    }
+
+    @Test
+    fun `solo con tls el enlace puede llevar el pin`() {
+        assertFalse(repository(useTls = false).canSendPinSecurely)
+        assertTrue(repository(useTls = true).canSendPinSecurely)
     }
 
     @Test

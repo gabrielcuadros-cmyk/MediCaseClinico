@@ -771,6 +771,7 @@ private fun CasePinAvailability.unavailableRes(): Int? = when (this) {
     CasePinAvailability.READY -> null
     CasePinAvailability.DISCONNECTED -> R.string.security_case_disconnected
     CasePinAvailability.NOT_SUPPORTED -> R.string.security_case_not_supported
+    CasePinAvailability.SECURE_CONNECTION_REQUIRED -> R.string.security_msg_secure_connection_required
 }
 
 @StringRes

@@ -57,6 +57,7 @@ class MqttCaseDeviceRepository(
     private val link = MqttCaseLink()
 
     override val transport: CaseTransport = CaseTransport.MQTT
+    override val canSendPinSecurely: Boolean = config.useTls
     override val connectionStatus: StateFlow<ConnectionStatus> = link.connectionStatus
     override val deviceIssue: StateFlow<DeviceIssue?> = link.deviceIssue
     override val telemetry: Flow<CaseTelemetry> = link.telemetry
@@ -121,7 +122,7 @@ class MqttCaseDeviceRepository(
         carriesPin: Boolean,
         encode: (commandId: String) -> String?
     ): Result<Unit> {
-        if (carriesPin && !config.useTls) {
+        if (carriesPin && !canSendPinSecurely) {
             return commandFailure(CaseCommandError.SECURE_CONNECTION_REQUIRED)
         }
         val mqtt = client

@@ -41,11 +41,17 @@ enum class CasePinAvailability {
     /** El estuche está conectado y acepta órdenes. */
     READY,
 
-    /** No hay enlace Bluetooth con el estuche. */
+    /** No hay enlace con el estuche. */
     DISCONNECTED,
 
     /** El estuche conectado no tiene estas funciones. */
-    NOT_SUPPORTED
+    NOT_SUPPORTED,
+
+    /**
+     * El enlace no está cifrado (MQTT sin TLS): el PIN no puede enviarse, esté o
+     * no conectado el estuche. Conectarlo no lo arregla, por eso tiene prioridad.
+     */
+    SECURE_CONNECTION_REQUIRED
 }
 
 /**

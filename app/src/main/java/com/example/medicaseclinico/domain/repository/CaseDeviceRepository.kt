@@ -26,6 +26,13 @@ interface CaseDeviceRepository {
     /** Por dónde llegan los datos: no cambia mientras la app está abierta. */
     val transport: CaseTransport
 
+    /**
+     * Si el enlace puede llevar el PIN cifrado. Por Bluetooth, sí: las escrituras
+     * exigen emparejamiento. Por MQTT, solo con TLS; sin él el PIN viajaría en claro
+     * por el broker, así que la app ni lo pide. Se fija al compilar, como [transport].
+     */
+    val canSendPinSecurely: Boolean get() = true
+
     /** Estado real del enlace BLE. */
     val connectionStatus: StateFlow<ConnectionStatus>
 

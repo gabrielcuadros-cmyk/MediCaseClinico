@@ -97,6 +97,7 @@ class FakeAuthorizedUsersRepository(
  */
 class FakeCaseDeviceRepository : CaseDeviceRepository {
     override var transport = CaseTransport.BLUETOOTH
+    override var canSendPinSecurely = true
     override val connectionStatus = MutableStateFlow(ConnectionStatus.DISCONNECTED)
     override val deviceIssue = MutableStateFlow<DeviceIssue?>(null)
     override val telemetry: Flow<CaseTelemetry> = emptyFlow()
