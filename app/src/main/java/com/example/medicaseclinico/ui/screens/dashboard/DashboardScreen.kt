@@ -218,6 +218,7 @@ fun DashboardScreen(
                 deviceIssue?.let { issue ->
                     DeviceIssueBanner(
                         issue = issue,
+                        transport = transport,
                         permissionsPermanentlyDenied = permissionsPermanentlyDenied,
                         onAction = onIssueAction,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -234,7 +235,7 @@ fun DashboardScreen(
             ) { state ->
                 when (state) {
                     is DashboardUiState.Loading -> DashboardLoadingContent()
-                    is DashboardUiState.Empty -> DashboardEmptyContent()
+                    is DashboardUiState.Empty -> DashboardEmptyContent(transport = transport)
                     is DashboardUiState.Error -> DashboardErrorContent(
                         reason = state.reason,
                         canRetry = state.canRetry,

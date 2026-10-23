@@ -36,18 +36,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.ui.theme.MediCaseStatusColors
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 
+/**
+ * Aviso de un problema de conexión con el estuche, con su acción para resolverlo.
+ *
+ * Recibe el [transport] porque el consejo cambia: por Bluetooth hay que acercar el
+ * estuche; por MQTT, revisar su Wi-Fi o la conexión a internet del teléfono.
+ */
 @Composable
 fun DeviceIssueBanner(
     issue: DeviceIssue,
+    transport: CaseTransport,
     permissionsPermanentlyDenied: Boolean,
     onAction: (DeviceIssue) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val style = issue.bannerStyle(MediCaseTheme.statusColors, permissionsPermanentlyDenied)
+    val style = issue.bannerStyle(MediCaseTheme.statusColors, transport, permissionsPermanentlyDenied)
 
     Surface(
         modifier = modifier
@@ -109,6 +117,7 @@ private data class IssueBannerStyle(
 
 private fun DeviceIssue.bannerStyle(
     colors: MediCaseStatusColors,
+    transport: CaseTransport,
     permissionsPermanentlyDenied: Boolean
 ): IssueBannerStyle = when (this) {
     DeviceIssue.PERMISSIONS_MISSING -> IssueBannerStyle(
@@ -138,7 +147,10 @@ private fun DeviceIssue.bannerStyle(
     DeviceIssue.DEVICE_NOT_FOUND -> IssueBannerStyle(
         icon = Icons.Outlined.SearchOff,
         titleRes = R.string.issue_not_found_title,
-        messageRes = R.string.issue_not_found_message,
+        messageRes = when (transport) {
+            CaseTransport.BLUETOOTH -> R.string.issue_not_found_message
+            CaseTransport.MQTT -> R.string.issue_not_found_message_mqtt
+        },
         actionRes = R.string.issue_action_search_again,
         accentColor = colors.warning,
         containerColor = colors.warningContainer
@@ -146,7 +158,10 @@ private fun DeviceIssue.bannerStyle(
     DeviceIssue.CONNECTION_LOST -> IssueBannerStyle(
         icon = Icons.Outlined.LinkOff,
         titleRes = R.string.issue_connection_lost_title,
-        messageRes = R.string.issue_connection_lost_message,
+        messageRes = when (transport) {
+            CaseTransport.BLUETOOTH -> R.string.issue_connection_lost_message
+            CaseTransport.MQTT -> R.string.issue_connection_lost_message_mqtt
+        },
         actionRes = R.string.issue_action_reconnect,
         accentColor = colors.critical,
         containerColor = colors.criticalContainer
@@ -168,6 +183,7 @@ private fun DeviceIssueBannerPreview() {
         Surface(color = MaterialTheme.colorScheme.background) {
             DeviceIssueBanner(
                 issue = DeviceIssue.BLUETOOTH_DISABLED,
+                transport = CaseTransport.BLUETOOTH,
                 permissionsPermanentlyDenied = false,
                 onAction = {},
                 modifier = Modifier.padding(16.dp)

@@ -127,6 +127,7 @@ class AppContainer(context: Context) {
         RecordingAlertPublisher(
             delegate = SystemAlertPublisher(
                 context = appContext,
+                transport = caseDeviceRepository.transport,
                 preferencesProvider = { notificationPreferences.value }
             ),
             alertEventRepository = alertEventRepository,

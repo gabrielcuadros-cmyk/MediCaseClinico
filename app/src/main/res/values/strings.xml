@@ -15,11 +15,11 @@
     <string name="dashboard_title">MediCase Clínico</string>
     <string name="dashboard_greeting">Hola, %1$s</string>
 
-    <!-- Estado Bluetooth del estuche -->
+    <!-- Estado de conexión del estuche -->
     <string name="ble_status_connected">Conectado</string>
     <string name="ble_status_connecting">Conectando…</string>
     <string name="ble_status_disconnected">Desconectado</string>
-    <string name="ble_status_content_description">Estado Bluetooth del estuche: %1$s</string>
+    <string name="ble_status_content_description">Estado de conexión del estuche: %1$s</string>
 
     <!-- Estados genéricos y acciones comunes -->
     <string name="state_loading_default">Cargando…</string>
@@ -35,6 +35,7 @@
     <string name="dashboard_loading">Sincronizando datos del estuche…</string>
     <string name="dashboard_empty_title">Aún no hay lecturas registradas</string>
     <string name="dashboard_empty_message">Enciende tu estuche MediCase y mantenlo cerca del teléfono con Bluetooth activado. La temperatura de tu insulina aparecerá aquí en cuanto llegue la primera lectura.</string>
+    <string name="dashboard_empty_message_mqtt">Enciende tu estuche MediCase y comprueba que esté conectado a una red Wi-Fi. La temperatura de tu insulina aparecerá aquí en cuanto llegue la primera lectura.</string>
 
     <!-- Dashboard: errores -->
     <string name="error_database_title">No se pudo leer el historial</string>
@@ -68,7 +69,7 @@
     <string name="dashboard_footer_battery_low">%1$s • Batería de Estuche baja</string>
     <string name="dashboard_access_log">Registrar Acceso por PIN</string>
 
-    <!-- Avisos del estuche BLE -->
+    <!-- Avisos de conexión del estuche -->
     <string name="issue_permissions_title">Permiso de dispositivos cercanos necesario</string>
     <string name="issue_permissions_message">MediCase necesita este permiso para encontrar tu estuche y leer la temperatura de tu insulina.</string>
     <string name="issue_permissions_denied_message">El permiso fue denegado. Actívalo en Ajustes → Permisos → Dispositivos cercanos.</string>
@@ -76,8 +77,10 @@
     <string name="issue_bluetooth_off_message">Activa el Bluetooth para recibir la temperatura y la batería del estuche en tiempo real.</string>
     <string name="issue_not_found_title">No se encontró tu estuche</string>
     <string name="issue_not_found_message">Comprueba que el estuche esté encendido y a menos de 10 metros del teléfono.</string>
+    <string name="issue_not_found_message_mqtt">El estuche no responde. Comprueba que esté encendido y conectado a una red Wi-Fi.</string>
     <string name="issue_connection_lost_title">Se perdió la conexión con el estuche</string>
     <string name="issue_connection_lost_message">Se agotaron los reintentos automáticos. Acerca el estuche al teléfono e intenta reconectar.</string>
+    <string name="issue_connection_lost_message_mqtt">No se pudo contactar con el servidor del estuche. Comprueba la conexión a internet del teléfono e intenta reconectar.</string>
     <string name="issue_not_supported_title">Bluetooth LE no disponible</string>
     <string name="issue_not_supported_message">Este dispositivo no admite Bluetooth de bajo consumo. Puedes consultar el historial guardado, pero no recibir lecturas en vivo.</string>
     <string name="issue_action_grant_permissions">Conceder permisos</string>
@@ -168,7 +171,7 @@
     <string name="channel_battery_name">Batería Baja</string>
     <string name="channel_battery_description">Notifica cuando el estuche baja del 20 % para asegurar el enfriamiento.</string>
     <string name="channel_connection_name">Desconexión de Estuche</string>
-    <string name="channel_connection_description">Aviso si se pierde la conexión Bluetooth con el estuche.</string>
+    <string name="channel_connection_description">Aviso si se pierde la conexión con el estuche.</string>
     <string name="channel_geofence_name">Geocerca de Seguridad</string>
     <string name="channel_geofence_description">Alerta al entrar o salir de las zonas configuradas.</string>
     <string name="channel_security_name">Acceso No Autorizado</string>
@@ -181,6 +184,7 @@
     <string name="notif_battery_text">Batería al %1$d%%. Conecta el MediCase al cargador: la refrigeración podría fallar.</string>
     <string name="notif_connection_title">Estuche desconectado</string>
     <string name="notif_connection_text">Se perdió la conexión Bluetooth con tu MediCase. Acércalo al teléfono.</string>
+    <string name="notif_connection_text_mqtt">Se perdió la conexión con tu MediCase. Comprueba que esté encendido y conectado a una red Wi-Fi.</string>
     <string name="notif_security_title">Intento de acceso al estuche</string>
     <string name="notif_security_denied_text">Alguien tecleó una contraseña incorrecta en tu MediCase. Intentos fallidos seguidos: %1$d.</string>
     <string name="notif_security_locked_text">Tu MediCase se bloqueó por intentos fallidos de contraseña.</string>
@@ -242,8 +246,8 @@
     <string name="alerts_battery_title">Nivel de Batería Bajo</string>
     <string name="alerts_battery_title_with_level">Nivel de Batería Bajo (%1$d%%)</string>
     <string name="alerts_battery_description">Conecta el MediCase al cargador. La refrigeración podría fallar.</string>
-    <string name="alerts_connection_title">Desconexión Bluetooth</string>
-    <string name="alerts_connection_description">Pérdida de enlace directo con el móvil.</string>
+    <string name="alerts_connection_title">Desconexión del Estuche</string>
+    <string name="alerts_connection_description">Se perdió el enlace con el estuche.</string>
     <string name="alerts_geofence_title">Geocerca de Seguridad Violada</string>
     <string name="alerts_geofence_description">El dispositivo ha salido de la geocerca establecida.</string>
     <string name="alerts_geofence_description_with_zone">El dispositivo ha salido de la geocerca establecida en %1$s.</string>
@@ -284,7 +288,7 @@
     <string name="map_empty_no_signal_title">Sin señal GPS</string>
     <string name="map_empty_no_signal_message">El GPS del estuche aún no tiene posición. Llévalo a un lugar despejado; su ubicación aparecerá aquí.</string>
     <string name="map_empty_no_link_title">Sin ubicación del estuche</string>
-    <string name="map_empty_no_link_message">Conecta tu estuche por Bluetooth. Su ubicación aparecerá aquí en cuanto la envíe.</string>
+    <string name="map_empty_no_link_message">Conecta tu estuche. Su ubicación aparecerá aquí en cuanto la envíe.</string>
     <string name="map_empty_not_supported_title">Estuche sin GPS</string>
     <string name="map_empty_not_supported_message">El estuche conectado no informa su ubicación.</string>
     <string name="map_status_no_signal">Sin señal GPS · última ubicación conocida</string>
@@ -385,7 +389,7 @@
     <string name="loss_mode_alarm_description">El estuche emitirá un pitido de alto volumen.</string>
     <string name="loss_mode_gps_title">Aumentar Frecuencia GPS</string>
     <string name="loss_mode_gps_description">Mayor consumo de batería para reportar cada 1 seg.</string>
-    <string name="loss_mode_controls_disconnected">Conecta el estuche por Bluetooth para usar la alarma y el GPS.</string>
+    <string name="loss_mode_controls_disconnected">Conecta el estuche para usar la alarma y el GPS.</string>
     <string name="loss_mode_share_location">Enviar Ubicación a Contacto Clínico</string>
     <string name="loss_mode_share_subject">Ubicación de mi estuche MediCase</string>
     <string name="loss_mode_share_text">Mi estuche de insulina MediCase está perdido. Su última ubicación es %1$s. Mapa: %2$s</string>
@@ -462,7 +466,7 @@
     <string name="security_lock_title">Contraseña del Estuche (4 dígitos)</string>
     <string name="security_lock_description">Abre el estuche con una contraseña numérica.</string>
     <string name="security_case_not_supported">Requiere un estuche compatible.</string>
-    <string name="security_case_disconnected">Conecta el estuche por Bluetooth para gestionar su contraseña.</string>
+    <string name="security_case_disconnected">Conecta el estuche para gestionar su contraseña.</string>
     <string name="security_pin_section">CONTRASEÑA DEL ESTUCHE</string>
     <string name="security_pin_mask">••••</string>
     <string name="security_pin_hidden_description">Contraseña oculta</string>

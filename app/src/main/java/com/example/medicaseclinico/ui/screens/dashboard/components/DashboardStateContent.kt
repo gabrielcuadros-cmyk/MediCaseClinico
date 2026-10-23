@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.ui.components.MediCaseLoadingState
 import com.example.medicaseclinico.ui.components.MediCaseMessageState
 import com.example.medicaseclinico.ui.screens.dashboard.ErrorReason
@@ -32,13 +33,21 @@ fun DashboardLoadingContent(modifier: Modifier = Modifier) {
     )
 }
 
-/** Sin lecturas registradas (DashboardUiState.Empty). */
+/**
+ * Sin lecturas registradas (DashboardUiState.Empty). El consejo depende del
+ * [transport]: por Bluetooth, tener el estuche cerca; por MQTT, que tenga Wi-Fi.
+ */
 @Composable
-fun DashboardEmptyContent(modifier: Modifier = Modifier) {
+fun DashboardEmptyContent(transport: CaseTransport, modifier: Modifier = Modifier) {
     MediCaseMessageState(
         icon = Icons.Outlined.DeviceThermostat,
         title = stringResource(R.string.dashboard_empty_title),
-        message = stringResource(R.string.dashboard_empty_message),
+        message = stringResource(
+            when (transport) {
+                CaseTransport.BLUETOOTH -> R.string.dashboard_empty_message
+                CaseTransport.MQTT -> R.string.dashboard_empty_message_mqtt
+            }
+        ),
         accentColor = MaterialTheme.colorScheme.primary,
         accentContainerColor = MaterialTheme.colorScheme.primaryContainer,
         modifier = modifier
@@ -113,7 +122,7 @@ private fun DashboardLoadingPreview() {
 @Composable
 private fun DashboardEmptyPreview() {
     Surface {
-        DashboardEmptyContent()
+        DashboardEmptyContent(transport = CaseTransport.BLUETOOTH)
     }
 }
 

@@ -14,6 +14,7 @@ import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.model.AlertType
 import com.example.medicaseclinico.domain.model.BatteryThresholds
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.Geofence
 import com.example.medicaseclinico.domain.model.NotificationPreferences
 import com.example.medicaseclinico.domain.model.TemperatureStatus
@@ -24,9 +25,13 @@ import java.util.concurrent.TimeUnit
 /**
  * Publica las alertas de MediCase como notificaciones del sistema,
  * aplicando antirrebote para no saturar al usuario y respetando las preferencias guardadas.
+ *
+ * El [transport] solo cambia el consejo de la notificación de desconexión: acercar el
+ * estuche no sirve de nada si los datos llegan por MQTT.
  */
 class SystemAlertPublisher(
     context: Context,
+    private val transport: CaseTransport,
     private val preferencesProvider: () -> NotificationPreferences,
     private val clock: () -> Long = System::currentTimeMillis
 ) : AlertPublisher {
@@ -116,7 +121,12 @@ class SystemAlertPublisher(
             id = NOTIFICATION_ID_CONNECTION,
             channel = AlertChannel.CONNECTION,
             title = appContext.getString(R.string.notif_connection_title),
-            text = appContext.getString(R.string.notif_connection_text),
+            text = appContext.getString(
+                when (transport) {
+                    CaseTransport.BLUETOOTH -> R.string.notif_connection_text
+                    CaseTransport.MQTT -> R.string.notif_connection_text_mqtt
+                }
+            ),
             silent = false,
             ongoing = false
         )
