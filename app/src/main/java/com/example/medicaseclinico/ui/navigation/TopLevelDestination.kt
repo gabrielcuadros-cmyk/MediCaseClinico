@@ -2,6 +2,8 @@ package com.example.medicaseclinico.ui.navigation
 
 import androidx.annotation.StringRes
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.domain.model.CaseAccess
+import com.example.medicaseclinico.domain.model.CaseCapability
 
 /**
  * Los 5 destinos fijos de la barra inferior, en el orden exacto del diseño:
@@ -19,6 +21,19 @@ enum class TopLevelDestination(
 
     companion object {
         val START = HOME
+
+        /**
+         * Pestañas que ve [access]: sin permiso de temperatura no hay pestaña
+         * Temp, y sin permiso de ubicación no hay Mapa. Inicio, Alertas y
+         * Seguridad (con la cuenta y cerrar sesión) existen siempre.
+         */
+        fun visibleFor(access: CaseAccess): List<TopLevelDestination> = entries.filter {
+            when (it) {
+                TEMPERATURE -> access.can(CaseCapability.VIEW_TEMPERATURE)
+                MAP -> access.can(CaseCapability.VIEW_LOCATION)
+                HOME, ALERTS, SECURITY -> true
+            }
+        }
 
         /** Resuelve la pestaña activa, incluidas las pantallas secundarias. */
         fun fromRoute(route: String?): TopLevelDestination? =

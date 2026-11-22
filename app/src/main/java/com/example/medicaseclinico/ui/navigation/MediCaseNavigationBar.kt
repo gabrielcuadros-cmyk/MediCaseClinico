@@ -44,13 +44,15 @@ import com.example.medicaseclinico.ui.theme.MediCaseTheme
  * @param currentDestination pestaña activa (se pinta en Azul Eléctrico).
  * @param onNavigate callback al tocar una pestaña.
  * @param activeAlertsCount alertas sin revisar; si es > 0 se muestra un indicador rojo.
+ * @param destinations pestañas que puede ver la cuenta (un invitado sin permiso no ve Temp o Mapa).
  */
 @Composable
 fun MediCaseNavigationBar(
     currentDestination: TopLevelDestination?,
     onNavigate: (TopLevelDestination) -> Unit,
     modifier: Modifier = Modifier,
-    activeAlertsCount: Int = 0
+    activeAlertsCount: Int = 0,
+    destinations: List<TopLevelDestination> = TopLevelDestination.entries
 ) {
     // Línea superior fina que separa la barra del contenido, como en el diseño.
     Column(modifier = modifier) {
@@ -62,7 +64,7 @@ fun MediCaseNavigationBar(
             containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = NAV_BAR_ELEVATION
         ) {
-            TopLevelDestination.entries.forEach { destination ->
+            destinations.forEach { destination ->
                 val isSelected = destination == currentDestination
                 NavigationBarItem(
                     selected = isSelected,

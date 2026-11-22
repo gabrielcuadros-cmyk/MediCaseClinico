@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -18,12 +20,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.ui.components.MediCaseLoadingState
+import com.example.medicaseclinico.ui.components.MediCaseMessageState
 import com.example.medicaseclinico.ui.navigation.AuthNavGraph
 import com.example.medicaseclinico.ui.navigation.MediCaseNavGraph
 import com.example.medicaseclinico.ui.navigation.MediCaseNavigationBar
 import com.example.medicaseclinico.ui.navigation.TopLevelDestination
 import com.example.medicaseclinico.ui.navigation.currentTopLevelDestination
 import com.example.medicaseclinico.ui.navigation.navigateToTopLevel
+import com.example.medicaseclinico.ui.theme.MediCaseTheme
 
 /**
  * Raíz de MediCase Clínico: la compuerta de sesión.
@@ -53,6 +57,20 @@ fun MediCaseApp(
 
         SessionState.SIGNED_OUT ->
             AccountSurface(modifier = modifier) { AuthNavGraph() }
+
+        // El dueño quitó el acceso: no se muestra nada del estuche, solo salir.
+        SessionState.REVOKED ->
+            AccountSurface(modifier = modifier) {
+                MediCaseMessageState(
+                    icon = Icons.Outlined.Block,
+                    title = stringResource(R.string.access_revoked_title),
+                    message = stringResource(R.string.access_revoked_message),
+                    accentColor = MediCaseTheme.statusColors.critical,
+                    accentContainerColor = MediCaseTheme.statusColors.criticalContainer,
+                    actionLabel = stringResource(R.string.access_revoked_sign_out),
+                    onAction = viewModel::signOut
+                )
+            }
 
         SessionState.SIGNED_IN ->
             MainApp(
@@ -108,6 +126,14 @@ private fun MainApp(
         }
     }
     val unreadAlertsCount by viewModel.unreadAlertsCount.collectAsStateWithLifecycle()
+    // La sesión solo llega aquí con el acceso resuelto; hasta entonces, la espera.
+    val access = viewModel.caseAccess.collectAsStateWithLifecycle().value
+    if (access == null) {
+        AccountSurface(modifier = modifier) {
+            MediCaseLoadingState(message = stringResource(R.string.session_checking))
+        }
+        return
+    }
 
     Scaffold(
         modifier = modifier,
@@ -116,13 +142,15 @@ private fun MainApp(
             MediCaseNavigationBar(
                 currentDestination = navController.currentTopLevelDestination(),
                 onNavigate = { destination -> navController.navigateToTopLevel(destination) },
-                activeAlertsCount = unreadAlertsCount
+                activeAlertsCount = unreadAlertsCount,
+                destinations = TopLevelDestination.visibleFor(access)
             )
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         MediCaseNavGraph(
             navController = navController,
+            access = access,
             onSignOut = onSignOut,
             modifier = Modifier.padding(innerPadding)
         )

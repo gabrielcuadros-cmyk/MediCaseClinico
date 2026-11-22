@@ -11,7 +11,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.medicaseclinico.domain.model.AlertFilter
+import com.example.medicaseclinico.domain.model.CaseAccess
+import com.example.medicaseclinico.domain.model.CaseCapability
+import com.example.medicaseclinico.ui.components.NoPermissionScreen
 import com.example.medicaseclinico.ui.screens.alerts.AlertsRoute
+import com.example.medicaseclinico.ui.screens.dashboard.DashboardPermissions
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardRoute
 import com.example.medicaseclinico.ui.screens.dashboard.DashboardSection
 import com.example.medicaseclinico.ui.screens.geofence.GeofenceConfigRoute
@@ -35,9 +39,13 @@ import com.example.medicaseclinico.ui.screens.users.permissions.UserPermissionsR
 @Composable
 fun MediCaseNavGraph(
     navController: NavHostController,
+    access: CaseAccess,
     modifier: Modifier = Modifier,
     onSignOut: (() -> Unit)? = null
 ) {
+    val canControlCase = access.can(CaseCapability.CONTROL_CASE)
+    val canManageUsers = access.can(CaseCapability.MANAGE_USERS)
+
     // Filtro con el que el Inicio pide abrir Alertas. Vive aquí porque es lo
     // único que conoce a las dos pantallas; se borra en cuanto se aplica.
     var requestedAlertFilter by rememberSaveable { mutableStateOf<AlertFilter?>(null) }
@@ -61,29 +69,53 @@ fun MediCaseNavGraph(
                         }
                     )
                 },
-                // "Registrar Acceso por PIN": los intentos del teclado del
-                // estuche están en Alertas, bajo el filtro Seguridad.
+                // "Ver registro de accesos": aperturas, PIN incorrectos y
+                // bloqueos del teclado están en Alertas, bajo el filtro Seguridad.
                 onOpenAccessLog = {
                     requestedAlertFilter = AlertFilter.SECURITY
                     navController.navigateToTopLevel(TopLevelDestination.ALERTS)
-                }
+                },
+                permissions = DashboardPermissions.of(access)
             )
         }
+        // Cada ruta comprueba el permiso aunque su pestaña o su botón ya estén
+        // ocultos: un widget o un atajo podrían abrirla igualmente.
         composable(TopLevelDestination.TEMPERATURE.route) {
-            TemperatureHistoryRoute(onBack = { navController.popBackStack() })
+            if (access.can(CaseCapability.VIEW_TEMPERATURE)) {
+                TemperatureHistoryRoute(
+                    onBack = { navController.popBackStack() },
+                    canExportReport = access.can(CaseCapability.EXPORT_REPORTS)
+                )
+            } else {
+                NoPermissionScreen()
+            }
         }
         composable(TopLevelDestination.MAP.route) {
-            MapRoute(
-                onBack = { navController.popBackStack() },
-                onOpenLossMode = { navController.navigate(SecondaryRoutes.LOSS_MODE) },
-                onConfigureGeofence = { navController.navigate(SecondaryRoutes.GEOFENCE_CONFIG) }
-            )
+            if (access.can(CaseCapability.VIEW_LOCATION)) {
+                MapRoute(
+                    onBack = { navController.popBackStack() },
+                    onOpenLossMode = { navController.navigate(SecondaryRoutes.LOSS_MODE) }
+                        .takeIf { canControlCase },
+                    onConfigureGeofence = { navController.navigate(SecondaryRoutes.GEOFENCE_CONFIG) }
+                        .takeIf { canControlCase }
+                )
+            } else {
+                NoPermissionScreen()
+            }
         }
         composable(SecondaryRoutes.GEOFENCE_CONFIG) {
-            GeofenceConfigRoute(onBack = { navController.popBackStack() })
+            if (canControlCase) {
+                GeofenceConfigRoute(onBack = { navController.popBackStack() })
+            } else {
+                NoPermissionScreen()
+            }
         }
         composable(SecondaryRoutes.LOSS_MODE) {
-            LossModeRoute(onBack = { navController.popBackStack() })
+            if (canControlCase) {
+                LossModeRoute(onBack = { navController.popBackStack() })
+            } else {
+                NoPermissionScreen()
+            }
         }
         composable(TopLevelDestination.ALERTS.route) {
             AlertsRoute(
@@ -97,29 +129,43 @@ fun MediCaseNavGraph(
                 onOpenUsers = { navController.navigate(SecondaryRoutes.AUTHORIZED_USERS) },
                 onAddUser = { navController.navigate(SecondaryRoutes.ADD_USER) },
                 onOpenNotifications = { navController.navigate(SecondaryRoutes.NOTIFICATION_SETTINGS) },
-                onSignOut = onSignOut
+                onSignOut = onSignOut,
+                canControlCase = canControlCase,
+                canManageUsers = canManageUsers
             )
         }
         composable(SecondaryRoutes.AUTHORIZED_USERS) {
-            AuthorizedUsersRoute(
-                onBack = { navController.popBackStack() },
-                onAddUser = { navController.navigate(SecondaryRoutes.ADD_USER) },
-                onOpenPermissions = { userId ->
-                    navController.navigate(SecondaryRoutes.userPermissions(userId))
-                }
-            )
+            if (canManageUsers) {
+                AuthorizedUsersRoute(
+                    onBack = { navController.popBackStack() },
+                    onAddUser = { navController.navigate(SecondaryRoutes.ADD_USER) },
+                    onOpenPermissions = { userId ->
+                        navController.navigate(SecondaryRoutes.userPermissions(userId))
+                    }
+                )
+            } else {
+                NoPermissionScreen()
+            }
         }
         composable(SecondaryRoutes.USER_PERMISSIONS) {
-            UserPermissionsRoute(
-                onBack = { navController.popBackStack() },
-                onRevoked = { navController.popBackStack() }
-            )
+            if (canManageUsers) {
+                UserPermissionsRoute(
+                    onBack = { navController.popBackStack() },
+                    onRevoked = { navController.popBackStack() }
+                )
+            } else {
+                NoPermissionScreen()
+            }
         }
         composable(SecondaryRoutes.ADD_USER) {
-            AddUserRoute(
-                onBack = { navController.popBackStack() },
-                onDone = { navController.popBackStack() }
-            )
+            if (canManageUsers) {
+                AddUserRoute(
+                    onBack = { navController.popBackStack() },
+                    onDone = { navController.popBackStack() }
+                )
+            } else {
+                NoPermissionScreen()
+            }
         }
         composable(SecondaryRoutes.NOTIFICATION_SETTINGS) {
             NotificationSettingsRoute(onBack = { navController.popBackStack() })

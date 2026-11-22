@@ -7,13 +7,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
+import com.example.medicaseclinico.domain.model.CaseAccess
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import com.example.medicaseclinico.domain.repository.AuthRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
@@ -28,6 +30,9 @@ enum class SessionState {
 
     SIGNED_IN,
 
+    /** Hay sesión, pero el dueño le quitó el acceso al estuche a esta cuenta invitada. */
+    REVOKED,
+
     /** Esta instalación no tiene servicio de cuentas: se entra sin sesión. */
     NOT_REQUIRED
 }
@@ -41,20 +46,44 @@ enum class SessionState {
  */
 class MediCaseAppViewModel(
     alertEventRepository: AlertEventRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    caseAccess: Flow<CaseAccess?>
 ) : ViewModel() {
+
+    /**
+     * Qué puede ver y hacer la cuenta (dueña o invitada). null mientras se
+     * resuelve: la app no se muestra hasta saberlo.
+     */
+    val caseAccess: StateFlow<CaseAccess?> = caseAccess
+        .catch { throwable ->
+            if (throwable is CancellationException) throw throwable
+            emit(null)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            initialValue = null
+        )
+
 
     /**
      * Decide entre las pantallas de cuenta y la app. Si el estado de la sesión
      * no se puede leer se trata como "sin sesión": es preferible pedir entrar
      * de nuevo que mostrar los datos del estuche a quien no se ha identificado.
+     * Con sesión, se espera a saber si la cuenta es dueña, invitada o revocada.
      */
     val sessionState: StateFlow<SessionState> =
         if (!authRepository.isAvailable) {
             MutableStateFlow(SessionState.NOT_REQUIRED)
         } else {
-            authRepository.currentUser
-                .map { user -> if (user == null) SessionState.SIGNED_OUT else SessionState.SIGNED_IN }
+            combine(authRepository.currentUser, this.caseAccess) { user, access ->
+                when {
+                    user == null -> SessionState.SIGNED_OUT
+                    access == null -> SessionState.CHECKING
+                    access == CaseAccess.Revoked -> SessionState.REVOKED
+                    else -> SessionState.SIGNED_IN
+                }
+            }
                 .catch { throwable ->
                     if (throwable is CancellationException) throw throwable
                     emit(SessionState.SIGNED_OUT)
@@ -75,12 +104,15 @@ class MediCaseAppViewModel(
     }
 
     /**
-     * Alertas que el usuario aún no ha visto. Si no se puede leer el historial
+     * Alertas que el usuario aún no ha visto (de las que puede ver). Si no se puede leer el historial
      * no se muestra indicador: es preferible a un número que no es real, y el
      * error ya se explica al abrir la pestaña Alertas.
      */
     val unreadAlertsCount: StateFlow<Int> =
-        alertEventRepository.observeUnreadCount()
+        combine(alertEventRepository.observeAlertEvents(), caseAccess) { events, access ->
+            // Un invitado no cuenta alertas de datos que no puede ver.
+            events.count { !it.isRead && (access == null || access.canSeeAlert(it.type)) }
+        }
             .catch { throwable ->
                 if (throwable is CancellationException) throw throwable
                 emit(NO_ALERTS)
@@ -100,7 +132,8 @@ class MediCaseAppViewModel(
                 val application = checkNotNull(this[APPLICATION_KEY]) as MediCaseApplication
                 MediCaseAppViewModel(
                     alertEventRepository = application.container.alertEventRepository,
-                    authRepository = application.container.authRepository
+                    authRepository = application.container.authRepository,
+                    caseAccess = application.container.caseAccess
                 )
             }
         }
