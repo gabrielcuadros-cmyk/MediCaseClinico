@@ -93,14 +93,14 @@ fun UserPermissions.with(permission: UserPermission, granted: Boolean): UserPerm
 /**
  * En qué punto está el acceso de una persona.
  *
- * Hoy la app solo registra e invita: que el invitado entre desde su propio
- * teléfono es una mejora futura, así que nadie pasa todavía a [ACTIVE].
+ * Pasa a [ACTIVE] la primera vez que el invitado inicia sesión en la app con
+ * el correo con el que fue invitado.
  */
 enum class AccessStatus {
     /** Registrada e invitada; aún no ha entrado con su propia cuenta. */
     INVITATION_PENDING,
 
-    /** Ya usa su acceso. */
+    /** Ya entró con su propia cuenta y usa su acceso. */
     ACTIVE
 }
 

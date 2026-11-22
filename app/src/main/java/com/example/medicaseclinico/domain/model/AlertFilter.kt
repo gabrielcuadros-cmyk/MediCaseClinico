@@ -23,5 +23,18 @@ enum class AlertFilter {
 
     companion object {
         val DEFAULT = ALL
+
+        /**
+         * Chips que ve [access]: un invitado sin permiso para un dato no ve el
+         * filtro de sus alertas. "Todas" existe siempre.
+         */
+        fun visibleFor(access: CaseAccess): List<AlertFilter> = entries.filter { filter ->
+            when (filter) {
+                ALL -> true
+                TEMPERATURE -> access.canSeeAlert(AlertType.TEMPERATURE)
+                LOCATION -> access.canSeeAlert(AlertType.GEOFENCE)
+                SECURITY -> access.canSeeAlert(AlertType.SECURITY)
+            }
+        }
     }
 }
