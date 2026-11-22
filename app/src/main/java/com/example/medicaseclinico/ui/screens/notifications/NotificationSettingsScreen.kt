@@ -269,7 +269,6 @@ private data class AlertToggle(
 
 private val AlertToggles = listOf(
     AlertToggle(AlertType.TEMPERATURE, R.string.channel_temperature_name, R.string.channel_temperature_description),
-    AlertToggle(AlertType.BATTERY, R.string.channel_battery_name, R.string.channel_battery_description),
     AlertToggle(AlertType.CONNECTION, R.string.channel_connection_name, R.string.channel_connection_description),
     AlertToggle(AlertType.GEOFENCE, R.string.channel_geofence_name, R.string.channel_geofence_description),
     AlertToggle(AlertType.SECURITY, R.string.channel_security_name, R.string.channel_security_description)

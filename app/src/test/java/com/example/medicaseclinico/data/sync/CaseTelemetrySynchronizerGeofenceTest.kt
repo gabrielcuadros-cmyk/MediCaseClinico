@@ -107,7 +107,6 @@ class CaseTelemetrySynchronizerGeofenceTest {
         }
 
         override fun onTemperature(celsius: Float, status: TemperatureStatus) = Unit
-        override fun onBatteryLevel(percent: Int) = Unit
         override fun onConnectionLost() = Unit
         override fun onConnectionRestored() = Unit
 

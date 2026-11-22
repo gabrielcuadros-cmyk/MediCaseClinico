@@ -1,7 +1,6 @@
 package com.example.medicaseclinico.ui.screens.dashboard
 
 import androidx.compose.runtime.Immutable
-import com.example.medicaseclinico.domain.model.BatteryThresholds
 import com.example.medicaseclinico.domain.model.CaseAccess
 import com.example.medicaseclinico.domain.model.CaseCapability
 import com.example.medicaseclinico.domain.model.ConnectionStatus
@@ -41,11 +40,6 @@ sealed interface DashboardUiState {
         val currentTemperature: Float,
         /** Clasificación calculada por el ViewModel con TemperatureStatus.fromCelsius(). */
         val temperatureStatus: TemperatureStatus,
-        /**
-         * Último nivel de batería conocido (ej. 78 % en el diseño).
-         * null si el estuche aún no lo ha reportado → la tarjeta muestra "--".
-         */
-        val batteryLevel: Int?,
         /** Posición del cierre según el estuche, o por qué no se conoce. */
         val lockStatus: CaseLockStatus,
         /** Datos reales de las "Secciones rápidas". */
@@ -68,10 +62,6 @@ sealed interface DashboardUiState {
          */
         val isLiveData: Boolean
             get() = connectionStatus.isLive
-
-        /** true si la batería está por debajo del 20 % (alerta "Batería Baja" del diseño). */
-        val isBatteryLow: Boolean
-            get() = batteryLevel != null && batteryLevel < BatteryThresholds.LOW_PERCENT
     }
 
     /** Fallo controlado. La app no crashea: muestra la pantalla de error con reintento. */

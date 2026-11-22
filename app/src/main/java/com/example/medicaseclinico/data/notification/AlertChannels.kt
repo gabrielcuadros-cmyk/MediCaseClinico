@@ -26,13 +26,6 @@ enum class AlertChannel(
         importance = NotificationManagerCompat.IMPORTANCE_HIGH,
         isCritical = true
     ),
-    BATTERY(
-        id = "medicase_battery_alerts",
-        nameRes = R.string.channel_battery_name,
-        descriptionRes = R.string.channel_battery_description,
-        importance = NotificationManagerCompat.IMPORTANCE_DEFAULT,
-        isCritical = false
-    ),
     CONNECTION(
         id = "medicase_connection_alerts",
         nameRes = R.string.channel_connection_name,
@@ -59,6 +52,13 @@ enum class AlertChannel(
         private const val GROUP_ID = "medicase_case_alerts"
         private val CRITICAL_VIBRATION = longArrayOf(0, 500, 250, 500, 250, 500)
 
+        /**
+         * Canal "Batería Baja" de versiones anteriores. El estuche no tiene
+         * sensor de batería, así que se borra de los teléfonos donde ya existía
+         * para que no aparezca en los ajustes de notificaciones de Android.
+         */
+        private const val LEGACY_BATTERY_CHANNEL_ID = "medicase_battery_alerts"
+
         fun createAll(context: Context) {
             try {
                 val manager = NotificationManagerCompat.from(context)
@@ -84,6 +84,7 @@ enum class AlertChannel(
                         .build()
                 }
                 manager.createNotificationChannelsCompat(channels)
+                manager.deleteNotificationChannel(LEGACY_BATTERY_CHANNEL_ID)
             } catch (e: Exception) {
                 // Si falla la creación de canales, la app sigue operativa
             }

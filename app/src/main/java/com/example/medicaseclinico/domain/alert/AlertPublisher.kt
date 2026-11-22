@@ -10,9 +10,6 @@ interface AlertPublisher {
     /** Cada lectura de temperatura recibida del estuche. */
     fun onTemperature(celsius: Float, status: TemperatureStatus)
 
-    /** Cada nivel de batería recibido del estuche (0–100). */
-    fun onBatteryLevel(percent: Int)
-
     /** El enlace BLE pasó a desconectado. */
     fun onConnectionLost()
 

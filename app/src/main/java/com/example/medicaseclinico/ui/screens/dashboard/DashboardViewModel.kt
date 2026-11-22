@@ -60,8 +60,8 @@ class DashboardViewModel(
     private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS
 ) : ViewModel() {
 
-    /** Última lectura de temperatura y de batería guardadas. */
-    private data class Readings(val latest: TemperatureReading?, val batteryLevel: Int?)
+    /** Última lectura de temperatura guardada. */
+    private data class Readings(val latest: TemperatureReading?)
 
     private data class QuickData(val lastLocationAt: Long?, val unreadAlerts: Int)
 
@@ -168,11 +168,9 @@ class DashboardViewModel(
                 )
             }
 
+    // El estuche no tiene sensor de batería: el Inicio no la muestra.
     private fun observeReadings(): Flow<Readings> =
-        combine(
-            temperatureRepository.observeLatestReading(),
-            temperatureRepository.observeLatestBatteryLevel()
-        ) { latest, batteryLevel -> Readings(latest = latest, batteryLevel = batteryLevel) }
+        temperatureRepository.observeLatestReading().map { latest -> Readings(latest = latest) }
 
     /** Lo que alimenta las "Secciones rápidas" que no está ya en el resto del Inicio. */
     private fun observeQuickData(): Flow<QuickData> =
@@ -216,7 +214,6 @@ class DashboardViewModel(
             connectionStatus = connectionStatus,
             currentTemperature = latestReading.temperatureCelsius,
             temperatureStatus = TemperatureStatus.fromCelsius(latestReading.temperatureCelsius),
-            batteryLevel = readings.batteryLevel?.coerceIn(0, 100),
             lockStatus = controlState.toLockStatus(),
             quickSections = QuickSectionsState(
                 lastLocationElapsed = quickData.lastLocationAt?.let { at ->

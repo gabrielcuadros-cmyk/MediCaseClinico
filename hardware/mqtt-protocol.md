@@ -121,7 +121,9 @@ QoS 0, sin retained.
 ## 6. Batería — `<raíz>/bateria`
 
 QoS 1, retained. **El estuche actual no tiene sensor de batería: no publica este
-topic** y la app muestra `--`. Si en el futuro se añade un sensor:
+topic, y la app no muestra la batería en ninguna pantalla ni genera alertas de
+batería.** Si llegara este topic, la app solo lo guarda. Formato reservado por si en el
+futuro se añade un sensor:
 
 ```json
 {"porcentaje": 78}
@@ -276,9 +278,8 @@ Pérdida). Fuera de rango: `valor_invalido`. No se guarda en NVS.
 | Situación | Qué se ve en la app |
 |---|---|
 | Broker inaccesible o `estado` sin publicar | "Desconectado" |
-| `estado` = `{"online": false}` (o LWT) | "Desconectado"; batería y cierre en `--` |
+| `estado` = `{"online": false}` (o LWT) | "Desconectado"; cierre en `--` |
 | `ubicacion` = `{"fix": false}` | Mapa: "Sin señal GPS" y la última ubicación conocida |
-| Nunca se publica `bateria` | Batería: `--` |
 | Nunca se publica `cierre` | Cierre: `--` |
 | `acceso` con `denegado` o `bloqueo` | Notificación y alerta en Alertas → Seguridad |
 | Temperatura fuera de 15–30 °C | Notificación y alerta de temperatura |

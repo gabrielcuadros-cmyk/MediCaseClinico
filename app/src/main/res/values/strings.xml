@@ -59,16 +59,9 @@
     <string name="temperature_card_content_description">Temperatura de la insulina: %1$s. Estado: %2$s.</string>
     <string name="temperature_card_outdated_content_description">Última temperatura guardada de la insulina: %1$s, %2$s. Estuche sin conexión.</string>
 
-    <!-- Dashboard: batería y sincronización -->
-    <string name="battery_card_title">Batería Estuche</string>
-    <string name="battery_value">%1$d%%</string>
-    <string name="battery_unknown">--</string>
-    <string name="battery_low_hint">Batería baja: conecta el cargador</string>
-    <string name="battery_content_description">Batería del estuche: %1$s</string>
+    <!-- Dashboard: sincronización y registro de accesos -->
     <string name="dashboard_last_sync">Sincronizado vía Bluetooth %1$s</string>
     <string name="dashboard_last_sync_mqtt">Sincronizado vía MQTT %1$s</string>
-    <string name="dashboard_footer_battery_ok">%1$s • Batería de Estuche OK</string>
-    <string name="dashboard_footer_battery_low">%1$s • Batería de Estuche baja</string>
     <string name="dashboard_access_log">Ver registro de accesos</string>
 
     <!-- Avisos de conexión del estuche -->
@@ -170,8 +163,6 @@
     <string name="channel_group_name">Alertas del estuche</string>
     <string name="channel_temperature_name">Alerta de Temperatura</string>
     <string name="channel_temperature_description">Aviso inmediato si la insulina sale del rango óptimo (15 °C – 30 °C).</string>
-    <string name="channel_battery_name">Batería Baja</string>
-    <string name="channel_battery_description">Notifica cuando el estuche baja del 20 % para asegurar el enfriamiento.</string>
     <string name="channel_connection_name">Desconexión de Estuche</string>
     <string name="channel_connection_description">Aviso si se pierde la conexión con el estuche.</string>
     <string name="channel_geofence_name">Geocerca de Seguridad</string>
@@ -182,8 +173,6 @@
     <!-- Contenido de las notificaciones -->
     <string name="notif_temperature_title">Temperatura fuera de rango</string>
     <string name="notif_temperature_text">Tu insulina está a %1$s, fuera del rango seguro (%2$.0f °C – %3$.0f °C). Revisa el estuche.</string>
-    <string name="notif_battery_title">Batería baja del estuche</string>
-    <string name="notif_battery_text">Batería al %1$d%%. Conecta el MediCase al cargador: la refrigeración podría fallar.</string>
     <string name="notif_connection_title">Estuche desconectado</string>
     <string name="notif_connection_text">Se perdió la conexión Bluetooth con tu MediCase. Acércalo al teléfono.</string>
     <string name="notif_connection_text_mqtt">Se perdió la conexión con tu MediCase. Comprueba que esté encendido y conectado a una red Wi-Fi.</string>

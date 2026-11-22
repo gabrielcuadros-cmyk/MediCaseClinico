@@ -50,9 +50,6 @@ class RecordingAlertPublisherTest {
         override fun onTemperature(celsius: Float, status: TemperatureStatus) {
             calls += "temperature"
         }
-        override fun onBatteryLevel(percent: Int) {
-            calls += "battery"
-        }
         override fun onConnectionLost() {
             calls += "lost"
         }
@@ -121,20 +118,6 @@ class RecordingAlertPublisherTest {
         temperature(15.0f)
 
         assertTrue(repository.recorded.isEmpty())
-    }
-
-    @Test
-    fun `bateria baja se registra una vez hasta que se recupera`() = alertTest {
-        listOf(30, 19, 17, 22, 18).forEach { publisher.onBatteryLevel(it) }
-
-        val event = repository.recorded.single()
-        assertEquals(AlertType.BATTERY, event.type)
-        assertEquals(19f, event.value!!, delta)
-
-        publisher.onBatteryLevel(80)
-        publisher.onBatteryLevel(10)
-
-        assertEquals(listOf(19f, 10f), repository.recorded.map { it.value })
     }
 
     @Test
@@ -228,12 +211,11 @@ class RecordingAlertPublisherTest {
         temperature(22.2f)
         temperature(31.0f)
         temperature(31.5f)
-        publisher.onBatteryLevel(50)
         publisher.onConnectionRestored()
         publisher.onConnectionLost()
 
         assertEquals(
-            listOf("temperature", "temperature", "temperature", "battery", "restored", "lost"),
+            listOf("temperature", "temperature", "temperature", "restored", "lost"),
             delegate.calls
         )
     }

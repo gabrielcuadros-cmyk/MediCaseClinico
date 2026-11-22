@@ -18,14 +18,10 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -65,7 +61,6 @@ import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.DeviceIssue
 import com.example.medicaseclinico.ui.components.NoPermissionNote
 import com.example.medicaseclinico.ui.components.relativeTimeLabel
-import com.example.medicaseclinico.ui.screens.dashboard.components.BatteryCard
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardEmptyContent
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardErrorContent
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardLoadingContent
@@ -285,27 +280,11 @@ private fun DashboardSuccessContent(
         } else {
             NoPermissionNote(text = stringResource(R.string.access_no_temperature_permission))
         }
-        // Como en el diseño: batería y cierre lado a lado, a la misma altura.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            BatteryCard(
-                batteryLevel = state.batteryLevel,
-                isLow = state.isBatteryLow,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
-            LockCard(
-                status = state.lockStatus,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
-        }
+        // El estuche no tiene sensor de batería: el cierre ocupa todo el ancho.
+        LockCard(
+            status = state.lockStatus,
+            modifier = Modifier.fillMaxWidth()
+        )
         if (permissions.showAccessLog) {
             // Lleva al registro de intentos del teclado del estuche: la app no
             // abre el estuche ni teclea el PIN por el usuario.
@@ -349,12 +328,7 @@ private fun DashboardSuccessContent(
             relativeTime
         )
         Text(
-            // La batería solo se menciona si el estuche informó alguna vez de ella.
-            text = when {
-                state.batteryLevel == null -> lastSync
-                state.isBatteryLow -> stringResource(R.string.dashboard_footer_battery_low, lastSync)
-                else -> stringResource(R.string.dashboard_footer_battery_ok, lastSync)
-            },
+            text = lastSync,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

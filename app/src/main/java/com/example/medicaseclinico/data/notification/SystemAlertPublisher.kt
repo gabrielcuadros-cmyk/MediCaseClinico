@@ -13,7 +13,6 @@ import com.example.medicaseclinico.MainActivity
 import com.example.medicaseclinico.R
 import com.example.medicaseclinico.domain.alert.AlertPublisher
 import com.example.medicaseclinico.domain.model.AlertType
-import com.example.medicaseclinico.domain.model.BatteryThresholds
 import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.Geofence
 import com.example.medicaseclinico.domain.model.NotificationPreferences
@@ -42,7 +41,6 @@ class SystemAlertPublisher(
     private var temperatureAlertActive = false
     private var lastTemperatureAlertAt = 0L
     private var lastTemperatureUpdateAt = 0L
-    private var lowBatteryAlertActive = false
     private var hasBeenConnected = false
     private var disconnectionAlertActive = false
 
@@ -85,30 +83,6 @@ class SystemAlertPublisher(
         temperatureAlertActive = true
         lastTemperatureUpdateAt = now
         if (shouldSound) lastTemperatureAlertAt = now
-    }
-
-    // ------------------------------------------------------------------
-    //  Batería (con histéresis)
-    // ------------------------------------------------------------------
-    @Synchronized
-    override fun onBatteryLevel(percent: Int) {
-        when {
-            percent < BatteryThresholds.LOW_PERCENT && !lowBatteryAlertActive -> {
-                post(
-                    id = NOTIFICATION_ID_BATTERY,
-                    channel = AlertChannel.BATTERY,
-                    title = appContext.getString(R.string.notif_battery_title),
-                    text = appContext.getString(R.string.notif_battery_text, percent),
-                    silent = false,
-                    ongoing = false
-                )
-                lowBatteryAlertActive = true
-            }
-            percent >= BatteryThresholds.REARM_PERCENT && lowBatteryAlertActive -> {
-                notificationManager.cancel(NOTIFICATION_ID_BATTERY)
-                lowBatteryAlertActive = false
-            }
-        }
     }
 
     // ------------------------------------------------------------------
@@ -268,7 +242,6 @@ class SystemAlertPublisher(
 
     private fun AlertChannel.toAlertType(): AlertType = when (this) {
         AlertChannel.TEMPERATURE -> AlertType.TEMPERATURE
-        AlertChannel.BATTERY -> AlertType.BATTERY
         AlertChannel.CONNECTION -> AlertType.CONNECTION
         AlertChannel.GEOFENCE -> AlertType.GEOFENCE
         AlertChannel.SECURITY -> AlertType.SECURITY
@@ -276,7 +249,6 @@ class SystemAlertPublisher(
 
     private companion object {
         const val NOTIFICATION_ID_TEMPERATURE = 1001
-        const val NOTIFICATION_ID_BATTERY = 1002
         const val NOTIFICATION_ID_CONNECTION = 1003
         const val NOTIFICATION_ID_GEOFENCE = 1004
         const val NOTIFICATION_ID_SECURITY = 1005

@@ -2,7 +2,6 @@ package com.example.medicaseclinico.domain.alert
 
 import com.example.medicaseclinico.domain.model.AlertEvent
 import com.example.medicaseclinico.domain.model.AlertType
-import com.example.medicaseclinico.domain.model.BatteryThresholds
 import com.example.medicaseclinico.domain.model.Geofence
 import com.example.medicaseclinico.domain.model.TemperatureStatus
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
@@ -32,7 +31,6 @@ class RecordingAlertPublisher(
 ) : AlertPublisher {
 
     private var temperatureAlertActive = false
-    private var lowBatteryAlertActive = false
     private var hasBeenConnected = false
     private var disconnectionAlertActive = false
 
@@ -43,19 +41,6 @@ class RecordingAlertPublisher(
         }
         temperatureAlertActive = status.isAlert
         delegate.onTemperature(celsius, status)
-    }
-
-    /** Misma histéresis que la notificación: no vuelve a avisar hasta recuperarse. */
-    @Synchronized
-    override fun onBatteryLevel(percent: Int) {
-        when {
-            percent < BatteryThresholds.LOW_PERCENT && !lowBatteryAlertActive -> {
-                record(type = AlertType.BATTERY, value = percent.toFloat())
-                lowBatteryAlertActive = true
-            }
-            percent >= BatteryThresholds.REARM_PERCENT -> lowBatteryAlertActive = false
-        }
-        delegate.onBatteryLevel(percent)
     }
 
     /** Un estuche que nunca llegó a conectarse no se ha "desconectado". */

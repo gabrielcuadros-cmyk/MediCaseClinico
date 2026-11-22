@@ -106,10 +106,11 @@ Reglas del firmware:
 ## 5. Batería — no implementada
 
 El estuche no tiene sensor de batería. **No se debe exponer el servicio Battery
-(`0x180F`) ni enviar un porcentaje fijo.** Sin ese servicio la app muestra `--`.
+(`0x180F`) ni enviar un porcentaje fijo.** La app no muestra la batería en ninguna
+pantalla ni genera alertas de batería.
 
-Si en el futuro se añade un sensor: servicio `0x180F`, característica Battery Level
-`0x2A19` (Read y Notify), un byte de 0 a 100. La app ya lo entiende.
+Reservado por si en el futuro se añade un sensor: servicio `0x180F`, característica
+Battery Level `0x2A19` (Read y Notify), un byte de 0 a 100. Hoy la app solo lo guardaría.
 
 ## 6. Servicio propio "MediCase Control"
 
@@ -260,7 +261,6 @@ Segundos entre dos tramas de Location and Speed (§4). 1 byte, de `1` a `60`.
 | Sin servicio `0x1809` en el anuncio | No encuentra el estuche |
 | Sin Location and Navigation | Mapa: "Estuche sin GPS" |
 | Trama `00 00` en Location and Speed | Mapa: "Sin señal GPS" y la última ubicación conocida |
-| Sin servicio Battery | Batería: `--` |
 | Sin servicio MediCase Control | Seguridad: "Requiere un estuche compatible" |
 | Escritura sin emparejar | Android pide emparejar; la app pide repetir la acción |
 | Evento de acceso `0x02` o `0x03` | Notificación y alerta en la pestaña Alertas → Seguridad |

@@ -94,8 +94,9 @@ class CaseTelemetrySynchronizer(
         }
     }
 
+    // Se guarda si algún estuche la informa, pero no genera alertas: el estuche
+    // MediCase no tiene sensor de batería y la app no la muestra.
     private fun onBattery(battery: CaseTelemetry.Battery) {
-        alertPublisher.onBatteryLevel(battery.levelPercent)
         if (battery.levelPercent != latestBatteryPercent) {
             latestBatteryPercent = battery.levelPercent
             batteryChangedSinceLastSave = true

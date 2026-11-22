@@ -86,15 +86,12 @@ class DashboardViewModelTest {
     @Test
     fun `muestra la ultima lectura clasificada y cuanto hace de ella`() = runTest {
         temperature.latest.value = reading(22.2f, minutesAgo = 2)
-        temperature.batteryLevel.value = 78
         device.connectionStatus.value = ConnectionStatus.CONNECTED
 
         val state = viewModel().success()
 
         assertEquals(22.2f, state.currentTemperature)
         assertEquals(TemperatureStatus.SAFE, state.temperatureStatus)
-        assertEquals(78, state.batteryLevel)
-        assertFalse(state.isBatteryLow)
         assertEquals(RelativeTime.Minutes(2), state.lastReadingElapsed)
         assertTrue(state.isLiveData)
     }
@@ -136,19 +133,6 @@ class DashboardViewModelTest {
         device.connectionStatus.value = ConnectionStatus.CONNECTED
 
         assertFalse(viewModel().success().isReadingOutdated)
-    }
-
-    @Test
-    fun `sin nivel de bateria no se muestra ninguno y por debajo del umbral se avisa`() = runTest {
-        temperature.latest.value = reading(22.2f)
-        val viewModel = viewModel()
-        assertNull(viewModel.success().batteryLevel)
-        assertFalse(viewModel.success().isBatteryLow)
-
-        temperature.batteryLevel.value = 15
-
-        assertEquals(15, viewModel.success().batteryLevel)
-        assertTrue(viewModel.success().isBatteryLow)
     }
 
     @Test
