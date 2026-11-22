@@ -36,7 +36,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.model.TemperatureStatus
+import com.example.medicaseclinico.ui.components.relativeTimeLabel
 import com.example.medicaseclinico.ui.theme.MediCaseStatusColors
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 
@@ -49,19 +51,25 @@ import com.example.medicaseclinico.ui.theme.MediCaseTheme
  * @param temperatureCelsius última lectura real guardada en Room.
  * @param status clasificación clínica calculada con TemperatureStatus.fromCelsius().
  * @param isLiveData false si el estuche está desconectado: se avisa que el valor es la última lectura guardada y no una medición en vivo.
+ * @param outdatedElapsed antigüedad de la lectura si ya está desactualizada: el valor se atenúa y pierde la insignia, porque un "CRÍTICO" de hace días no describe la insulina de ahora. null si sigue vigente.
  */
 @Composable
 fun TemperatureCard(
     temperatureCelsius: Float,
     status: TemperatureStatus,
     isLiveData: Boolean,
+    outdatedElapsed: RelativeTime?,
     modifier: Modifier = Modifier
 ) {
     val style = status.cardStyle(MediCaseTheme.statusColors)
+    val isOutdated = outdatedElapsed != null
     // Transiciones suaves al cambiar de estado (p. ej. SAFE → CRITICAL).
-    val accentColor by animateColorAsState(style.accent, label = "tempAccent")
+    val accentColor by animateColorAsState(
+        targetValue = if (isOutdated) MaterialTheme.colorScheme.onSurfaceVariant else style.accent,
+        label = "tempAccent"
+    )
     val borderColor by animateColorAsState(
-        targetValue = if (status == TemperatureStatus.SAFE) {
+        targetValue = if (status == TemperatureStatus.SAFE || isOutdated) {
             MaterialTheme.colorScheme.outline
         } else {
             style.accent
@@ -69,17 +77,27 @@ fun TemperatureCard(
         label = "tempBorder"
     )
     val borderWidth by animateDpAsState(
-        targetValue = if (status == TemperatureStatus.CRITICAL) 2.dp else 1.dp,
+        targetValue = if (status == TemperatureStatus.CRITICAL && !isOutdated) 2.dp else 1.dp,
         label = "tempBorderWidth"
     )
 
     val temperatureText = stringResource(R.string.temperature_value, temperatureCelsius)
     val statusText = stringResource(style.labelRes)
-    val accessibilityText = stringResource(
-        R.string.temperature_card_content_description,
-        temperatureText,
-        statusText
-    )
+    // En medio de la frase: "Lectura de hace 4 días".
+    val outdatedText = outdatedElapsed?.let { relativeTimeLabel(it).replaceFirstChar(Char::lowercase) }
+    val accessibilityText = if (outdatedText != null) {
+        stringResource(
+            R.string.temperature_card_outdated_content_description,
+            temperatureText,
+            outdatedText
+        )
+    } else {
+        stringResource(
+            R.string.temperature_card_content_description,
+            temperatureText,
+            statusText
+        )
+    }
 
     Card(
         modifier = modifier
@@ -118,11 +136,13 @@ fun TemperatureCard(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
                 )
-                StatusBadge(
-                    text = statusText,
-                    contentColor = accentColor,
-                    containerColor = style.container
-                )
+                if (!isOutdated) {
+                    StatusBadge(
+                        text = statusText,
+                        contentColor = accentColor,
+                        containerColor = style.container
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.padding(top = 16.dp))
@@ -164,7 +184,11 @@ fun TemperatureCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = stringResource(R.string.temperature_not_live),
+                        text = if (outdatedText != null) {
+                            stringResource(R.string.temperature_outdated, outdatedText)
+                        } else {
+                            stringResource(R.string.temperature_not_live)
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -234,6 +258,7 @@ private fun TemperatureCardSafePreview() {
             temperatureCelsius = 4.2f,
             status = TemperatureStatus.SAFE,
             isLiveData = true,
+            outdatedElapsed = null,
             modifier = Modifier.padding(16.dp)
         )
     }
@@ -247,7 +272,24 @@ private fun TemperatureCardCriticalPreview() {
             temperatureCelsius = 8.4f,
             status = TemperatureStatus.CRITICAL,
             isLiveData = false,
+            outdatedElapsed = null,
             modifier = Modifier.padding(16.dp)
         )
+    }
+}
+
+@Preview(showBackground = true, name = "Tarjeta - lectura desactualizada")
+@Composable
+private fun TemperatureCardOutdatedPreview() {
+    MediCaseTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            TemperatureCard(
+                temperatureCelsius = 22.2f,
+                status = TemperatureStatus.CRITICAL,
+                isLiveData = false,
+                outdatedElapsed = RelativeTime.Days(4),
+                modifier = Modifier.padding(16.dp)
+            )
+        }
     }
 }

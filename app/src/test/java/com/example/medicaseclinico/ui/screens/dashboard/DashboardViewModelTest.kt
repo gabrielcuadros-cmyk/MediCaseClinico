@@ -114,6 +114,31 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `sin enlace la lectura de justo un dia aun no esta desactualizada`() = runTest {
+        temperature.latest.value = reading(4.2f, minutesAgo = MINUTES_IN_DAY)
+
+        assertFalse(viewModel().success().isReadingOutdated)
+    }
+
+    @Test
+    fun `sin enlace la lectura de mas de un dia queda desactualizada`() = runTest {
+        temperature.latest.value = reading(22.2f, minutesAgo = MINUTES_IN_DAY + 1)
+
+        val state = viewModel().success()
+
+        assertTrue(state.isReadingOutdated)
+        assertEquals(RelativeTime.Days(1), state.lastReadingElapsed)
+    }
+
+    @Test
+    fun `con enlace una lectura antigua no se marca desactualizada`() = runTest {
+        temperature.latest.value = reading(4.2f, minutesAgo = MINUTES_IN_DAY + 1)
+        device.connectionStatus.value = ConnectionStatus.CONNECTED
+
+        assertFalse(viewModel().success().isReadingOutdated)
+    }
+
+    @Test
     fun `sin nivel de bateria no se muestra ninguno y por debajo del umbral se avisa`() = runTest {
         temperature.latest.value = reading(4.2f)
         val viewModel = viewModel()
@@ -258,5 +283,6 @@ class DashboardViewModelTest {
 
     private companion object {
         const val MINUTE_MS = 60_000L
+        const val MINUTES_IN_DAY = 24 * 60
     }
 }

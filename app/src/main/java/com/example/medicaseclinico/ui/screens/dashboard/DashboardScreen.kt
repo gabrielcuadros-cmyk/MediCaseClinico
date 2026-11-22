@@ -271,7 +271,8 @@ private fun DashboardSuccessContent(
         TemperatureCard(
             temperatureCelsius = state.currentTemperature,
             status = state.temperatureStatus,
-            isLiveData = state.isLiveData
+            isLiveData = state.isLiveData,
+            outdatedElapsed = state.lastReadingElapsed.takeIf { state.isReadingOutdated }
         )
         // Como en el diseño: batería y cierre lado a lado, a la misma altura.
         Row(

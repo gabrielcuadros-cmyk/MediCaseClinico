@@ -53,7 +53,12 @@ sealed interface DashboardUiState {
          * vía Bluetooth hace 2 min". Lo calcula el ViewModel para que la UI no
          * consulte el reloj al dibujar.
          */
-        val lastReadingElapsed: RelativeTime
+        val lastReadingElapsed: RelativeTime,
+        /**
+         * true si, sin enlace, la lectura supera el límite de antigüedad: la UI
+         * la atenúa y quita la insignia para no presentarla como estado actual.
+         */
+        val isReadingOutdated: Boolean
     ) : DashboardUiState {
         /**
          * false si el estuche está desconectado: la temperatura mostrada es la

@@ -55,7 +55,9 @@
     <string name="temperature_status_warning">PRECAUCIÓN</string>
     <string name="temperature_status_critical">CRÍTICO</string>
     <string name="temperature_not_live">Última lectura guardada · estuche sin conexión</string>
+    <string name="temperature_outdated">Lectura de %1$s · estuche sin conexión</string>
     <string name="temperature_card_content_description">Temperatura de la insulina: %1$s. Estado: %2$s.</string>
+    <string name="temperature_card_outdated_content_description">Última temperatura guardada de la insulina: %1$s, %2$s. Estuche sin conexión.</string>
 
     <!-- Dashboard: batería y sincronización -->
     <string name="battery_card_title">Batería Estuche</string>

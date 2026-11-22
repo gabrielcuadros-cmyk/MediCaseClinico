@@ -228,7 +228,9 @@ class DashboardViewModel(
             lastReadingElapsed = RelativeTime.between(
                 timestamp = latestReading.timestamp,
                 now = now
-            )
+            ),
+            isReadingOutdated = !connectionStatus.isLive &&
+                now - latestReading.timestamp > OUTDATED_READING_AFTER_MS
         )
     }
 
@@ -263,6 +265,9 @@ class DashboardViewModel(
 
         /** El tiempo relativo cambia como mucho una vez por minuto. */
         const val DEFAULT_TICK_INTERVAL_MS = 60_000L
+
+        /** Sin enlace, una lectura más antigua ya no describe el estado de la insulina. */
+        const val OUTDATED_READING_AFTER_MS = 24 * 60 * 60 * 1_000L
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
