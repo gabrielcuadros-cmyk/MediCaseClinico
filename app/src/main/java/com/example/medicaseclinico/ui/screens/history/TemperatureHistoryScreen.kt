@@ -77,6 +77,7 @@ private const val PDF_MIME_TYPE = "application/pdf"
 fun TemperatureHistoryRoute(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    canExportReport: Boolean = true,
     viewModel: TemperatureHistoryViewModel = viewModel(factory = TemperatureHistoryViewModel.Factory)
 ) {
     val context = LocalContext.current
@@ -101,7 +102,8 @@ fun TemperatureHistoryRoute(
         onBack = onBack,
         onRangeSelected = viewModel::onRangeSelected,
         onRetry = viewModel::retry,
-        onExportReport = viewModel::exportReport,
+        // Sin el permiso "Exportar reportes" no hay botón de PDF.
+        onExportReport = if (canExportReport) viewModel::exportReport else null,
         onExportErrorShown = viewModel::onExportHandled,
         modifier = modifier
     )
@@ -145,7 +147,7 @@ fun TemperatureHistoryScreen(
     onBack: () -> Unit,
     onRangeSelected: (HistoryRange) -> Unit,
     onRetry: () -> Unit,
-    onExportReport: () -> Unit,
+    onExportReport: (() -> Unit)?,
     onExportErrorShown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -283,7 +285,7 @@ private fun HistoryContent(
     uiState: TemperatureHistoryUiState.Success,
     isExporting: Boolean,
     onRangeSelected: (HistoryRange) -> Unit,
-    onExportReport: () -> Unit,
+    onExportReport: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -338,9 +340,11 @@ private fun HistoryContent(
                 )
             }
         }
-        item {
-            Spacer(modifier = Modifier.height(20.dp))
-            ExportReportButton(isExporting = isExporting, onClick = onExportReport)
+        if (onExportReport != null) {
+            item {
+                Spacer(modifier = Modifier.height(20.dp))
+                ExportReportButton(isExporting = isExporting, onClick = onExportReport)
+            }
         }
     }
 }

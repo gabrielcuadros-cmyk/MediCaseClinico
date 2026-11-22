@@ -49,7 +49,7 @@ fun CaseLocationCard(
     longitude: Double,
     elapsed: RelativeTime,
     nearestGeofence: MapGeofence?,
-    onAdjustGeofence: () -> Unit,
+    onAdjustGeofence: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -83,8 +83,11 @@ fun CaseLocationCard(
                     valueColor = geofenceColor(nearestGeofence),
                     modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
-                AdjustButton(onClick = onAdjustGeofence)
+                // Solo quien puede editar las zonas ve "Ajustar".
+                if (onAdjustGeofence != null) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    AdjustButton(onClick = onAdjustGeofence)
+                }
             }
         }
     }

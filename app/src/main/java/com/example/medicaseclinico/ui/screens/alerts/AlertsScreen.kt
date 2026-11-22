@@ -139,6 +139,7 @@ fun AlertsScreen(
                 is AlertsUiState.Empty -> {
                     FilterRow(
                         selectedFilter = uiState.selectedFilter,
+                        filters = uiState.filters,
                         onFilterSelected = onFilterSelected
                     )
                     MediCaseMessageState(
@@ -153,6 +154,7 @@ fun AlertsScreen(
                 is AlertsUiState.Success -> {
                     FilterRow(
                         selectedFilter = uiState.selectedFilter,
+                        filters = uiState.filters,
                         onFilterSelected = onFilterSelected
                     )
                     LazyColumn(
@@ -189,12 +191,14 @@ fun AlertsScreen(
 @Composable
 private fun FilterRow(
     selectedFilter: AlertFilter,
+    filters: List<AlertFilter>,
     onFilterSelected: (AlertFilter) -> Unit
 ) {
     AlertFilterChips(
         selectedFilter = selectedFilter,
         onFilterSelected = onFilterSelected,
-        contentPadding = PaddingValues(horizontal = ScreenPadding)
+        contentPadding = PaddingValues(horizontal = ScreenPadding),
+        filters = filters
     )
 }
 

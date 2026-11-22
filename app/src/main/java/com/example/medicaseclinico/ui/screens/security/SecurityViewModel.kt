@@ -44,9 +44,10 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 class SecurityViewModel(
     private val deviceRepository: CaseDeviceRepository,
-    private val authRepository: AuthRepository,
+    authRepository: AuthRepository,
     private val authorizedUsersRepository: AuthorizedUsersRepository,
-    private val appearanceRepository: AppearanceRepository
+    private val appearanceRepository: AppearanceRepository,
+    private val caseOwnerId: Flow<String?> = authRepository.currentUser.map { it?.uid }
 ) : ViewModel() {
 
     /** Lo que no viene de los repositorios: trabajo en curso y aviso pendiente. */
@@ -187,8 +188,7 @@ class SecurityViewModel(
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeUsers(): Flow<Users> =
-        authRepository.currentUser
-            .map { it?.uid }
+        caseOwnerId
             .distinctUntilChanged()
             .flatMapLatest { ownerId ->
                 if (ownerId == null) {
@@ -212,7 +212,7 @@ class SecurityViewModel(
 
     private suspend fun currentOwnerId(): String? =
         try {
-            authRepository.currentUser.first()?.uid
+            caseOwnerId.first()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -262,7 +262,9 @@ class SecurityViewModel(
                     deviceRepository = application.container.caseDeviceRepository,
                     authRepository = application.container.authRepository,
                     authorizedUsersRepository = application.container.authorizedUsersRepository,
-                    appearanceRepository = application.container.appearanceRepository
+                    appearanceRepository = application.container.appearanceRepository,
+                    // La lista es la del dueño, también para un invitado que la gestiona.
+                    caseOwnerId = application.container.resolvedCaseAccess.map { it.caseOwnerId }
                 )
             }
         }

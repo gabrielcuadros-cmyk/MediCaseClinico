@@ -45,7 +45,8 @@ fun AlertFilterChips(
     selectedFilter: AlertFilter,
     onFilterSelected: (AlertFilter) -> Unit,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(0.dp)
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    filters: List<AlertFilter> = AlertFilter.entries
 ) {
     Row(
         modifier = modifier
@@ -54,7 +55,7 @@ fun AlertFilterChips(
             .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        for (filter in AlertFilter.entries) {
+        for (filter in filters) {
             val isSelected = filter == selectedFilter
             Surface(
                 modifier = Modifier

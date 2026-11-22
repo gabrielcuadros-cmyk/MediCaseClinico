@@ -45,15 +45,21 @@ import com.example.medicaseclinico.ui.theme.MediCaseTheme
 private val CardSpacing = 12.dp
 
 /**
- * "Secciones rápidas" del Dashboard: cuatro atajos a las demás pestañas, cada
- * uno con un dato real de lo que hay dentro.
+ * "Secciones rápidas" del Dashboard: atajos a las demás pestañas, cada uno con
+ * un dato real de lo que hay dentro.
+ *
+ * @param visibleSections atajos que la cuenta puede usar: un invitado sin
+ * permiso de temperatura o de ubicación no ve el atajo correspondiente. Se
+ * reparten de dos en dos.
  */
 @Composable
 fun QuickSections(
     state: QuickSectionsState,
     onSectionClick: (DashboardSection) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    visibleSections: Set<DashboardSection> = DashboardSection.entries.toSet()
 ) {
+    val cards = DashboardSection.entries.filter { it in visibleSections }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(CardSpacing)) {
         Text(
             text = stringResource(R.string.quick_sections_header),
@@ -61,58 +67,79 @@ fun QuickSections(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
         )
-        QuickRow {
-            QuickCard(
-                title = stringResource(R.string.quick_history_title),
-                description = stringResource(R.string.quick_history_description),
-                status = stringResource(R.string.history_range_24h),
-                icon = Icons.Outlined.Thermostat,
-                onClick = { onSectionClick(DashboardSection.HISTORY) },
-                modifier = Modifier.weight(1f).fillMaxHeight()
-            )
-            QuickCard(
-                title = stringResource(R.string.quick_location_title),
-                description = stringResource(R.string.quick_location_description),
-                // Sin ninguna posición del estuche no se inventa una hora.
-                status = state.lastLocationElapsed?.let { relativeTimeLabel(it) }
-                    ?: stringResource(R.string.map_empty_no_signal_title),
-                icon = Icons.Outlined.LocationOn,
-                onClick = { onSectionClick(DashboardSection.LOCATION) },
-                modifier = Modifier.weight(1f).fillMaxHeight()
-            )
-        }
-        QuickRow {
-            QuickCard(
-                title = stringResource(R.string.quick_alerts_title),
-                description = stringResource(R.string.quick_alerts_description),
-                status = if (state.unreadAlerts > 0) {
-                    pluralStringResource(
-                        R.plurals.quick_alerts_unread,
-                        state.unreadAlerts,
-                        state.unreadAlerts
+        cards.chunked(2).forEach { row ->
+            QuickRow {
+                row.forEach { section ->
+                    SectionCard(
+                        section = section,
+                        state = state,
+                        onClick = { onSectionClick(section) },
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     )
-                } else {
-                    stringResource(R.string.quick_alerts_none)
-                },
-                icon = Icons.Outlined.ErrorOutline,
-                onClick = { onSectionClick(DashboardSection.ALERTS) },
-                modifier = Modifier.weight(1f).fillMaxHeight()
-            )
-            QuickCard(
-                title = stringResource(R.string.quick_settings_title),
-                description = stringResource(R.string.quick_settings_description),
-                status = stringResource(
-                    when (state.pinLock) {
-                        PinLockStatus.ENABLED -> R.string.quick_settings_pin_enabled
-                        PinLockStatus.DISABLED -> R.string.quick_settings_pin_disabled
-                        PinLockStatus.UNKNOWN -> R.string.value_unknown
-                    }
-                ),
-                icon = Icons.Outlined.Settings,
-                onClick = { onSectionClick(DashboardSection.SETTINGS) },
-                modifier = Modifier.weight(1f).fillMaxHeight()
-            )
+                }
+                // Una sola tarjeta en la fila conserva el ancho de media fila.
+                if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+            }
         }
+    }
+}
+
+@Composable
+private fun SectionCard(
+    section: DashboardSection,
+    state: QuickSectionsState,
+    onClick: () -> Unit,
+    modifier: Modifier
+) {
+    when (section) {
+        DashboardSection.HISTORY -> QuickCard(
+            title = stringResource(R.string.quick_history_title),
+            description = stringResource(R.string.quick_history_description),
+            status = stringResource(R.string.history_range_24h),
+            icon = Icons.Outlined.Thermostat,
+            onClick = onClick,
+            modifier = modifier
+        )
+        DashboardSection.LOCATION -> QuickCard(
+            title = stringResource(R.string.quick_location_title),
+            description = stringResource(R.string.quick_location_description),
+            // Sin ninguna posición del estuche no se inventa una hora.
+            status = state.lastLocationElapsed?.let { relativeTimeLabel(it) }
+                ?: stringResource(R.string.map_empty_no_signal_title),
+            icon = Icons.Outlined.LocationOn,
+            onClick = onClick,
+            modifier = modifier
+        )
+        DashboardSection.ALERTS -> QuickCard(
+            title = stringResource(R.string.quick_alerts_title),
+            description = stringResource(R.string.quick_alerts_description),
+            status = if (state.unreadAlerts > 0) {
+                pluralStringResource(
+                    R.plurals.quick_alerts_unread,
+                    state.unreadAlerts,
+                    state.unreadAlerts
+                )
+            } else {
+                stringResource(R.string.quick_alerts_none)
+            },
+            icon = Icons.Outlined.ErrorOutline,
+            onClick = onClick,
+            modifier = modifier
+        )
+        DashboardSection.SETTINGS -> QuickCard(
+            title = stringResource(R.string.quick_settings_title),
+            description = stringResource(R.string.quick_settings_description),
+            status = stringResource(
+                when (state.pinLock) {
+                    PinLockStatus.ENABLED -> R.string.quick_settings_pin_enabled
+                    PinLockStatus.DISABLED -> R.string.quick_settings_pin_disabled
+                    PinLockStatus.UNKNOWN -> R.string.value_unknown
+                }
+            ),
+            icon = Icons.Outlined.Settings,
+            onClick = onClick,
+            modifier = modifier
+        )
     }
 }
 

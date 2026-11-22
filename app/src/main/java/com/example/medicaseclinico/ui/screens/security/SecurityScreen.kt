@@ -79,6 +79,7 @@ import com.example.medicaseclinico.domain.model.AppearanceMode
 import com.example.medicaseclinico.domain.model.UserRole
 import com.example.medicaseclinico.ui.components.MediCaseLoadingState
 import com.example.medicaseclinico.ui.components.MediCaseMessageState
+import com.example.medicaseclinico.ui.components.NoPermissionNote
 import com.example.medicaseclinico.ui.components.labelRes
 import com.example.medicaseclinico.ui.screens.security.components.ChangeCasePinDialog
 import com.example.medicaseclinico.ui.screens.security.components.ConfirmCasePinDialog
@@ -102,6 +103,8 @@ fun SecurityRoute(
     onOpenNotifications: () -> Unit,
     onSignOut: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    canControlCase: Boolean = true,
+    canManageUsers: Boolean = true,
     viewModel: SecurityViewModel = viewModel(factory = SecurityViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -130,6 +133,8 @@ fun SecurityRoute(
         onOpenNotifications = onOpenNotifications,
         onSignOut = onSignOut,
         onRetry = viewModel::retry,
+        canControlCase = canControlCase,
+        canManageUsers = canManageUsers,
         modifier = modifier
     )
 }
@@ -137,6 +142,10 @@ fun SecurityRoute(
 /**
  * Pantalla "Seguridad del Estuche": seguro y contraseña del estuche, personas
  * con acceso y los ajustes de la cuenta.
+ *
+ * @param canControlCase false para un invitado: el seguro y la contraseña
+ * solo los cambia el dueño.
+ * @param canManageUsers false si la cuenta no puede gestionar a otras personas.
  */
 @Composable
 fun SecurityScreen(
@@ -151,7 +160,9 @@ fun SecurityScreen(
     onOpenNotifications: () -> Unit,
     onSignOut: (() -> Unit)?,
     onRetry: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    canControlCase: Boolean = true,
+    canManageUsers: Boolean = true
 ) {
     Scaffold(
         modifier = modifier,
@@ -200,7 +211,9 @@ fun SecurityScreen(
                         onAddUser = onAddUser,
                         onOpenNotifications = onOpenNotifications,
                         onSignOut = onSignOut,
-                        onRetry = onRetry
+                        onRetry = onRetry,
+                        canControlCase = canControlCase,
+                        canManageUsers = canManageUsers
                     )
 
                 SecurityUiState.Error ->
@@ -232,7 +245,9 @@ private fun SecurityContent(
     onAddUser: () -> Unit,
     onOpenNotifications: () -> Unit,
     onSignOut: (() -> Unit)?,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    canControlCase: Boolean,
+    canManageUsers: Boolean
 ) {
     var pinDialog by rememberSaveable { mutableStateOf<PinDialog?>(null) }
     var pendingRemovalId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -291,51 +306,57 @@ private fun SecurityContent(
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        PinLockCard(
-            pin = state.pin,
-            enabled = !state.isBusy,
-            onToggle = { enable ->
-                pinDialog = if (enable) PinDialog.ENABLE_LOCK else PinDialog.DISABLE_LOCK
-            }
-        )
-
-        SectionHeader(text = stringResource(R.string.security_pin_section))
-        CasePinRow(
-            pin = state.pin,
-            enabled = !state.isBusy,
-            onChangeClick = { pinDialog = PinDialog.CHANGE_PIN }
-        )
-
-        // "Ver todos" no está en el diseño: es la entrada a Usuarios Autorizados.
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SectionHeader(
-                text = stringResource(R.string.security_users_section),
-                modifier = Modifier.weight(1f)
+        if (canControlCase) {
+            PinLockCard(
+                pin = state.pin,
+                enabled = !state.isBusy,
+                onToggle = { enable ->
+                    pinDialog = if (enable) PinDialog.ENABLE_LOCK else PinDialog.DISABLE_LOCK
+                }
             )
-            TextButton(onClick = onOpenUsers) {
-                Text(
-                    text = stringResource(R.string.security_users_see_all),
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+
+            SectionHeader(text = stringResource(R.string.security_pin_section))
+            CasePinRow(
+                pin = state.pin,
+                enabled = !state.isBusy,
+                onChangeClick = { pinDialog = PinDialog.CHANGE_PIN }
+            )
+        } else {
+            NoPermissionNote(text = stringResource(R.string.access_owner_only_pin))
         }
-        when {
-            state.usersFailed -> UsersFailed(onRetry = onRetry)
-            state.users.isEmpty() ->
-                Text(
-                    text = stringResource(R.string.security_users_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+
+        if (canManageUsers) {
+            // "Ver todos" no está en el diseño: es la entrada a Usuarios Autorizados.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SectionHeader(
+                    text = stringResource(R.string.security_users_section),
+                    modifier = Modifier.weight(1f)
                 )
-            else -> state.users.forEach { user ->
-                AccessUserCard(
-                    user = user,
-                    enabled = !state.isBusy,
-                    onRemoveClick = { pendingRemovalId = user.id }
-                )
+                TextButton(onClick = onOpenUsers) {
+                    Text(
+                        text = stringResource(R.string.security_users_see_all),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
+            when {
+                state.usersFailed -> UsersFailed(onRetry = onRetry)
+                state.users.isEmpty() ->
+                    Text(
+                        text = stringResource(R.string.security_users_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                else -> state.users.forEach { user ->
+                    AccessUserCard(
+                        user = user,
+                        enabled = !state.isBusy,
+                        onRemoveClick = { pendingRemovalId = user.id }
+                    )
+                }
+            }
+            AddUserButton(onClick = onAddUser)
         }
-        AddUserButton(onClick = onAddUser)
 
         SectionHeader(text = stringResource(R.string.security_account_section))
         SettingsRow(

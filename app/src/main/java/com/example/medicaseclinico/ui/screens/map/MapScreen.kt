@@ -88,8 +88,8 @@ private val AttributionClearance = 32.dp
 @Composable
 fun MapRoute(
     onBack: () -> Unit,
-    onOpenLossMode: () -> Unit,
-    onConfigureGeofence: () -> Unit,
+    onOpenLossMode: (() -> Unit)?,
+    onConfigureGeofence: (() -> Unit)?,
     modifier: Modifier = Modifier,
     viewModel: MapViewModel = viewModel(factory = MapViewModel.Factory)
 ) {
@@ -127,8 +127,8 @@ fun MapScreen(
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onOpenInGoogleMaps: (latitude: Double, longitude: Double) -> Unit,
-    onOpenLossMode: () -> Unit,
-    onConfigureGeofence: () -> Unit,
+    onOpenLossMode: (() -> Unit)?,
+    onConfigureGeofence: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -210,7 +210,7 @@ fun MapScreen(
 @Composable
 private fun EmptyContent(
     liveStatus: CaseLiveStatus,
-    onConfigureGeofence: () -> Unit
+    onConfigureGeofence: (() -> Unit)?
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         MediCaseMessageState(
@@ -221,19 +221,21 @@ private fun EmptyContent(
             accentContainerColor = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier.weight(1f)
         )
-        OutlinedButton(
-            onClick = onConfigureGeofence,
-            shape = ButtonShape,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(ScreenPadding)
-                .heightIn(min = ButtonHeight)
-        ) {
-            ButtonLabel(
-                icon = Icons.Outlined.Settings,
-                text = stringResource(R.string.map_configure_geofence)
-            )
+        if (onConfigureGeofence != null) {
+            OutlinedButton(
+                onClick = onConfigureGeofence,
+                shape = ButtonShape,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(ScreenPadding)
+                    .heightIn(min = ButtonHeight)
+            ) {
+                ButtonLabel(
+                    icon = Icons.Outlined.Settings,
+                    text = stringResource(R.string.map_configure_geofence)
+                )
+            }
         }
     }
 }
@@ -246,8 +248,8 @@ private fun EmptyContent(
 private fun MapContent(
     state: MapUiState.Success,
     onOpenInGoogleMaps: (latitude: Double, longitude: Double) -> Unit,
-    onOpenLossMode: () -> Unit,
-    onConfigureGeofence: () -> Unit
+    onOpenLossMode: (() -> Unit)?,
+    onConfigureGeofence: (() -> Unit)?
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         CaseMapArea(
@@ -280,37 +282,40 @@ private fun MapContent(
                     text = stringResource(R.string.map_open_google_maps)
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = onOpenLossMode,
-                    shape = ButtonShape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MediCaseTheme.statusColors.critical,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    ),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = ButtonHeight)
-                ) {
-                    ButtonLabel(
-                        icon = Icons.Outlined.WarningAmber,
-                        text = stringResource(R.string.map_loss_mode)
-                    )
-                }
-                OutlinedButton(
-                    onClick = onConfigureGeofence,
-                    shape = ButtonShape,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = ButtonHeight)
-                ) {
-                    ButtonLabel(
-                        icon = Icons.Outlined.Settings,
-                        text = stringResource(R.string.map_configure_geofence)
-                    )
+            // Modo Pérdida y geocercas cambian el estuche: solo para el dueño.
+            if (onOpenLossMode != null && onConfigureGeofence != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = onOpenLossMode,
+                        shape = ButtonShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MediCaseTheme.statusColors.critical,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ButtonHeight)
+                    ) {
+                        ButtonLabel(
+                            icon = Icons.Outlined.WarningAmber,
+                            text = stringResource(R.string.map_loss_mode)
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = onConfigureGeofence,
+                        shape = ButtonShape,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ButtonHeight)
+                    ) {
+                        ButtonLabel(
+                            icon = Icons.Outlined.Settings,
+                            text = stringResource(R.string.map_configure_geofence)
+                        )
+                    }
                 }
             }
         }

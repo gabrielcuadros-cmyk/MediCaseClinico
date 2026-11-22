@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
 import com.example.medicaseclinico.domain.model.AlertEvent
 import com.example.medicaseclinico.domain.model.AlertFilter
+import com.example.medicaseclinico.domain.model.CaseAccess
 import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import com.example.medicaseclinico.domain.time.DateTimeLabels
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -40,6 +42,7 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * @param clock se inyecta para que los tests fijen la hora del tiempo relativo.
  * @param dateTimeLabels formatea la fecha y hora exactas de cada alerta.
+ * @param caseAccess qué alertas puede ver la cuenta (un invitado, solo las de sus permisos).
  * @param tickIntervalMs cada cuánto se recalcula "Hace X min" aunque no
  * lleguen alertas nuevas.
  */
@@ -47,7 +50,8 @@ class AlertsViewModel(
     private val alertEventRepository: AlertEventRepository,
     private val clock: () -> Long = System::currentTimeMillis,
     private val dateTimeLabels: DateTimeLabels = DateTimeLabels.system(),
-    private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS
+    private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS,
+    private val caseAccess: Flow<CaseAccess> = flowOf(CaseAccess.Owner(uid = ""))
 ) : ViewModel() {
 
     private val selectedFilter = MutableStateFlow(AlertFilter.DEFAULT)
@@ -77,9 +81,18 @@ class AlertsViewModel(
         combine(
             alertEventRepository.observeAlertEvents().onEach { events -> markAsRead(events) },
             selectedFilter,
-            currentTime()
-        ) { events, filter, now ->
-            buildUiState(events, filter, now)
+            currentTime(),
+            caseAccess
+        ) { events, filter, now, access ->
+            // Un invitado solo ve las alertas de los datos que tiene permiso de ver,
+            // y un filtro que ya no puede usar vuelve a "Todas".
+            val visibleFilter = filter.takeIf { it in AlertFilter.visibleFor(access) } ?: AlertFilter.ALL
+            buildUiState(
+                events = events.filter { access.canSeeAlert(it.type) },
+                filter = visibleFilter,
+                filters = AlertFilter.visibleFor(access),
+                now = now
+            )
         }
             .onStart { emit(AlertsUiState.Loading) }
             .catch { throwable ->
@@ -105,6 +118,7 @@ class AlertsViewModel(
     private fun buildUiState(
         events: List<AlertEvent>,
         filter: AlertFilter,
+        filters: List<AlertFilter>,
         now: Long
     ): AlertsUiState {
         val alerts = events
@@ -120,9 +134,9 @@ class AlertsViewModel(
                 )
             }
         return if (alerts.isEmpty()) {
-            AlertsUiState.Empty(selectedFilter = filter)
+            AlertsUiState.Empty(selectedFilter = filter, filters = filters)
         } else {
-            AlertsUiState.Success(selectedFilter = filter, alerts = alerts)
+            AlertsUiState.Success(selectedFilter = filter, alerts = alerts, filters = filters)
         }
     }
 
@@ -136,7 +150,8 @@ class AlertsViewModel(
             initializer {
                 val application = checkNotNull(this[APPLICATION_KEY]) as MediCaseApplication
                 AlertsViewModel(
-                    alertEventRepository = application.container.alertEventRepository
+                    alertEventRepository = application.container.alertEventRepository,
+                    caseAccess = application.container.resolvedCaseAccess
                 )
             }
         }

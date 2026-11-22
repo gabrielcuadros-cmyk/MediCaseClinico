@@ -63,6 +63,7 @@ import com.example.medicaseclinico.data.ble.BlePermissions
 import com.example.medicaseclinico.data.notification.NotificationPermission
 import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.DeviceIssue
+import com.example.medicaseclinico.ui.components.NoPermissionNote
 import com.example.medicaseclinico.ui.components.relativeTimeLabel
 import com.example.medicaseclinico.ui.screens.dashboard.components.BatteryCard
 import com.example.medicaseclinico.ui.screens.dashboard.components.DashboardEmptyContent
@@ -81,6 +82,7 @@ fun DashboardRoute(
     onOpenSection: (DashboardSection) -> Unit,
     onOpenAccessLog: () -> Unit,
     modifier: Modifier = Modifier,
+    permissions: DashboardPermissions = DashboardPermissions(),
     viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
 ) {
     val context = LocalContext.current
@@ -146,6 +148,7 @@ fun DashboardRoute(
         onOpenLossMode = onOpenLossMode,
         onOpenSection = onOpenSection,
         onOpenAccessLog = onOpenAccessLog,
+        permissions = permissions,
         permissionsPermanentlyDenied = permissionsPermanentlyDenied,
         onRetry = viewModel::retry,
         onIssueAction = { issue ->
@@ -184,7 +187,8 @@ fun DashboardScreen(
     lossModeActive: Boolean = false,
     onOpenLossMode: () -> Unit = {},
     onOpenSection: (DashboardSection) -> Unit = {},
-    onOpenAccessLog: () -> Unit = {}
+    onOpenAccessLog: () -> Unit = {},
+    permissions: DashboardPermissions = DashboardPermissions()
 ) {
     Scaffold(
         modifier = modifier,
@@ -200,7 +204,8 @@ fun DashboardScreen(
                 .padding(innerPadding)
         ) {
             AnimatedVisibility(
-                visible = lossModeActive,
+                // El Modo Pérdida es una herramienta del dueño: el invitado no lo abre.
+                visible = lossModeActive && permissions.canUseLossMode,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
@@ -245,7 +250,8 @@ fun DashboardScreen(
                         state = state,
                         transport = transport,
                         onOpenSection = onOpenSection,
-                        onOpenAccessLog = onOpenAccessLog
+                        onOpenAccessLog = onOpenAccessLog,
+                        permissions = permissions
                     )
                 }
             }
@@ -259,6 +265,7 @@ private fun DashboardSuccessContent(
     transport: CaseTransport,
     onOpenSection: (DashboardSection) -> Unit,
     onOpenAccessLog: () -> Unit,
+    permissions: DashboardPermissions,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -268,12 +275,16 @@ private fun DashboardSuccessContent(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        TemperatureCard(
-            temperatureCelsius = state.currentTemperature,
-            status = state.temperatureStatus,
-            isLiveData = state.isLiveData,
-            outdatedElapsed = state.lastReadingElapsed.takeIf { state.isReadingOutdated }
-        )
+        if (permissions.showTemperature) {
+            TemperatureCard(
+                temperatureCelsius = state.currentTemperature,
+                status = state.temperatureStatus,
+                isLiveData = state.isLiveData,
+                outdatedElapsed = state.lastReadingElapsed.takeIf { state.isReadingOutdated }
+            )
+        } else {
+            NoPermissionNote(text = stringResource(R.string.access_no_temperature_permission))
+        }
         // Como en el diseño: batería y cierre lado a lado, a la misma altura.
         Row(
             modifier = Modifier
@@ -295,32 +306,38 @@ private fun DashboardSuccessContent(
                     .fillMaxHeight()
             )
         }
-        // Lleva al registro de intentos del teclado del estuche: la app no
-        // abre el estuche ni teclea el PIN por el usuario.
-        Button(
-            onClick = onOpenAccessLog,
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 52.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Lock,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.dashboard_access_log),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
+        if (permissions.showAccessLog) {
+            // Lleva al registro de intentos del teclado del estuche: la app no
+            // abre el estuche ni teclea el PIN por el usuario.
+            Button(
+                onClick = onOpenAccessLog,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 52.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Lock,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.dashboard_access_log),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
-        QuickSections(state = state.quickSections, onSectionClick = onOpenSection)
+        QuickSections(
+            state = state.quickSections,
+            onSectionClick = onOpenSection,
+            visibleSections = permissions.visibleSections
+        )
         // El tiempo va en medio de la frase: "…vía Bluetooth hace 5 min".
         val relativeTime = relativeTimeLabel(state.lastReadingElapsed)
             .replaceFirstChar { it.lowercase() }

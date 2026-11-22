@@ -2,6 +2,8 @@ package com.example.medicaseclinico.ui.screens.dashboard
 
 import androidx.compose.runtime.Immutable
 import com.example.medicaseclinico.domain.model.BatteryThresholds
+import com.example.medicaseclinico.domain.model.CaseAccess
+import com.example.medicaseclinico.domain.model.CaseCapability
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.model.TemperatureStatus
@@ -117,6 +119,37 @@ enum class PinLockStatus {
 
 /** Pestañas a las que llevan las "Secciones rápidas". */
 enum class DashboardSection { HISTORY, LOCATION, ALERTS, SETTINGS }
+
+/**
+ * Qué partes del Dashboard ve la cuenta. El dueño, todas; un invitado, según
+ * sus permisos. La decisión es del dominio ([CaseAccess.can]); aquí solo se
+ * traduce a lo que la pantalla muestra.
+ */
+@Immutable
+data class DashboardPermissions(
+    val showTemperature: Boolean = true,
+    val showLocation: Boolean = true,
+    val showAccessLog: Boolean = true,
+    val canUseLossMode: Boolean = true
+) {
+    /** Atajos de "Secciones rápidas" que puede usar. */
+    val visibleSections: Set<DashboardSection>
+        get() = buildSet {
+            if (showTemperature) add(DashboardSection.HISTORY)
+            if (showLocation) add(DashboardSection.LOCATION)
+            add(DashboardSection.ALERTS)
+            add(DashboardSection.SETTINGS)
+        }
+
+    companion object {
+        fun of(access: CaseAccess) = DashboardPermissions(
+            showTemperature = access.can(CaseCapability.VIEW_TEMPERATURE),
+            showLocation = access.can(CaseCapability.VIEW_LOCATION),
+            showAccessLog = access.can(CaseCapability.VIEW_ACCESS_LOGS),
+            canUseLossMode = access.can(CaseCapability.CONTROL_CASE)
+        )
+    }
+}
 
 /**
  * Causa del error expresada como tipo, no como texto.

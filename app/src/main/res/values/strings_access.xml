@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Acceso de invitados: revocación, permisos y contactos de cuidado. -->
+<resources>
+    <!-- Acceso revocado -->
+    <string name="access_revoked_title">Tu acceso fue revocado</string>
+    <string name="access_revoked_message">El dueño del estuche te quitó el acceso. Si crees que es un error, pídele que te invite de nuevo.</string>
+    <string name="access_revoked_sign_out">Cerrar sesión</string>
+
+    <!-- Sin permiso -->
+    <string name="access_no_permission_title">Sin permiso para esta sección</string>
+    <string name="access_no_permission_message">El dueño del estuche no te dio permiso para ver esto. Puede activarlo en Seguridad → Usuarios Autorizados → Permisos.</string>
+    <string name="access_no_temperature_permission">No tienes permiso para ver la temperatura del estuche.</string>
+    <string name="access_owner_only_pin">Solo el dueño del estuche puede cambiar la contraseña y el seguro.</string>
+
+    <!-- Modo Pérdida: enviar la ubicación a un contacto de cuidado -->
+    <string name="loss_mode_contact_picker_title">Enviar la ubicación a…</string>
+    <string name="loss_mode_contact_via_sms">SMS · %1$s</string>
+    <string name="loss_mode_contact_via_email">Correo · %1$s</string>
+    <string name="loss_mode_contact_other_app">Otra aplicación</string>
+</resources>

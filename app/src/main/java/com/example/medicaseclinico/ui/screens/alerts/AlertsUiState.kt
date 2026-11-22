@@ -21,12 +21,19 @@ sealed interface AlertsUiState {
      * No hay alertas para [selectedFilter]: o no se ha emitido ninguna, o
      * ninguna es de esa categoría.
      */
-    data class Empty(val selectedFilter: AlertFilter) : AlertsUiState
+    data class Empty(
+        val selectedFilter: AlertFilter,
+        val filters: List<AlertFilter> = AlertFilter.entries
+    ) : AlertsUiState
 
-    /** @param alerts alertas del filtro, de la más reciente a la más antigua. */
+    /**
+     * @param alerts alertas del filtro, de la más reciente a la más antigua.
+     * @param filters chips que puede usar la cuenta (un invitado, solo los de sus permisos).
+     */
     data class Success(
         val selectedFilter: AlertFilter,
-        val alerts: List<AlertItem>
+        val alerts: List<AlertItem>,
+        val filters: List<AlertFilter> = AlertFilter.entries
     ) : AlertsUiState
 
     /** Fallo controlado al leer el historial. La pantalla ofrece reintentar. */
