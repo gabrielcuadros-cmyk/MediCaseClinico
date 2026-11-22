@@ -15,7 +15,7 @@ sealed interface HistoryEvent {
     val timestamp: Long
 
     /**
-     * La insulina salió del rango seguro 2–8 °C.
+     * La insulina salió del rango seguro 15–30 °C.
      *
      * @param timestamp primera lectura fuera de rango del episodio.
      * @param peakCelsius valor más alejado del rango durante el episodio
@@ -55,9 +55,9 @@ sealed interface HistoryEvent {
 
 /** Sentido en que la temperatura salió del rango seguro. */
 enum class TemperatureExcursion {
-    /** Por encima del máximo seguro (8 °C). */
+    /** Por encima del máximo seguro (30 °C). */
     HIGH,
 
-    /** Por debajo del mínimo seguro (2 °C). */
+    /** Por debajo del mínimo seguro (15 °C). */
     LOW
 }

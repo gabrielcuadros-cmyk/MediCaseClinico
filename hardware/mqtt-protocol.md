@@ -281,7 +281,7 @@ Pérdida). Fuera de rango: `valor_invalido`. No se guarda en NVS.
 | Nunca se publica `bateria` | Batería: `--` |
 | Nunca se publica `cierre` | Cierre: `--` |
 | `acceso` con `denegado` o `bloqueo` | Notificación y alerta en Alertas → Seguridad |
-| Temperatura fuera de 2–8 °C | Notificación y alerta de temperatura |
+| Temperatura fuera de 15–30 °C | Notificación y alerta de temperatura |
 | Orden sin respuesta en 10 s | La acción falla con un mensaje de error |
 
 Para probar sin el estuche: **MQTT Explorer** (o `mosquitto_pub`/`mosquitto_sub`)

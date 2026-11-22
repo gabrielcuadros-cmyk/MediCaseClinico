@@ -12,12 +12,12 @@ import com.example.medicaseclinico.domain.model.TemperatureStatus
  * Dibuja la gráfica de estabilidad en el lienzo de una página PDF.
  *
  * Usa el mismo [StabilityChartModel] que la pantalla, así que el médico ve
- * en el reporte la misma banda 2–8 °C, la misma línea y los mismos picos que
+ * en el reporte la misma banda 15–30 °C, la misma línea y los mismos picos que
  * el paciente vio en la app. Los colores son fijos (tema claro) porque un PDF
  * se imprime sobre blanco.
  *
- * @param maxSafeLabel texto de la guía superior ("Máx Seguro 8°C").
- * @param minSafeLabel texto de la guía inferior ("Mín Seguro 2°C").
+ * @param maxSafeLabel texto de la guía superior ("Máx Seguro 30°C").
+ * @param minSafeLabel texto de la guía inferior ("Mín Seguro 15°C").
  */
 internal class PdfStabilityChartDrawer(
     private val maxSafeLabel: String,

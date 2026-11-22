@@ -264,7 +264,7 @@ Segundos entre dos tramas de Location and Speed (§4). 1 byte, de `1` a `60`.
 | Sin servicio MediCase Control | Seguridad: "Requiere un estuche compatible" |
 | Escritura sin emparejar | Android pide emparejar; la app pide repetir la acción |
 | Evento de acceso `0x02` o `0x03` | Notificación y alerta en la pestaña Alertas → Seguridad |
-| Temperatura fuera de 2–8 °C | Notificación y alerta de temperatura |
+| Temperatura fuera de 15–30 °C | Notificación y alerta de temperatura |
 
 Para probar sin la app: **nRF Connect** permite ver cada característica, activar las
 notificaciones y escribir las tramas de los ejemplos.

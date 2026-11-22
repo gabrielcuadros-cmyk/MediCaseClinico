@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey
  * Lectura térmica registrada por el estuche MediCase vía BLE.
  *
  * Cada fila es una muestra real del sensor: alimenta la tarjeta de 4.2 °C del
- * Dashboard, la gráfica de estabilidad (2–8 °C) y la línea de eventos del
+ * Dashboard, la gráfica de estabilidad (15–30 °C) y la línea de eventos del
  * Historial Térmico (filtros 24h / 7 días / 30 días).
  *
  * El índice sobre [timestamp] acelera las consultas por rango de fechas y el
@@ -33,7 +33,7 @@ data class TemperatureEntity(
     val timestamp: Long,
 
     /**
-     * true si la lectura salió del rango seguro de la insulina (2 °C – 8 °C)
+     * true si la lectura salió del rango seguro de la insulina (15 °C – 30 °C)
      * y disparó una alerta. Lo calcula el ViewModel, no la UI.
      */
     @ColumnInfo(name = "is_alert_triggered")

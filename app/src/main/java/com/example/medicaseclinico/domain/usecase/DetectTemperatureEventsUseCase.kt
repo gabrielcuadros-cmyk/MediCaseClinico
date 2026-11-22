@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
  *
  * Antirrebote: si la temperatura vuelve al rango menos de [mergeGapMs] y sale
  * otra vez en el mismo sentido, sigue siendo el mismo episodio. Una insulina
- * que oscila alrededor de 8 °C es un único problema clínico, no diez alertas.
+ * que oscila alrededor de 30 °C es un único problema clínico, no diez alertas.
  * Alta y baja nunca se unen entre sí porque son riesgos distintos.
  *
  * La batería usa histéresis, igual que las notificaciones: tras avisar, no

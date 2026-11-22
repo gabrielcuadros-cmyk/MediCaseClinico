@@ -34,23 +34,24 @@ class StabilityChartModelTest {
         val model = model()
 
         assertEquals(0, model.pointCount)
-        assertEquals(0f, model.minCelsius, delta)
-        assertEquals(10f, model.maxCelsius, delta)
+        // Banda 15–30 °C con 2 °C de margen a cada lado.
+        assertEquals(13f, model.minCelsius, delta)
+        assertEquals(32f, model.maxCelsius, delta)
     }
 
     @Test
     fun `intervalos seguidos forman un solo tramo ordenado en el tiempo`() {
-        val model = model(bucket(2, 4.1f), bucket(0, 4.2f), bucket(1, 4.0f))
+        val model = model(bucket(2, 22.1f), bucket(0, 22.2f), bucket(1, 22.0f))
 
         val points = model.segments.single()
-        assertEquals(listOf(4.2f, 4.0f, 4.1f), points.map { it.celsius })
+        assertEquals(listOf(22.2f, 22.0f, 22.1f), points.map { it.celsius })
         assertEquals(0.05f, points.first().xFraction, delta)
         assertTrue(points.zipWithNext().all { (a, b) -> a.xFraction < b.xFraction })
     }
 
     @Test
     fun `un hueco largo sin lecturas parte la linea en dos tramos`() {
-        val model = model(bucket(0, 4.0f), bucket(1, 4.0f), bucket(5, 4.0f))
+        val model = model(bucket(0, 22.0f), bucket(1, 22.0f), bucket(5, 22.0f))
 
         assertEquals(listOf(2, 1), model.segments.map { it.size })
     }
@@ -58,7 +59,7 @@ class StabilityChartModelTest {
     @Test
     fun `intervalos vacios de menos de cinco minutos no cortan la linea`() {
         // Lecturas cada 4 min con intervalos de 2 min: uno vacío entre cada par.
-        val model = model(bucket(0, 4.0f), bucket(2, 4.1f), bucket(4, 4.2f), bucket(6, 4.1f))
+        val model = model(bucket(0, 22.0f), bucket(2, 22.1f), bucket(4, 22.2f), bucket(6, 22.1f))
 
         assertEquals(4, model.segments.single().size)
     }
@@ -66,7 +67,7 @@ class StabilityChartModelTest {
     @Test
     fun `un hueco de mas de cinco minutos corta la linea aunque sea el unico`() {
         // 6 min entre los dos intervalos con datos.
-        val model = model(bucket(0, 4.0f), bucket(3, 4.0f))
+        val model = model(bucket(0, 22.0f), bucket(3, 22.0f))
 
         assertEquals(listOf(1, 1), model.segments.map { it.size })
     }
@@ -74,7 +75,7 @@ class StabilityChartModelTest {
     @Test
     fun `con intervalos mas largos que el hueco maximo los vecinos siguen unidos`() {
         val quarterHour = TimeUnit.MINUTES.toMillis(15)
-        fun wideBucket(index: Long) = bucket(0, 4.0f).copy(startTimestamp = index * quarterHour)
+        fun wideBucket(index: Long) = bucket(0, 22.0f).copy(startTimestamp = index * quarterHour)
 
         val model = buildStabilityChartModel(
             buckets = listOf(wideBucket(0), wideBucket(1), wideBucket(3)),
@@ -88,20 +89,21 @@ class StabilityChartModelTest {
 
     @Test
     fun `un pico amplia la escala y se marca como fuera de rango`() {
-        val model = model(bucket(0, 4.0f), bucket(1, 6.0f, min = 4.0f, max = 11.0f))
+        val model = model(bucket(0, 22.0f), bucket(1, 24.0f, min = 22.0f, max = 33.0f))
 
-        assertEquals(11.5f, model.maxCelsius, delta)
+        assertEquals(33.5f, model.maxCelsius, delta)
         val excursion = model.excursions.single()
-        assertEquals(11.0f, excursion.maxCelsius, delta)
+        assertEquals(33.0f, excursion.maxCelsius, delta)
         assertTrue(model.yFraction(11.0f) > 0f)
     }
 
     @Test
     fun `los limites de la banda quedan dentro de la grafica`() {
-        val model = model(bucket(0, 4.0f))
+        val model = model(bucket(0, 22.0f))
 
-        assertEquals(0.2f, model.yFraction(8f), delta)
-        assertEquals(0.8f, model.yFraction(2f), delta)
+        // Escala de 13 a 32 °C: 30 °C queda a 2/19 del borde superior y 15 °C a 17/19.
+        assertEquals(2f / 19f, model.yFraction(30f), delta)
+        assertEquals(17f / 19f, model.yFraction(15f), delta)
         assertTrue(model.excursions.isEmpty())
     }
 }

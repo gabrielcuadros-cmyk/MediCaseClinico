@@ -63,7 +63,7 @@ private const val MAX_POINTS_WITH_DOTS = 12
 private const val AXIS_LABEL_COUNT = 5
 
 /**
- * Tarjeta "Gráfica de estabilidad (2-8 °C)" del Historial Térmico.
+ * Tarjeta "Gráfica de estabilidad (15-30 °C)" del Historial Térmico.
  *
  * Sin lógica de negocio: recibe los intervalos y las estadísticas ya
  * calculados por el ViewModel y solo los dibuja. Si no hay lecturas muestra

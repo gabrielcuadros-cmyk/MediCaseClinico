@@ -93,32 +93,32 @@ class RecordingAlertPublisherTest {
 
     @Test
     fun `temperatura fuera de rango registra una sola alerta por episodio`() = alertTest {
-        temperature(8.4f)
-        temperature(9.1f)
-        temperature(8.7f)
+        temperature(30.4f)
+        temperature(31.1f)
+        temperature(30.7f)
 
         val event = repository.recorded.single()
         assertEquals(AlertType.TEMPERATURE, event.type)
-        assertEquals(8.4f, event.value!!, delta)
+        assertEquals(30.4f, event.value!!, delta)
         assertEquals(1_000L, event.timestamp)
     }
 
     @Test
     fun `volver al rango y salir de nuevo registra una segunda alerta`() = alertTest {
-        temperature(8.4f)
-        temperature(5.0f)
+        temperature(30.4f)
+        temperature(23.0f)
         now = 2_000L
-        temperature(1.2f)
+        temperature(14.2f)
 
-        assertEquals(listOf(8.4f, 1.2f), repository.recorded.map { it.value })
+        assertEquals(listOf(30.4f, 14.2f), repository.recorded.map { it.value })
         assertEquals(listOf(1_000L, 2_000L), repository.recorded.map { it.timestamp })
     }
 
     @Test
     fun `temperatura segura o cerca del limite no registra nada`() = alertTest {
-        temperature(4.2f)
-        temperature(7.8f)
-        temperature(2.0f)
+        temperature(22.2f)
+        temperature(29.8f)
+        temperature(15.0f)
 
         assertTrue(repository.recorded.isEmpty())
     }
@@ -212,9 +212,9 @@ class RecordingAlertPublisherTest {
 
     @Test
     fun `todas las llamadas llegan al emisor real aunque no se registren`() = alertTest {
-        temperature(4.2f)
-        temperature(9.0f)
-        temperature(9.5f)
+        temperature(22.2f)
+        temperature(31.0f)
+        temperature(31.5f)
         publisher.onBatteryLevel(50)
         publisher.onConnectionRestored()
         publisher.onConnectionLost()
@@ -227,7 +227,7 @@ class RecordingAlertPublisherTest {
 
     @Test
     fun `si falla el guardado la alerta se sigue emitiendo`() = alertTest(failing = true) {
-        temperature(9.0f)
+        temperature(31.0f)
 
         assertTrue(repository.recorded.isEmpty())
         assertEquals(listOf("temperature"), delegate.calls)

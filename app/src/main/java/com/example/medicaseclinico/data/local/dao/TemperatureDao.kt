@@ -52,7 +52,7 @@ interface TemperatureDao {
 
     /**
      * Lecturas desde [since] (epoch ms) en orden cronológico → gráfica de
-     * estabilidad 2–8 °C con filtros Últimas 24h / 7 Días / 30 Días.
+     * estabilidad 15–30 °C con filtros Últimas 24h / 7 Días / 30 Días.
      */
     @Query(
         """

@@ -5,7 +5,7 @@ package com.example.medicaseclinico.domain.model
  *
  * El rango de 30 días puede superar las 250 000 lecturas; cargarlas una a una
  * congelaría la pantalla. Cada intervalo conserva el mínimo y el máximo, así
- * que ningún pico fuera de 2–8 °C se pierde aunque dure una sola lectura.
+ * que ningún pico fuera de 15–30 °C se pierde aunque dure una sola lectura.
  *
  * @param startTimestamp inicio del intervalo (epoch ms).
  * @param averageCelsius media de las lecturas del intervalo → línea de la gráfica.

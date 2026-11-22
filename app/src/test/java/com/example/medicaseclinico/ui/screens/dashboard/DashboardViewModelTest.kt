@@ -85,13 +85,13 @@ class DashboardViewModelTest {
 
     @Test
     fun `muestra la ultima lectura clasificada y cuanto hace de ella`() = runTest {
-        temperature.latest.value = reading(4.2f, minutesAgo = 2)
+        temperature.latest.value = reading(22.2f, minutesAgo = 2)
         temperature.batteryLevel.value = 78
         device.connectionStatus.value = ConnectionStatus.CONNECTED
 
         val state = viewModel().success()
 
-        assertEquals(4.2f, state.currentTemperature)
+        assertEquals(22.2f, state.currentTemperature)
         assertEquals(TemperatureStatus.SAFE, state.temperatureStatus)
         assertEquals(78, state.batteryLevel)
         assertFalse(state.isBatteryLow)
@@ -101,21 +101,21 @@ class DashboardViewModelTest {
 
     @Test
     fun `una temperatura fuera de rango se marca critica`() = runTest {
-        temperature.latest.value = reading(9.0f)
+        temperature.latest.value = reading(31.0f)
 
         assertEquals(TemperatureStatus.CRITICAL, viewModel().success().temperatureStatus)
     }
 
     @Test
     fun `sin enlace la lectura mostrada no se da por actual`() = runTest {
-        temperature.latest.value = reading(4.2f)
+        temperature.latest.value = reading(22.2f)
 
         assertFalse(viewModel().success().isLiveData)
     }
 
     @Test
     fun `sin enlace la lectura de justo un dia aun no esta desactualizada`() = runTest {
-        temperature.latest.value = reading(4.2f, minutesAgo = MINUTES_IN_DAY)
+        temperature.latest.value = reading(22.2f, minutesAgo = MINUTES_IN_DAY)
 
         assertFalse(viewModel().success().isReadingOutdated)
     }
@@ -132,7 +132,7 @@ class DashboardViewModelTest {
 
     @Test
     fun `con enlace una lectura antigua no se marca desactualizada`() = runTest {
-        temperature.latest.value = reading(4.2f, minutesAgo = MINUTES_IN_DAY + 1)
+        temperature.latest.value = reading(22.2f, minutesAgo = MINUTES_IN_DAY + 1)
         device.connectionStatus.value = ConnectionStatus.CONNECTED
 
         assertFalse(viewModel().success().isReadingOutdated)
@@ -140,7 +140,7 @@ class DashboardViewModelTest {
 
     @Test
     fun `sin nivel de bateria no se muestra ninguno y por debajo del umbral se avisa`() = runTest {
-        temperature.latest.value = reading(4.2f)
+        temperature.latest.value = reading(22.2f)
         val viewModel = viewModel()
         assertNull(viewModel.success().batteryLevel)
         assertFalse(viewModel.success().isBatteryLow)
@@ -153,7 +153,7 @@ class DashboardViewModelTest {
 
     @Test
     fun `el cierre solo se muestra cuando el estuche lo informa`() = runTest {
-        temperature.latest.value = reading(4.2f)
+        temperature.latest.value = reading(22.2f)
         val viewModel = viewModel()
         assertEquals(CaseLockStatus.UNKNOWN, viewModel.success().lockStatus)
 
@@ -172,7 +172,7 @@ class DashboardViewModelTest {
 
     @Test
     fun `las secciones rapidas cuentan las alertas sin ver y el estado real del seguro`() = runTest {
-        temperature.latest.value = reading(4.2f)
+        temperature.latest.value = reading(22.2f)
         alerts.events.value = listOf(
             AlertEvent(id = 1, type = AlertType.TEMPERATURE, timestamp = now, isRead = false),
             AlertEvent(id = 2, type = AlertType.SECURITY, timestamp = now, isRead = true),
@@ -192,7 +192,7 @@ class DashboardViewModelTest {
 
     @Test
     fun `la ubicacion rapida usa la posicion en vivo y si no la ultima guardada`() = runTest {
-        temperature.latest.value = reading(4.2f)
+        temperature.latest.value = reading(22.2f)
         val viewModel = viewModel()
         assertNull(viewModel.success().quickSections.lastLocationElapsed)
 
@@ -227,10 +227,10 @@ class DashboardViewModelTest {
         assertTrue(error.canRetry)
 
         temperature.readError = null
-        temperature.latest.value = reading(4.2f)
+        temperature.latest.value = reading(22.2f)
         viewModel.retry()
 
-        assertEquals(4.2f, viewModel.success().currentTemperature)
+        assertEquals(22.2f, viewModel.success().currentTemperature)
         assertEquals(1, device.monitoringStarts)
     }
 

@@ -47,7 +47,7 @@ private const val BAND_MARGIN_CELSIUS = 2f
 private const val PEAK_MARGIN_CELSIUS = 0.5f
 
 /**
- * La escala vertical siempre incluye la banda 2–8 °C con margen y se amplía
+ * La escala vertical siempre incluye la banda 15–30 °C con margen y se amplía
  * solo si hay picos, de modo que una insulina estable se ve igual que en el
  * diseño y un pico nunca queda cortado.
  *

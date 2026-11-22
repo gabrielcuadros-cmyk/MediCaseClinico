@@ -34,12 +34,12 @@ class TemperatureHistoryViewModelTest {
     private val exporter = FakeMedicalReportExporter()
 
     private val latest = TemperatureReading(
-        temperatureCelsius = 4.2f,
+        temperatureCelsius = 22.2f,
         timestamp = now - 60_000L,
         isAlertTriggered = false
     )
 
-    private fun bucket(minutesAgo: Int, celsius: Float = 4.0f) = TemperatureBucket(
+    private fun bucket(minutesAgo: Int, celsius: Float = 22.0f) = TemperatureBucket(
         startTimestamp = now - minutesAgo * 60_000L,
         averageCelsius = celsius,
         minCelsius = celsius,
@@ -74,7 +74,7 @@ class TemperatureHistoryViewModelTest {
 
         assertEquals(HistoryRange.LAST_24_HOURS, state.selectedRange)
         assertEquals(2, state.buckets.size)
-        assertEquals(4.2f, state.current.celsius)
+        assertEquals(22.2f, state.current.celsius)
         assertEquals(TemperatureStatus.SAFE, state.current.status)
         assertEquals(now - DAY_MS, state.rangeStart)
         assertEquals(now, state.rangeEnd)
@@ -103,7 +103,7 @@ class TemperatureHistoryViewModelTest {
 
         val state = viewModel().uiState.value as TemperatureHistoryUiState.Empty
 
-        assertEquals(4.2f, state.current?.celsius)
+        assertEquals(22.2f, state.current?.celsius)
     }
 
     @Test
@@ -119,11 +119,11 @@ class TemperatureHistoryViewModelTest {
         temperature.buckets.value = listOf(bucket(minutesAgo = 10))
         val viewModel = viewModel()
 
-        temperature.latest.value = latest.copy(temperatureCelsius = 9.1f, timestamp = now)
-        temperature.buckets.value = listOf(bucket(minutesAgo = 10), bucket(minutesAgo = 0, celsius = 9.1f))
+        temperature.latest.value = latest.copy(temperatureCelsius = 31.1f, timestamp = now)
+        temperature.buckets.value = listOf(bucket(minutesAgo = 10), bucket(minutesAgo = 0, celsius = 31.1f))
 
         // El dato clínico llega al instante; la gráfica todavía es la anterior.
-        assertEquals(9.1f, viewModel.success().current.celsius)
+        assertEquals(31.1f, viewModel.success().current.celsius)
         assertEquals(TemperatureStatus.CRITICAL, viewModel.success().current.status)
         assertEquals(1, viewModel.success().buckets.size)
 
@@ -159,7 +159,7 @@ class TemperatureHistoryViewModelTest {
 
         val report = exporter.exported.single()
         assertEquals(HistoryRange.LAST_24_HOURS, report.range)
-        assertEquals(4.2f, report.currentCelsius)
+        assertEquals(22.2f, report.currentCelsius)
         assertEquals(viewModel.success().buckets, report.buckets)
         assertEquals(now, report.generatedAt)
         assertEquals(ReportExportState.Ready("content://reportes/1.pdf"), viewModel.exportState.value)

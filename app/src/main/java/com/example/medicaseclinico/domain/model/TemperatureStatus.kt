@@ -3,11 +3,12 @@ package com.example.medicaseclinico.domain.model
 /**
  * Clasificación clínica de una lectura de temperatura del estuche.
  *
- * Rango de conservación de la insulina sin abrir: 2 °C – 8 °C
+ * Rango seguro de trabajo: temperatura ambiente de 15 °C – 30 °C
  * (el "Rango óptimo" que muestra el Dashboard y la gráfica de estabilidad).
+ * Toda la app (alertas, gráfica, reporte, widget) lee estos límites de aquí.
  *
- *  CRITICAL   SAFE...............................SAFE   CRITICAL
- *  ───────┤ 2.0 ├ WARNING ┤ 2.5 ─────── 7.5 ├ WARNING ┤ 8.0 ├───────
+ *  CRITICAL   SAFE.................................SAFE   CRITICAL
+ *  ───────┤ 15.0 ├ WARNING ┤ 15.5 ───── 29.5 ├ WARNING ┤ 30.0 ├───────
  */
 enum class TemperatureStatus {
     /** Dentro del rango y lejos de los límites. Tarjeta en verde ("SEGURO"). */
@@ -17,7 +18,7 @@ enum class TemperatureStatus {
     WARNING,
 
     /**
-     * Fuera del rango 2–8 °C. La insulina puede perder eficacia.
+     * Fuera del rango 15–30 °C. La insulina puede perder eficacia.
      * Dispara la alerta "Temperatura Fuera de Rango" y pinta la tarjeta en rojo.
      */
     CRITICAL;
@@ -28,10 +29,10 @@ enum class TemperatureStatus {
 
     companion object {
         /** Límite inferior seguro (°C). */
-        const val MIN_SAFE_CELSIUS = 2.0f
+        const val MIN_SAFE_CELSIUS = 15.0f
 
         /** Límite superior seguro (°C). */
-        const val MAX_SAFE_CELSIUS = 8.0f
+        const val MAX_SAFE_CELSIUS = 30.0f
 
         /** Margen antes de cada límite que activa el estado WARNING (°C). */
         const val WARNING_MARGIN_CELSIUS = 0.5f
