@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos del widget "Últimas alertas" de la pantalla de inicio. -->
+<resources>
+    <string name="alerts_widget_label">Últimas alertas</string>
+    <string name="alerts_widget_description">Lista de las últimas alertas del estuche: temperatura, batería, conexión, geocerca y accesos.</string>
+    <string name="alerts_widget_title">Últimas alertas</string>
+    <string name="alerts_widget_unread">%1$d sin ver</string>
+    <string name="alerts_widget_empty">Sin alertas registradas</string>
+    <string name="alerts_widget_loading">Cargando…</string>
+    <string name="alerts_widget_error">No se pudieron leer las alertas</string>
+    <string name="alerts_widget_retry">Reintentar</string>
+    <string name="alerts_widget_open">Abrir Alertas de Seguridad en MediCase Clínico</string>
+
+    <!-- Hora de cada alerta: "14:32", "Ayer 14:32" o "5 oct, 14:32" -->
+    <string name="alerts_widget_time_earlier">%1$s, %2$s</string>
+    <!-- Descripción accesible de una fila: "Temperatura Fuera de Rango, Ayer 14:32, sin ver" -->
+    <string name="alerts_widget_item_description">%1$s, %2$s</string>
+    <string name="alerts_widget_item_unread_description">%1$s, %2$s, sin ver</string>
+</resources>
