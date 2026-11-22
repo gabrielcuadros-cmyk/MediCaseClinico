@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -20,6 +21,7 @@ import com.example.medicaseclinico.ui.components.MediCaseLoadingState
 import com.example.medicaseclinico.ui.navigation.AuthNavGraph
 import com.example.medicaseclinico.ui.navigation.MediCaseNavGraph
 import com.example.medicaseclinico.ui.navigation.MediCaseNavigationBar
+import com.example.medicaseclinico.ui.navigation.TopLevelDestination
 import com.example.medicaseclinico.ui.navigation.currentTopLevelDestination
 import com.example.medicaseclinico.ui.navigation.navigateToTopLevel
 
@@ -29,10 +31,16 @@ import com.example.medicaseclinico.ui.navigation.navigateToTopLevel
  * Sin sesión solo existen las pantallas de cuenta; con sesión, la app. Son
  * dos grafos de navegación separados para que, tras cerrar sesión, "Atrás" no
  * pueda devolver a una pantalla con los datos del estuche.
+ *
+ * @param launchDestination pestaña pedida desde fuera de la app (widget), o
+ *   null. Sin sesión espera: se abre en cuanto el usuario entra.
+ * @param onLaunchDestinationHandled avisa que ya se abrió, para no repetirlo.
  */
 @Composable
 fun MediCaseApp(
     modifier: Modifier = Modifier,
+    launchDestination: TopLevelDestination? = null,
+    onLaunchDestinationHandled: () -> Unit = {},
     viewModel: MediCaseAppViewModel = viewModel(factory = MediCaseAppViewModel.Factory)
 ) {
     val sessionState by viewModel.sessionState.collectAsStateWithLifecycle()
@@ -47,11 +55,23 @@ fun MediCaseApp(
             AccountSurface(modifier = modifier) { AuthNavGraph() }
 
         SessionState.SIGNED_IN ->
-            MainApp(viewModel = viewModel, onSignOut = viewModel::signOut, modifier = modifier)
+            MainApp(
+                viewModel = viewModel,
+                onSignOut = viewModel::signOut,
+                launchDestination = launchDestination,
+                onLaunchDestinationHandled = onLaunchDestinationHandled,
+                modifier = modifier
+            )
 
         // Sin servicio de cuentas no hay sesión que cerrar.
         SessionState.NOT_REQUIRED ->
-            MainApp(viewModel = viewModel, onSignOut = null, modifier = modifier)
+            MainApp(
+                viewModel = viewModel,
+                onSignOut = null,
+                launchDestination = launchDestination,
+                onLaunchDestinationHandled = onLaunchDestinationHandled,
+                modifier = modifier
+            )
     }
 }
 
@@ -74,9 +94,19 @@ private fun AccountSurface(
 private fun MainApp(
     viewModel: MediCaseAppViewModel,
     onSignOut: (() -> Unit)?,
+    launchDestination: TopLevelDestination?,
+    onLaunchDestinationHandled: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
+
+    // Acceso directo del widget: se navega con la misma lógica que la barra inferior.
+    LaunchedEffect(launchDestination) {
+        if (launchDestination != null) {
+            navController.navigateToTopLevel(launchDestination)
+            onLaunchDestinationHandled()
+        }
+    }
     val unreadAlertsCount by viewModel.unreadAlertsCount.collectAsStateWithLifecycle()
 
     Scaffold(
