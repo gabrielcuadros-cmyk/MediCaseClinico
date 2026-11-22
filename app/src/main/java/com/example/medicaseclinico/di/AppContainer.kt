@@ -39,6 +39,8 @@ import com.example.medicaseclinico.domain.usecase.ShouldSaveCaseLocationUseCase
 import com.example.medicaseclinico.ui.widget.CaseWidgetStateSource
 import com.example.medicaseclinico.ui.widget.MediCaseWidget
 import com.example.medicaseclinico.ui.widget.WidgetRefresher
+import com.example.medicaseclinico.ui.widget.alerts.RecentAlertsStateSource
+import com.example.medicaseclinico.ui.widget.alerts.RecentAlertsWidget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -157,6 +159,16 @@ class AppContainer(context: Context) {
             context = appContext,
             widget = MediCaseWidget(),
             changes = CaseWidgetStateSource.from(container = this).visibleChanges(),
+            scope = applicationScope
+        )
+    }
+
+    /** Redibuja el widget "Últimas alertas" cada vez que cambia el historial de alertas. */
+    val recentAlertsWidgetRefresher: WidgetRefresher by lazy {
+        WidgetRefresher(
+            context = appContext,
+            widget = RecentAlertsWidget(),
+            changes = RecentAlertsStateSource.from(container = this).summaries(),
             scope = applicationScope
         )
     }
