@@ -9,6 +9,8 @@
     <string name="widget_loading">Cargando…</string>
     <string name="widget_error">No se pudo leer el estuche</string>
     <string name="widget_retry">Reintentar</string>
+    <string name="widget_signed_out">Inicia sesión en MediCase para ver la temperatura</string>
+    <string name="widget_no_permission">No tienes permiso para ver la temperatura</string>
 
     <!-- Estado del enlace: "En vivo · 20 nov, 14:32" -->
     <string name="widget_connection_live">En vivo</string>

@@ -89,6 +89,9 @@ fun RecentAlertsWidgetContent(state: RecentAlertsUiState, onRetry: () -> Unit) {
 
                 RecentAlertsUiState.Error -> ErrorBlock(onRetry = onRetry)
 
+                RecentAlertsUiState.SignedOut ->
+                    CenteredText(text = context.getString(R.string.alerts_widget_signed_out))
+
                 is RecentAlertsUiState.Ready ->
                     if (state.items.isEmpty()) {
                         CenteredText(text = context.getString(R.string.alerts_widget_empty))

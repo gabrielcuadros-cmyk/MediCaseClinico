@@ -93,6 +93,12 @@ fun MediCaseWidgetContent(state: CaseWidgetUiState, onRetry: () -> Unit) {
                 CaseWidgetUiState.Error ->
                     ErrorBlock(onRetry = onRetry)
 
+                CaseWidgetUiState.SignedOut ->
+                    MessageBlock(text = context.getString(R.string.widget_signed_out))
+
+                CaseWidgetUiState.NoPermission ->
+                    MessageBlock(text = context.getString(R.string.widget_no_permission))
+
                 is CaseWidgetUiState.Ready -> {
                     if (!isFull) CompactHeader(connection = state.summary.connection)
                     ReadingBlock(

@@ -1,6 +1,8 @@
 package com.example.medicaseclinico.ui.widget
 
 import com.example.medicaseclinico.di.AppContainer
+import com.example.medicaseclinico.domain.model.CaseAccess
+import com.example.medicaseclinico.domain.model.CaseCapability
 import com.example.medicaseclinico.domain.model.CaseWidgetSummary
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import com.example.medicaseclinico.domain.repository.CaseDeviceRepository
@@ -11,6 +13,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 /**
@@ -25,6 +28,12 @@ sealed interface CaseWidgetUiState {
 
     /** No se pudo leer el historial: el widget ofrece "Reintentar". */
     data object Error : CaseWidgetUiState
+
+    /** Sin sesión en la app: no se enseña ningún dato del estuche. */
+    data object SignedOut : CaseWidgetUiState
+
+    /** La cuenta es invitada sin permiso de temperatura, o su acceso fue revocado. */
+    data object NoPermission : CaseWidgetUiState
 
     /**
      * @param readingTime hora de la última lectura ya formateada
@@ -45,6 +54,7 @@ class CaseWidgetStateSource(
     private val temperatureRepository: TemperatureRepository,
     private val deviceRepository: CaseDeviceRepository,
     private val alertEventRepository: AlertEventRepository,
+    private val caseAccess: Flow<CaseAccess?> = flowOf(CaseAccess.Owner(uid = "")),
     private val buildSummary: BuildCaseWidgetSummaryUseCase = BuildCaseWidgetSummaryUseCase(),
     private val dateTimeLabels: DateTimeLabels = DateTimeLabels.system(),
     private val clock: () -> Long = System::currentTimeMillis
@@ -67,23 +77,32 @@ class CaseWidgetStateSource(
      * Lo que se ve en el widget, para decidir cuándo redibujarlo: la hora de
      * la lectura solo cuenta al minuto, que es como se muestra.
      */
-    fun visibleChanges(): Flow<CaseWidgetSummary> = summaries().map { summary ->
-        when (summary) {
-            is CaseWidgetSummary.NoReadings -> summary
-            is CaseWidgetSummary.Reading -> summary.copy(timestamp = summary.timestamp / MINUTE_MS)
-        }
-    }
+    fun visibleChanges(): Flow<Any> = combine(
+        summaries().map { summary ->
+            when (summary) {
+                is CaseWidgetSummary.NoReadings -> summary
+                is CaseWidgetSummary.Reading -> summary.copy(timestamp = summary.timestamp / MINUTE_MS)
+            }
+        },
+        // Cambiar de cuenta o de permisos también cambia lo que se ve.
+        caseAccess.map { access -> access?.can(CaseCapability.VIEW_TEMPERATURE) }
+    ) { summary, canView -> summary to canView }
 
     /**
      * Estado del widget. Un flujo nuevo en cada llamada: "Reintentar" vuelve a
      * empezar la lectura en lugar de reutilizar uno que ya terminó en error.
      */
-    fun uiState(): Flow<CaseWidgetUiState> = summaries()
-        .map { summary ->
-            val readingTime = (summary as? CaseWidgetSummary.Reading)
-                ?.let { dateTimeLabels.readingTime(it.timestamp) }
-            CaseWidgetUiState.Ready(summary = summary, readingTime = readingTime)
+    fun uiState(): Flow<CaseWidgetUiState> = combine(summaries(), caseAccess) { summary, access ->
+        when {
+            access == null -> CaseWidgetUiState.SignedOut
+            !access.can(CaseCapability.VIEW_TEMPERATURE) -> CaseWidgetUiState.NoPermission
+            else -> CaseWidgetUiState.Ready(
+                summary = summary,
+                readingTime = (summary as? CaseWidgetSummary.Reading)
+                    ?.let { dateTimeLabels.readingTime(it.timestamp) }
+            )
         }
+    }
         .catch<CaseWidgetUiState> { error ->
             if (error is CancellationException) throw error
             emit(CaseWidgetUiState.Error)
@@ -96,7 +115,8 @@ class CaseWidgetStateSource(
         fun from(container: AppContainer): CaseWidgetStateSource = CaseWidgetStateSource(
             temperatureRepository = container.temperatureRepository,
             deviceRepository = container.caseDeviceRepository,
-            alertEventRepository = container.alertEventRepository
+            alertEventRepository = container.alertEventRepository,
+            caseAccess = container.caseAccess
         )
     }
 }

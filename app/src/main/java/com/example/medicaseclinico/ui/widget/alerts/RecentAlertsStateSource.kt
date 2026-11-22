@@ -2,6 +2,7 @@ package com.example.medicaseclinico.ui.widget.alerts
 
 import com.example.medicaseclinico.di.AppContainer
 import com.example.medicaseclinico.domain.model.AlertEvent
+import com.example.medicaseclinico.domain.model.CaseAccess
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
 import com.example.medicaseclinico.domain.time.DateTimeLabels
 import com.example.medicaseclinico.domain.time.EventTimeLabel
@@ -10,6 +11,8 @@ import com.example.medicaseclinico.domain.usecase.SelectRecentAlertsUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 /** Una fila del widget: la alerta guardada y su hora ya clasificada (hoy / ayer / antes). */
@@ -28,6 +31,9 @@ sealed interface RecentAlertsUiState {
     /** No se pudo leer el historial: el widget ofrece "Reintentar". */
     data object Error : RecentAlertsUiState
 
+    /** Sin sesión en la app: no se enseña ninguna alerta. */
+    data object SignedOut : RecentAlertsUiState
+
     data class Ready(
         val items: List<RecentAlertItem>,
         val unreadCount: Int
@@ -40,17 +46,25 @@ sealed interface RecentAlertsUiState {
  */
 class RecentAlertsStateSource(
     private val alertEventRepository: AlertEventRepository,
+    private val caseAccess: Flow<CaseAccess?> = flowOf(CaseAccess.Owner(uid = "")),
     private val selectRecentAlerts: SelectRecentAlertsUseCase = SelectRecentAlertsUseCase(),
     private val dateTimeLabels: DateTimeLabels = DateTimeLabels.system(),
     private val clock: () -> Long = System::currentTimeMillis
 ) {
-    /** Lo que el widget muestra; también decide cuándo redibujarlo. */
-    fun summaries(): Flow<RecentAlertsSummary> =
-        alertEventRepository.observeAlertEvents().map { selectRecentAlerts(it) }
+    /**
+     * Lo que el widget muestra; también decide cuándo redibujarlo. Un invitado
+     * solo ve las alertas de los datos que tiene permiso de ver; sin sesión
+     * (acceso null) no hay resumen.
+     */
+    fun summaries(): Flow<RecentAlertsSummary?> =
+        combine(alertEventRepository.observeAlertEvents(), caseAccess) { events, access ->
+            access?.let { selectRecentAlerts(events.filter { event -> it.canSeeAlert(event.type) }) }
+        }
 
     /** Un flujo nuevo en cada llamada: "Reintentar" vuelve a leer desde cero. */
     fun uiState(): Flow<RecentAlertsUiState> = summaries()
         .map { summary ->
+            if (summary == null) return@map RecentAlertsUiState.SignedOut
             val now = clock()
             RecentAlertsUiState.Ready(
                 items = summary.alerts.map { event ->
@@ -70,6 +84,9 @@ class RecentAlertsStateSource(
     companion object {
         /** Con las instancias únicas de la app. */
         fun from(container: AppContainer): RecentAlertsStateSource =
-            RecentAlertsStateSource(alertEventRepository = container.alertEventRepository)
+            RecentAlertsStateSource(
+                alertEventRepository = container.alertEventRepository,
+                caseAccess = container.caseAccess
+            )
     }
 }

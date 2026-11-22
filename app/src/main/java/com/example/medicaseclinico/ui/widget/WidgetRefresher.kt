@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 class WidgetRefresher(
     private val context: Context,
     private val widget: GlanceAppWidget,
-    private val changes: Flow<Any>,
+    private val changes: Flow<Any?>,
     private val scope: CoroutineScope
 ) {
     /** Empieza a observar; la primera emisión corrige un widget que quedó de otra sesión. */

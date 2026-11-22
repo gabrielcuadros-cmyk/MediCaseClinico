@@ -9,6 +9,7 @@
     <string name="alerts_widget_loading">Cargando…</string>
     <string name="alerts_widget_error">No se pudieron leer las alertas</string>
     <string name="alerts_widget_retry">Reintentar</string>
+    <string name="alerts_widget_signed_out">Inicia sesión en MediCase para ver las alertas</string>
     <string name="alerts_widget_open">Abrir Alertas de Seguridad en MediCase Clínico</string>
 
     <!-- Hora de cada alerta: "14:32", "Ayer 14:32" o "5 oct, 14:32" -->
