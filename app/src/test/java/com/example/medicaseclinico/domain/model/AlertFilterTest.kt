@@ -23,8 +23,11 @@ class AlertFilterTest {
     }
 
     @Test
-    fun `seguridad solo muestra alertas de seguridad`() {
-        assertEquals(listOf(AlertType.SECURITY), typesShownBy(AlertFilter.SECURITY))
+    fun `seguridad muestra el registro de accesos completo`() {
+        assertEquals(
+            listOf(AlertType.SECURITY, AlertType.ACCESS_GRANTED),
+            typesShownBy(AlertFilter.SECURITY)
+        )
     }
 
     @Test

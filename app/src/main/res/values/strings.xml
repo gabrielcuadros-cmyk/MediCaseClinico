@@ -69,7 +69,7 @@
     <string name="dashboard_last_sync_mqtt">Sincronizado vía MQTT %1$s</string>
     <string name="dashboard_footer_battery_ok">%1$s • Batería de Estuche OK</string>
     <string name="dashboard_footer_battery_low">%1$s • Batería de Estuche baja</string>
-    <string name="dashboard_access_log">Registrar Acceso por PIN</string>
+    <string name="dashboard_access_log">Ver registro de accesos</string>
 
     <!-- Avisos de conexión del estuche -->
     <string name="issue_permissions_title">Permiso de dispositivos cercanos necesario</string>
@@ -256,6 +256,8 @@
     <string name="alerts_security_title">Intento de Acceso con Contraseña</string>
     <string name="alerts_security_description">Bloqueo por intentos fallidos de contraseña de 4 dígitos.</string>
     <string name="alerts_security_denied_description">Se tecleó una contraseña incorrecta en el estuche. Intentos fallidos seguidos: %1$d.</string>
+    <string name="alerts_access_granted_title">Apertura del Estuche</string>
+    <string name="alerts_access_granted_description">El estuche se abrió desde su teclado: con la contraseña correcta o con el seguro desactivado.</string>
 
     <!-- Tiempo relativo (Alertas y pie del Dashboard) -->
     <string name="relative_time_now">Ahora</string>

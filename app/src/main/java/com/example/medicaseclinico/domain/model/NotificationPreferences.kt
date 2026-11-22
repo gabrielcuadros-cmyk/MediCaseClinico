@@ -1,12 +1,22 @@
 package com.example.medicaseclinico.domain.model
 
-/** Tipos de alerta de MediCase, uno por cada interruptor del diseño. */
+/**
+ * Tipos de evento del historial de alertas: uno por cada interruptor del
+ * diseño, más [ACCESS_GRANTED], que es solo un registro.
+ */
 enum class AlertType {
     TEMPERATURE,
     BATTERY,
     CONNECTION,
     GEOFENCE,
-    SECURITY
+    SECURITY,
+
+    /**
+     * El estuche se abrió con la contraseña correcta. No es una alerta: se
+     * guarda con su fecha y hora para el registro de accesos, ya marcada como
+     * vista y sin notificación.
+     */
+    ACCESS_GRANTED
 }
 
 /**
@@ -40,6 +50,8 @@ data class NotificationPreferences(
         AlertType.CONNECTION -> connectionAlertsEnabled
         AlertType.GEOFENCE -> geofenceAlertsEnabled
         AlertType.SECURITY -> securityAlertsEnabled
+        // Un acceso correcto nunca se notifica: solo queda en el registro.
+        AlertType.ACCESS_GRANTED -> false
     }
 
     /**

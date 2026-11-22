@@ -180,7 +180,7 @@ QoS 1, sin retained: es un evento, no un estado.
 
 | `tipo` | Significado | Qué hace la app |
 |---|---|---|
-| `"concedido"` | PIN correcto, o apertura sin PIN con el seguro desactivado | Lo recibe; aún no lo muestra |
+| `"concedido"` | PIN correcto, o apertura sin PIN con el seguro desactivado | Lo guarda con su fecha y hora en el registro de accesos (sin notificación) |
 | `"denegado"` | PIN incorrecto | Alerta de Seguridad |
 | `"bloqueo"` | Teclado bloqueado por intentos fallidos | Alerta de Seguridad |
 

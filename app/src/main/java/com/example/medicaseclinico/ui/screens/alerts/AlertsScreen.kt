@@ -259,20 +259,23 @@ private fun AlertsSuccessPreview() {
                 AlertItem(
                     id = 1,
                     type = AlertType.TEMPERATURE,
-                    value = 8.4f,
-                    elapsed = RelativeTime.Minutes(5)
+                    value = 31.4f,
+                    elapsed = RelativeTime.Minutes(5),
+                    dateTime = "21 nov 2026, 18:04"
                 ),
                 AlertItem(
                     id = 2,
                     type = AlertType.BATTERY,
                     value = 15f,
-                    elapsed = RelativeTime.Hours(3)
+                    elapsed = RelativeTime.Hours(3),
+                    dateTime = "21 nov 2026, 15:10"
                 ),
                 AlertItem(
                     id = 3,
                     type = AlertType.CONNECTION,
                     value = null,
-                    elapsed = RelativeTime.Hours(12)
+                    elapsed = RelativeTime.Hours(12),
+                    dateTime = "21 nov 2026, 06:20"
                 )
             )
         )

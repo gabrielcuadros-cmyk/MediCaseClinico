@@ -203,11 +203,24 @@ class RecordingAlertPublisherTest {
     }
 
     @Test
-    fun `abrir con el pin correcto no registra nada pero llega al emisor real`() = alertTest {
+    fun `abrir con el pin correcto queda en el registro ya visto y llega al emisor real`() = alertTest {
         publisher.onAccessGranted()
 
-        assertTrue(repository.recorded.isEmpty())
+        val event = repository.recorded.single()
+        assertEquals(AlertType.ACCESS_GRANTED, event.type)
+        assertEquals(1_000L, event.timestamp)
+        assertTrue(event.isRead)
+        assertEquals(null, event.value)
         assertEquals(listOf("granted"), delegate.calls)
+    }
+
+    @Test
+    fun `cada apertura correcta se registra aunque sean seguidas`() = alertTest {
+        publisher.onAccessGranted()
+        now = 2_000L
+        publisher.onAccessGranted()
+
+        assertEquals(listOf(1_000L, 2_000L), repository.recorded.map { it.timestamp })
     }
 
     @Test

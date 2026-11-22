@@ -11,6 +11,7 @@ import com.example.medicaseclinico.domain.model.AlertEvent
 import com.example.medicaseclinico.domain.model.AlertFilter
 import com.example.medicaseclinico.domain.model.RelativeTime
 import com.example.medicaseclinico.domain.repository.AlertEventRepository
+import com.example.medicaseclinico.domain.time.DateTimeLabels
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -38,12 +39,14 @@ import kotlin.coroutines.cancellation.CancellationException
  * la pestaña no debe seguir avisando de ellas.
  *
  * @param clock se inyecta para que los tests fijen la hora del tiempo relativo.
+ * @param dateTimeLabels formatea la fecha y hora exactas de cada alerta.
  * @param tickIntervalMs cada cuánto se recalcula "Hace X min" aunque no
  * lleguen alertas nuevas.
  */
 class AlertsViewModel(
     private val alertEventRepository: AlertEventRepository,
     private val clock: () -> Long = System::currentTimeMillis,
+    private val dateTimeLabels: DateTimeLabels = DateTimeLabels.system(),
     private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS
 ) : ViewModel() {
 
@@ -112,6 +115,7 @@ class AlertsViewModel(
                     type = event.type,
                     value = event.value,
                     elapsed = RelativeTime.between(timestamp = event.timestamp, now = now),
+                    dateTime = dateTimeLabels.reportDateTime(event.timestamp),
                     detail = event.detail?.takeIf { it.isNotBlank() }
                 )
             }

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.DeviceThermostat
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -50,7 +51,7 @@ private val IconBoxSize = 28.dp
 
 /**
  * Tarjeta de una alerta: barra lateral del color de su gravedad, ícono,
- * título, tiempo relativo a la derecha y descripción.
+ * título, tiempo relativo a la derecha, descripción y fecha y hora exactas.
  *
  * El color nunca es la única pista: cada tipo tiene también ícono y título
  * propios. Los lectores de pantalla leen la tarjeta entera como un elemento.
@@ -118,6 +119,11 @@ fun AlertCard(
                 Text(
                     text = style.description,
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = alert.dateTime,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -190,6 +196,14 @@ private fun AlertItem.cardStyle(): AlertCardStyle {
                 stringResource(R.string.alerts_security_description)
             }
         )
+        // Verde: es un acceso legítimo, no un riesgo. El título lo dice en texto.
+        AlertType.ACCESS_GRANTED -> AlertCardStyle(
+            icon = Icons.Outlined.LockOpen,
+            accent = statusColors.safe,
+            container = statusColors.safeContainer,
+            title = stringResource(R.string.alerts_access_granted_title),
+            description = stringResource(R.string.alerts_access_granted_description)
+        )
     }
 }
 
@@ -210,18 +224,44 @@ private fun temperatureDescription(celsius: Float?): String {
 @Preview(showBackground = true, name = "Tarjetas de alerta")
 @Composable
 private fun AlertCardPreview() {
+    val dateTime = "21 nov 2026, 18:04"
     val alerts = listOf(
-        AlertItem(id = 1, type = AlertType.TEMPERATURE, value = 8.4f, elapsed = RelativeTime.Minutes(5)),
+        AlertItem(
+            id = 1,
+            type = AlertType.TEMPERATURE,
+            value = 31.4f,
+            elapsed = RelativeTime.Minutes(5),
+            dateTime = dateTime
+        ),
         AlertItem(
             id = 2,
             type = AlertType.GEOFENCE,
             value = null,
             elapsed = RelativeTime.Minutes(23),
+            dateTime = dateTime,
             detail = "Hospital Clínico"
         ),
-        AlertItem(id = 3, type = AlertType.SECURITY, value = null, elapsed = RelativeTime.Hours(1)),
-        AlertItem(id = 4, type = AlertType.BATTERY, value = 15f, elapsed = RelativeTime.Hours(3)),
-        AlertItem(id = 5, type = AlertType.CONNECTION, value = null, elapsed = RelativeTime.Hours(12))
+        AlertItem(
+            id = 3,
+            type = AlertType.ACCESS_GRANTED,
+            value = null,
+            elapsed = RelativeTime.Minutes(40),
+            dateTime = dateTime
+        ),
+        AlertItem(
+            id = 4,
+            type = AlertType.SECURITY,
+            value = null,
+            elapsed = RelativeTime.Hours(1),
+            dateTime = dateTime
+        ),
+        AlertItem(
+            id = 5,
+            type = AlertType.CONNECTION,
+            value = null,
+            elapsed = RelativeTime.Hours(12),
+            dateTime = dateTime
+        )
     )
     MediCaseTheme {
         Surface(color = MaterialTheme.colorScheme.background) {

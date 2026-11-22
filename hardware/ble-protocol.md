@@ -219,7 +219,7 @@ Lo que ocurre en el teclado del estuche. 2 bytes:
 
 | Tipo | Significado | Qué hace la app |
 |---|---|---|
-| `0x01` | Acceso concedido (PIN correcto, o apertura sin PIN con el seguro desactivado) | Lo recibe; aún no lo muestra |
+| `0x01` | Acceso concedido (PIN correcto, o apertura sin PIN con el seguro desactivado) | Lo guarda con su fecha y hora en el registro de accesos (sin notificación) |
 | `0x02` | Acceso denegado (PIN incorrecto) | Alerta de Seguridad |
 | `0x03` | Bloqueo por intentos fallidos | Alerta de Seguridad |
 

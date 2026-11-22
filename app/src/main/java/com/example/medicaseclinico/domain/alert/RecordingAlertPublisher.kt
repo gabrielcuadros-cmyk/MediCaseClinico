@@ -105,9 +105,14 @@ class RecordingAlertPublisher(
         delegate.onAccessDenied(failedAttempts, lockedOut)
     }
 
-    /** Abrir con el PIN correcto no es una alerta: solo se avisa al emisor real. */
+    /**
+     * Abrir con el PIN correcto no es una alerta, pero queda en el registro de
+     * accesos con su fecha y hora. Se guarda ya vista para no inflar el
+     * contador de alertas, y el emisor real no notifica nada.
+     */
     @Synchronized
     override fun onAccessGranted() {
+        record(type = AlertType.ACCESS_GRANTED, value = null, isRead = true)
         delegate.onAccessGranted()
     }
 
@@ -115,8 +120,19 @@ class RecordingAlertPublisher(
      * Si la base de datos falla, la alerta no queda en el historial pero la
      * notificación se emite igual: el `Result` se descarta a propósito.
      */
-    private fun record(type: AlertType, value: Float?, detail: String? = null) {
-        val event = AlertEvent(type = type, timestamp = clock(), value = value, detail = detail)
+    private fun record(
+        type: AlertType,
+        value: Float?,
+        detail: String? = null,
+        isRead: Boolean = false
+    ) {
+        val event = AlertEvent(
+            type = type,
+            timestamp = clock(),
+            value = value,
+            isRead = isRead,
+            detail = detail
+        )
         scope.launch { alertEventRepository.recordAlert(event) }
     }
 }

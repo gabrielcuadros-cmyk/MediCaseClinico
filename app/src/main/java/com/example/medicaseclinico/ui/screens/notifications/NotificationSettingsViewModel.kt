@@ -57,6 +57,8 @@ class NotificationSettingsViewModel(
             AlertType.CONNECTION -> prefs.copy(connectionAlertsEnabled = enabled)
             AlertType.GEOFENCE -> prefs.copy(geofenceAlertsEnabled = enabled)
             AlertType.SECURITY -> prefs.copy(securityAlertsEnabled = enabled)
+            // Sin interruptor: los accesos correctos nunca se notifican.
+            AlertType.ACCESS_GRANTED -> prefs
         }
     }
 

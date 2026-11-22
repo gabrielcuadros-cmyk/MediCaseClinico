@@ -42,6 +42,8 @@ sealed interface AlertsUiState {
  * @param value temperatura en °C o batería en % según [type]; null si el tipo
  * no lleva valor.
  * @param elapsed tiempo desde la alerta, ya calculado para no hacerlo al dibujar.
+ * @param dateTime fecha y hora exactas ("21 nov 2026, 18:04"): "Hace 3 días"
+ * no basta para un registro de accesos ni para revisar cuándo pasó algo.
  * @param detail nombre de la zona en una alerta de geocerca; null si la alerta
  * no lo tiene (otros tipos, o geocercas registradas sin nombre).
  */
@@ -51,5 +53,6 @@ data class AlertItem(
     val type: AlertType,
     val value: Float?,
     val elapsed: RelativeTime,
+    val dateTime: String,
     val detail: String? = null
 )

@@ -193,14 +193,15 @@ private fun ErrorBlock(onRetry: () -> Unit) {
 
 /**
  * Mismos colores que las tarjetas de "Alertas de Seguridad": rojo para lo que
- * pone en riesgo la insulina o el acceso, ámbar para lo que pide atención y el
- * color principal para los avisos de conexión.
+ * pone en riesgo la insulina o el acceso, ámbar para lo que pide atención, el
+ * color principal para los avisos de conexión y verde para un acceso correcto.
  */
 @Composable
 private fun accentFor(type: AlertType): ColorProvider = when (type) {
     AlertType.TEMPERATURE, AlertType.SECURITY -> WidgetStatusColors.accent(TemperatureStatus.CRITICAL)
     AlertType.BATTERY, AlertType.GEOFENCE -> WidgetStatusColors.accent(TemperatureStatus.WARNING)
     AlertType.CONNECTION -> GlanceTheme.colors.primary
+    AlertType.ACCESS_GRANTED -> WidgetStatusColors.accent(TemperatureStatus.SAFE)
 }
 
 /** Los mismos títulos que la pantalla de Alertas, para que el usuario reconozca cada una. */
@@ -210,6 +211,7 @@ private fun titleRes(type: AlertType): Int = when (type) {
     AlertType.CONNECTION -> R.string.alerts_connection_title
     AlertType.GEOFENCE -> R.string.alerts_geofence_title
     AlertType.SECURITY -> R.string.alerts_security_title
+    AlertType.ACCESS_GRANTED -> R.string.alerts_access_granted_title
 }
 
 /** "14:32" hoy, "Ayer 14:32" o "5 oct, 14:32"; hora exacta porque el widget no se redibuja cada minuto. */
