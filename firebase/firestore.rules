@@ -1,0 +1,87 @@
+// =====================================================================
+//  MediCase Clínico - reglas de seguridad de Cloud Firestore
+// ---------------------------------------------------------------------
+//  Se publican a mano: consola de Firebase -> Firestore Database -> Reglas
+//  -> pegar este archivo completo -> Publicar.
+//
+//  Datos:
+//   users/{uid}                          perfil de cada cuenta (nombre, teléfono,
+//                                        y "guestOf" si aceptó una invitación)
+//   users/{dueño}/authorizedUsers/{id}   personas a las que el dueño dio acceso
+//   invitations/{correo}                 { ownerId, userId }: une el correo del
+//                                        invitado con su registro del dueño
+//
+//  Quién puede qué:
+//   - Cada cuenta lee y escribe solo su perfil.
+//   - El dueño gestiona su lista de usuarios y sus invitaciones.
+//   - Un invitado con el permiso "Gestionar usuarios" también puede.
+//   - Un invitado lee su propia invitación y su propio registro, y solo puede
+//     cambiar de este su estado ("activo") y la fecha de su último acceso.
+// =====================================================================
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function invitationPath(email) {
+      return /databases/$(database)/documents/invitations/$(email);
+    }
+
+    // La cuenta fue invitada por ownerId.
+    function isGuestOf(ownerId) {
+      return signedIn()
+        && request.auth.token.email != null
+        && exists(invitationPath(myEmail()))
+        && get(invitationPath(myEmail())).data.ownerId == ownerId;
+    }
+
+    // Invitada por ownerId y con el permiso "Gestionar usuarios".
+    function guestCanManage(ownerId) {
+      return isGuestOf(ownerId)
+        && get(/databases/$(database)/documents/users/$(ownerId)/authorizedUsers/$(get(invitationPath(myEmail())).data.userId))
+             .data.permissions.manageUsers == true;
+    }
+
+    function canManage(ownerId) {
+      return signedIn() && (request.auth.uid == ownerId || guestCanManage(ownerId));
+    }
+
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+
+      match /authorizedUsers/{userId} {
+        allow read: if canManage(uid)
+          || (isGuestOf(uid) && resource.data.email.lower() == myEmail());
+
+        allow create, delete: if canManage(uid);
+
+        allow update: if canManage(uid)
+          || (isGuestOf(uid)
+              && resource.data.email.lower() == myEmail()
+              && request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['status', 'lastAccessAt']));
+      }
+    }
+
+    match /invitations/{email} {
+      allow read: if signedIn()
+        && (email == myEmail() || canManage(resource.data.ownerId));
+
+      allow create: if canManage(request.resource.data.ownerId);
+
+      // Una invitación de otro dueño no se puede sobrescribir.
+      allow update: if canManage(resource.data.ownerId)
+        && request.resource.data.ownerId == resource.data.ownerId;
+
+      allow delete: if canManage(resource.data.ownerId);
+    }
+  }
+}

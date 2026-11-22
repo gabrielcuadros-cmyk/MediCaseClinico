@@ -2,9 +2,11 @@ package com.example.medicaseclinico.data.user
 
 import android.content.Context
 import com.example.medicaseclinico.domain.model.AuthorizedUser
+import com.example.medicaseclinico.domain.model.Invitation
 import com.example.medicaseclinico.domain.repository.AuthorizedUsersRepository
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -17,8 +19,11 @@ import kotlin.coroutines.cancellation.CancellationException
 /**
  * Usuarios autorizados en Firestore: `users/{ownerId}/authorizedUsers/{id}`.
  *
- * Cuelgan del perfil del dueño para que la misma regla de seguridad ("cada
- * usuario solo toca lo suyo") los proteja sin reglas adicionales por documento.
+ * Cuelgan del perfil del dueño. Cada usuario con correo tiene además su
+ * invitación en `invitations/{correo}`, que se crea, cambia y borra en el
+ * mismo lote que el registro: así nunca queda una invitación sin registro ni
+ * al revés, y quien entra con ese correo encuentra su acceso (ver
+ * [FirestoreCaseAccessRepository]). Las reglas están en `firebase/firestore.rules`.
  *
  * Sin `google-services.json` no hay Firestore: la lista sale vacía y las
  * escrituras fallan de forma controlada.
@@ -64,13 +69,48 @@ class FirestoreAuthorizedUsersRepository(
     override suspend fun saveUser(ownerId: String, user: AuthorizedUser): Result<String> =
         firestoreCall(ownerId) { collection ->
             val document = if (user.id.isEmpty()) collection.document() else collection.document(user.id)
-            awaitQueued { document.set(AuthorizedUserMapper.toMap(user)).await() }
+            // Si se cambió el correo, la invitación del correo anterior debe desaparecer.
+            val previousEmail = if (user.id.isEmpty()) null else storedEmail(document)
+            val invitations = collection.firestore.collection(InvitationMapper.COLLECTION)
+            val newKey = InvitationMapper.documentIdFor(user.email)
+            val oldKey = InvitationMapper.documentIdFor(previousEmail)
+
+            val batch = collection.firestore.batch()
+            batch.set(document, AuthorizedUserMapper.toMap(user))
+            if (oldKey.isNotEmpty() && oldKey != newKey) batch.delete(invitations.document(oldKey))
+            if (newKey.isNotEmpty()) {
+                batch.set(
+                    invitations.document(newKey),
+                    InvitationMapper.toMap(Invitation(ownerId = ownerId, userId = document.id))
+                )
+            }
+            awaitQueued { batch.commit().await() }
             document.id
         }
 
     override suspend fun deleteUser(ownerId: String, userId: String): Result<Unit> =
         firestoreCall(ownerId) { collection ->
-            awaitQueued { collection.document(userId).delete().await() }
+            val document = collection.document(userId)
+            val key = InvitationMapper.documentIdFor(storedEmail(document))
+            val batch = collection.firestore.batch()
+            batch.delete(document)
+            // Sin invitación, la cuenta del invitado queda revocada al instante.
+            if (key.isNotEmpty()) {
+                batch.delete(collection.firestore.collection(InvitationMapper.COLLECTION).document(key))
+            }
+            awaitQueued { batch.commit().await() }
+        }
+
+    /** Correo guardado en el registro; null si no existe o no se pudo leer (sin red y sin caché). */
+    private suspend fun storedEmail(document: DocumentReference): String? =
+        try {
+            withTimeoutOrNull(writeTimeoutMs) {
+                document.get().await().getString(AuthorizedUserMapper.FIELD_EMAIL)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
         }
 
     private fun usersOf(ownerId: String): CollectionReference? =
