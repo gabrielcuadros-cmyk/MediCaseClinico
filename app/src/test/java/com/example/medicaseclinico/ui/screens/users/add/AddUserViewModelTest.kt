@@ -103,7 +103,7 @@ class AddUserViewModelTest {
         assertEquals(UserPermissions.defaultsFor(UserRole.CAREGIVER), saved.permissions)
 
         assertEquals(
-            PendingInvitation(name = "Laura Gómez", role = UserRole.CAREGIVER),
+            PendingInvitation(name = "Laura Gómez", role = UserRole.CAREGIVER, email = saved.email),
             viewModel.uiState.value.invitation
         )
         assertFalse(viewModel.uiState.value.isSubmitting)

@@ -95,7 +95,12 @@ fun AddUserRoute(
 
     val invitation = uiState.invitation
     val invitationText = invitation?.let {
-        stringResource(R.string.add_user_invitation_text, it.name, stringResource(it.role.labelRes()))
+        stringResource(
+            R.string.add_user_invitation_text,
+            it.name,
+            stringResource(it.role.labelRes()),
+            it.email
+        )
     }
     val invitationSubject = stringResource(R.string.add_user_invitation_subject)
     val chooserTitle = stringResource(R.string.add_user_share_title)

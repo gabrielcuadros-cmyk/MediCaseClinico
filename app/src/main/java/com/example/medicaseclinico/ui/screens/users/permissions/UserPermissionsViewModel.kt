@@ -45,8 +45,9 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 class UserPermissionsViewModel(
     private val userId: String,
-    private val authRepository: AuthRepository,
-    private val authorizedUsersRepository: AuthorizedUsersRepository
+    authRepository: AuthRepository,
+    private val authorizedUsersRepository: AuthorizedUsersRepository,
+    private val caseOwnerId: Flow<String?> = authRepository.currentUser.map { it?.uid }
 ) : ViewModel() {
 
     /** La persona tal como está guardada, junto a su dueño, para poder reescribirla. */
@@ -164,8 +165,7 @@ class UserPermissionsViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeOwned(): Flow<Owned?> =
-        authRepository.currentUser
-            .map { it?.uid }
+        caseOwnerId
             .distinctUntilChanged()
             .flatMapLatest { ownerId ->
                 if (ownerId == null) {
@@ -188,7 +188,8 @@ class UserPermissionsViewModel(
                 UserPermissionsViewModel(
                     userId = userId,
                     authRepository = application.container.authRepository,
-                    authorizedUsersRepository = application.container.authorizedUsersRepository
+                    authorizedUsersRepository = application.container.authorizedUsersRepository,
+                    caseOwnerId = application.container.resolvedCaseAccess.map { it.caseOwnerId }
                 )
             }
         }

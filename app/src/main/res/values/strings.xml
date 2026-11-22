@@ -571,5 +571,5 @@
     <string name="user_permission_manage_users_title">Gestionar otros usuarios</string>
     <string name="user_permission_manage_users_description">Capacidad de agregar/remover cuidadores.</string>
     <string name="add_user_invitation_subject">Invitación a MediCase Clínico</string>
-    <string name="add_user_invitation_text">Hola, %1$s. Te registré como %2$s de mi estuche de insulina en MediCase Clínico. Tu invitación está pendiente: te avisaré cuando puedas entrar desde tu teléfono.</string>
+    <string name="add_user_invitation_text">Hola, %1$s. Te di acceso como %2$s a mi estuche de insulina en MediCase Clínico. Para entrar, instala la app y crea tu cuenta (o inicia sesión) con este correo: %3$s. Verás el estuche con los permisos que te asigné.</string>
 </resources>

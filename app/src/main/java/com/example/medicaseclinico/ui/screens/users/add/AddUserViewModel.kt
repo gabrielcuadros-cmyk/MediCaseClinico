@@ -21,10 +21,12 @@ import com.example.medicaseclinico.domain.model.with
 import com.example.medicaseclinico.domain.repository.AuthRepository
 import com.example.medicaseclinico.domain.repository.AuthorizedUsersRepository
 import com.example.medicaseclinico.domain.user.isEmailAlreadyInvited
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -58,7 +60,9 @@ enum class AddUserError {
 @Immutable
 data class PendingInvitation(
     val name: String,
-    val role: UserRole
+    val role: UserRole,
+    /** Correo con el que el invitado debe crear su cuenta o iniciar sesión. */
+    val email: String
 )
 
 /**
@@ -97,8 +101,9 @@ data class AddUserUiState(
  * invitado entre desde su propio teléfono es una mejora futura.
  */
 class AddUserViewModel(
-    private val authRepository: AuthRepository,
-    private val authorizedUsersRepository: AuthorizedUsersRepository
+    authRepository: AuthRepository,
+    private val authorizedUsersRepository: AuthorizedUsersRepository,
+    private val caseOwnerId: Flow<String?> = authRepository.currentUser.map { it?.uid }
 ) : ViewModel() {
 
     // Los textos son estado de Compose y no parte del StateFlow, para que los
@@ -201,7 +206,7 @@ class AddUserViewModel(
                 if (saved.isSuccess) {
                     it.copy(
                         isSubmitting = false,
-                        invitation = PendingInvitation(name = user.name, role = user.role)
+                        invitation = PendingInvitation(name = user.name, role = user.role, email = user.email)
                     )
                 } else {
                     it.copy(isSubmitting = false, error = AddUserError.SAVE_FAILED)
@@ -229,7 +234,7 @@ class AddUserViewModel(
 
     private suspend fun currentOwnerId(): String? =
         try {
-            authRepository.currentUser.first()?.uid
+            caseOwnerId.first()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -245,7 +250,9 @@ class AddUserViewModel(
                 val application = checkNotNull(this[APPLICATION_KEY]) as MediCaseApplication
                 AddUserViewModel(
                     authRepository = application.container.authRepository,
-                    authorizedUsersRepository = application.container.authorizedUsersRepository
+                    authorizedUsersRepository = application.container.authorizedUsersRepository,
+                    // Se agrega a la lista del dueño, también desde un invitado que la gestiona.
+                    caseOwnerId = application.container.resolvedCaseAccess.map { it.caseOwnerId }
                 )
             }
         }

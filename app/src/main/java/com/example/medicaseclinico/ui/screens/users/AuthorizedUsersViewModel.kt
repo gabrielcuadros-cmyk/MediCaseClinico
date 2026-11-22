@@ -48,7 +48,8 @@ class AuthorizedUsersViewModel(
     private val authRepository: AuthRepository,
     private val authorizedUsersRepository: AuthorizedUsersRepository,
     private val clock: () -> Long = System::currentTimeMillis,
-    private val zone: () -> ZoneId = ZoneId::systemDefault
+    private val zone: () -> ZoneId = ZoneId::systemDefault,
+    private val caseOwnerId: Flow<String?> = authRepository.currentUser.map { it?.uid }
 ) : ViewModel() {
 
     /** Lo que no viene de los repositorios: trabajo en curso y aviso pendiente. */
@@ -58,7 +59,8 @@ class AuthorizedUsersViewModel(
     )
 
     /** El dueño con su lista, o null si no hay sesión. */
-    private data class Owned(val owner: AuthUser, val users: List<AuthorizedUser>)
+    /** @param owner la cuenta propia si es la dueña; null para un invitado que gestiona la lista. */
+    private data class Owned(val owner: AuthUser?, val users: List<AuthorizedUser>)
 
     private val local = MutableStateFlow(Local())
     private val retryTrigger = MutableStateFlow(0)
@@ -110,7 +112,7 @@ class AuthorizedUsersViewModel(
                 AuthorizedUsersUiState.Empty
             } else {
                 AuthorizedUsersUiState.Success(
-                    users = listOf(owned.owner.toItem()) + owned.users.map { it.toItem() },
+                    users = listOfNotNull(owned.owner?.toItem()) + owned.users.map { it.toItem() },
                     isBusy = local.isBusy,
                     message = local.message
                 )
@@ -122,23 +124,28 @@ class AuthorizedUsersViewModel(
                 emit(AuthorizedUsersUiState.Error)
             }
 
-    /** La lista depende de quién tenga la sesión: cambia si cambia la cuenta. */
+    /**
+     * La lista es la del dueño del estuche: la propia, o la del dueño si la
+     * cuenta es una invitada con permiso de gestionar usuarios. La fila
+     * "Principal" solo aparece cuando la cuenta es la dueña: de otro dueño no
+     * se conoce su nombre ni su último inicio de sesión.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeOwned(): Flow<Owned?> =
-        authRepository.currentUser
+        combine(authRepository.currentUser, caseOwnerId) { me, ownerId -> me to ownerId }
             .distinctUntilChanged()
-            .flatMapLatest { owner ->
-                if (owner == null) {
+            .flatMapLatest { (me, ownerId) ->
+                if (me == null || ownerId == null) {
                     flowOf(null)
                 } else {
-                    authorizedUsersRepository.observeUsers(owner.uid)
-                        .map { users -> Owned(owner = owner, users = users) }
+                    authorizedUsersRepository.observeUsers(ownerId)
+                        .map { users -> Owned(owner = me.takeIf { it.uid == ownerId }, users = users) }
                 }
             }
 
     private suspend fun currentOwnerId(): String? =
         try {
-            authRepository.currentUser.first()?.uid
+            caseOwnerId.first()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -185,7 +192,8 @@ class AuthorizedUsersViewModel(
                 val application = checkNotNull(this[APPLICATION_KEY]) as MediCaseApplication
                 AuthorizedUsersViewModel(
                     authRepository = application.container.authRepository,
-                    authorizedUsersRepository = application.container.authorizedUsersRepository
+                    authorizedUsersRepository = application.container.authorizedUsersRepository,
+                    caseOwnerId = application.container.resolvedCaseAccess.map { it.caseOwnerId }
                 )
             }
         }
