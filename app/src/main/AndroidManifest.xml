@@ -47,7 +47,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.MediCaseClinico"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

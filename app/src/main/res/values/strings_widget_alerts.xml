@@ -4,7 +4,10 @@
     <string name="alerts_widget_label">Últimas alertas</string>
     <string name="alerts_widget_description">Lista de las últimas alertas del estuche: temperatura, batería, conexión, geocerca y accesos.</string>
     <string name="alerts_widget_title">Últimas alertas</string>
-    <string name="alerts_widget_unread">%1$d sin ver</string>
+    <plurals name="alerts_widget_unread">
+        <item quantity="one">%1$d sin ver</item>
+        <item quantity="other">%1$d sin ver</item>
+    </plurals>
     <string name="alerts_widget_empty">Sin alertas registradas</string>
     <string name="alerts_widget_loading">Cargando…</string>
     <string name="alerts_widget_error">No se pudieron leer las alertas</string>

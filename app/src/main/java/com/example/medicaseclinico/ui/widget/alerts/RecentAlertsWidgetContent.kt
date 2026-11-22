@@ -67,7 +67,7 @@ fun RecentAlertsWidgetContent(state: RecentAlertsUiState, onRetry: () -> Unit) {
                     val unread = (state as? RecentAlertsUiState.Ready)?.unreadCount ?: 0
                     if (unread > 0) {
                         Text(
-                            text = context.getString(R.string.alerts_widget_unread, unread),
+                            text = context.resources.getQuantityString(R.plurals.alerts_widget_unread, unread, unread),
                             style = TextStyle(
                                 color = GlanceTheme.colors.primary,
                                 fontSize = 12.sp,

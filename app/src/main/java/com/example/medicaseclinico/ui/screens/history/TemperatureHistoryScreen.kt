@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -48,6 +47,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicaseclinico.R
@@ -115,7 +115,7 @@ fun TemperatureHistoryRoute(
  * de cerrar la app.
  */
 private fun Context.shareReport(uri: String, chooserTitle: String): Boolean {
-    val reportUri = Uri.parse(uri)
+    val reportUri = uri.toUri()
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
         type = PDF_MIME_TYPE
         putExtra(Intent.EXTRA_STREAM, reportUri)
