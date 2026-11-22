@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vista previa del widget en tema oscuro. -->
+<resources>
+    <color name="widget_preview_background">#FF1A1F27</color>
+    <color name="widget_preview_text_primary">#FFE8EBF0</color>
+    <color name="widget_preview_accent">#FF8AB0FF</color>
+    <color name="widget_preview_button">#FF1E3A6E</color>
+</resources>

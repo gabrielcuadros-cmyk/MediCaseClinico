@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos del widget de la pantalla de inicio (en su propio archivo para separarlos de los de la app). -->
+<resources>
+    <string name="widget_label">Estado de la insulina</string>
+    <string name="widget_description">Temperatura del estuche en tiempo real y accesos directos a Historial, Mapa y Alertas.</string>
+    <string name="widget_title">Insulina</string>
+    <string name="widget_temperature_empty">--°C</string>
+    <string name="widget_no_readings">Sin lecturas del estuche</string>
+    <string name="widget_loading">Cargando…</string>
+    <string name="widget_error">No se pudo leer el estuche</string>
+    <string name="widget_retry">Reintentar</string>
+
+    <!-- Estado del enlace: "En vivo · 20 nov, 14:32" -->
+    <string name="widget_connection_live">En vivo</string>
+    <string name="widget_connection_connecting">Conectando…</string>
+    <string name="widget_connection_offline">Sin conexión</string>
+    <string name="widget_connection_with_time">%1$s · %2$s</string>
+
+    <!-- Accesos directos -->
+    <string name="widget_shortcut_history">Historial</string>
+    <string name="widget_shortcut_map">Mapa</string>
+    <string name="widget_shortcut_alerts">Alertas</string>
+    <string name="widget_shortcut_alerts_count">Alertas (%1$d)</string>
+    <string name="widget_open_app">Abrir el historial térmico en MediCase Clínico</string>
+</resources>

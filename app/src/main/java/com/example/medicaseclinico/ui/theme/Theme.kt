@@ -23,7 +23,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 // ============================================================
 //  Esquemas de color Material 3
 // ============================================================
-private val MediCaseLightColors = lightColorScheme(
+/** Internos (no privados) porque el widget de inicio los usa en Android 11 o anterior. */
+internal val MediCaseLightColors = lightColorScheme(
     primary = ElectricBlue,
     onPrimary = PureWhite,
     primaryContainer = ElectricBlueContainer,
@@ -49,7 +50,7 @@ private val MediCaseLightColors = lightColorScheme(
     onErrorContainer = AlertRed
 )
 
-private val MediCaseDarkColors = darkColorScheme(
+internal val MediCaseDarkColors = darkColorScheme(
     primary = ElectricBlueLight,
     onPrimary = DarkBackground,
     primaryContainer = ElectricBlueDarkContainer,

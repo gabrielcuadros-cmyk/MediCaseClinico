@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo de la vista previa del widget: esquinas como las del sistema (16 dp en Android 12+). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_preview_background" />
+    <corners android:radius="16dp" />
+</shape>

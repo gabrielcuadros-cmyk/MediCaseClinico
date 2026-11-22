@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vista previa del widget en el selector (XML estático): mismos tonos que el tema de la app. -->
+<resources>
+    <color name="widget_preview_background">#FFFFFFFF</color>
+    <color name="widget_preview_text_primary">#FF14181F</color>
+    <color name="widget_preview_accent">#FF3B7BEA</color>
+    <color name="widget_preview_button">#FFE3ECFD</color>
+</resources>

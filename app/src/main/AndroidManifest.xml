@@ -57,6 +57,19 @@
             </intent-filter>
         </activity>
 
+        <!-- Widget de la pantalla de inicio "Estado de la insulina" (Jetpack Glance) -->
+        <receiver
+            android:name=".ui.widget.MediCaseWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/medicase_widget_info" />
+        </receiver>
+
         <!-- Comparte el Reporte Médico (PDF) con otras apps sin exponer el resto de archivos -->
         <provider
             android:name="androidx.core.content.FileProvider"
