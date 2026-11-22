@@ -3,8 +3,10 @@ package com.example.medicaseclinico.ui.screens.lossmode
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +55,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -85,6 +88,9 @@ private val ButtonShape = RoundedCornerShape(12.dp)
 private val ButtonHeight = 52.dp
 private const val TEXT_MIME_TYPE = "text/plain"
 
+/** Extra estándar con el texto del SMS (no hay constante pública en el SDK). */
+private const val SMS_BODY_EXTRA = "sms_body"
+
 /**
  * Teléfono de emergencias de la Policía Nacional del Perú. Configuración de
  * fábrica: la app solo abre el marcador con él, nunca llama por su cuenta.
@@ -103,8 +109,10 @@ fun LossModeRoute(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val contacts by viewModel.contacts.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var choosingContact by rememberSaveable { mutableStateOf(false) }
 
     val message = when (val state = uiState) {
         is LossModeUiState.Success -> state.message
@@ -131,6 +139,28 @@ fun LossModeRoute(
     val shareSubject = stringResource(R.string.loss_mode_share_subject)
     val shareChooserTitle = stringResource(R.string.loss_mode_share_location)
     val noAppMessage = stringResource(R.string.loss_mode_no_app)
+    val openShareMenu = {
+        val opened = shareText != null &&
+            context.shareText(text = shareText, subject = shareSubject, chooserTitle = shareChooserTitle)
+        if (!opened) scope.launch { snackbarHostState.showSnackbar(noAppMessage) }
+    }
+
+    if (choosingContact && shareText != null) {
+        CareContactPickerDialog(
+            contacts = contacts,
+            onContactSelected = { contact ->
+                choosingContact = false
+                if (!context.sendToContact(contact, text = shareText, subject = shareSubject)) {
+                    scope.launch { snackbarHostState.showSnackbar(noAppMessage) }
+                }
+            },
+            onOtherApp = {
+                choosingContact = false
+                openShareMenu()
+            },
+            onDismiss = { choosingContact = false }
+        )
+    }
 
     LossModeScreen(
         uiState = uiState,
@@ -143,10 +173,9 @@ fun LossModeRoute(
         onLockOfferDismissed = viewModel::onLockOfferDismissed,
         onAlarmToggled = viewModel::setAlarm,
         onHighFrequencyGpsToggled = viewModel::setHighFrequencyGps,
+        // Con contactos de cuidado se elige a quién; sin ellos, el menú de compartir.
         onShareLocation = {
-            val opened = shareText != null &&
-                context.shareText(text = shareText, subject = shareSubject, chooserTitle = shareChooserTitle)
-            if (!opened) scope.launch { snackbarHostState.showSnackbar(noAppMessage) }
+            if (contacts.isNotEmpty() && shareText != null) choosingContact = true else openShareMenu()
         },
         onDialPolice = {
             if (!context.openDialer(POLICE_EMERGENCY_NUMBER)) {
@@ -173,6 +202,82 @@ private fun Context.shareText(text: String, subject: String, chooserTitle: Strin
     } catch (e: SecurityException) {
         false
     }
+}
+
+/**
+ * Envía la ubicación a un contacto de cuidado: por SMS si tiene teléfono y si
+ * no, por correo. Protegido: devuelve false si ninguna app puede enviarlo.
+ */
+private fun Context.sendToContact(contact: CareContact, text: String, subject: String): Boolean {
+    val intent = if (contact.phone.isNotBlank()) {
+        Intent(Intent.ACTION_SENDTO, "smsto:${Uri.encode(contact.phone)}".toUri())
+            .putExtra(SMS_BODY_EXTRA, text)
+    } else {
+        Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
+            .putExtra(Intent.EXTRA_EMAIL, arrayOf(contact.email))
+            .putExtra(Intent.EXTRA_SUBJECT, subject)
+            .putExtra(Intent.EXTRA_TEXT, text)
+    }
+    return try {
+        startActivity(intent)
+        true
+    } catch (e: ActivityNotFoundException) {
+        false
+    } catch (e: SecurityException) {
+        false
+    }
+}
+
+/** Lista de contactos de cuidado para elegir a quién enviar la ubicación. */
+@Composable
+private fun CareContactPickerDialog(
+    contacts: List<CareContact>,
+    onContactSelected: (CareContact) -> Unit,
+    onOtherApp: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.loss_mode_contact_picker_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                contacts.forEach { contact ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onContactSelected(contact) }
+                            .padding(horizontal = 8.dp, vertical = 10.dp)
+                    ) {
+                        Text(
+                            text = contact.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (contact.phone.isNotBlank()) {
+                                stringResource(R.string.loss_mode_contact_via_sms, contact.phone)
+                            } else {
+                                stringResource(R.string.loss_mode_contact_via_email, contact.email)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onOtherApp) {
+                Text(text = stringResource(R.string.loss_mode_contact_other_app))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.action_cancel))
+            }
+        }
+    )
 }
 
 /**

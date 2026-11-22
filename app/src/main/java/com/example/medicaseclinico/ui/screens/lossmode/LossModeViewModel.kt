@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.medicaseclinico.MediCaseApplication
+import com.example.medicaseclinico.domain.model.AuthorizedUser
 import com.example.medicaseclinico.domain.model.CaseCommandError
 import com.example.medicaseclinico.domain.model.CaseCommandException
 import com.example.medicaseclinico.domain.model.CaseControlState
@@ -27,9 +28,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -55,8 +59,30 @@ class LossModeViewModel(
     private val caseLocationRepository: CaseLocationRepository,
     private val lossModeRepository: LossModeRepository,
     private val clock: () -> Long = System::currentTimeMillis,
-    private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS
+    private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS,
+    authorizedUsers: Flow<List<AuthorizedUser>> = flowOf(emptyList())
 ) : ViewModel() {
+
+    /**
+     * Contactos de cuidado (usuarios autorizados con teléfono o correo) para
+     * "Enviar Ubicación". Si la lista no se puede leer queda vacía y se usa el
+     * menú de compartir de siempre: la ubicación se puede enviar igual.
+     */
+    val contacts: StateFlow<List<CareContact>> = authorizedUsers
+        .map { users ->
+            users.filter { it.phone.isNotBlank() || it.email.isNotBlank() }
+                .map { CareContact(id = it.id, name = it.name, phone = it.phone.trim(), email = it.email.trim()) }
+        }
+        .catch { throwable ->
+            if (throwable is CancellationException) throw throwable
+            emit(emptyList())
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            initialValue = emptyList()
+        )
+
 
     /** Lo que no viene de los repositorios. */
     private data class Local(
@@ -297,13 +323,24 @@ class LossModeViewModel(
         /** El tiempo relativo cambia como mucho una vez por minuto. */
         const val DEFAULT_TICK_INTERVAL_MS = 60_000L
 
+        @OptIn(ExperimentalCoroutinesApi::class)
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = checkNotNull(this[APPLICATION_KEY]) as MediCaseApplication
                 LossModeViewModel(
                     caseDeviceRepository = application.container.caseDeviceRepository,
                     caseLocationRepository = application.container.caseLocationRepository,
-                    lossModeRepository = application.container.lossModeRepository
+                    lossModeRepository = application.container.lossModeRepository,
+                    authorizedUsers = application.container.resolvedCaseAccess
+                        .map { it.caseOwnerId }
+                        .distinctUntilChanged()
+                        .flatMapLatest { ownerId ->
+                            if (ownerId.isNullOrBlank()) {
+                                flowOf(emptyList())
+                            } else {
+                                application.container.authorizedUsersRepository.observeUsers(ownerId)
+                            }
+                        }
                 )
             }
         }

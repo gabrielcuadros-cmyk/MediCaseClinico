@@ -98,3 +98,18 @@ enum class LossModeMessage {
     /** El modo se desactivó, pero el estuche no recibió la orden de apagar la alarma o el GPS rápido. */
     DEACTIVATED_CASE_NOT_UPDATED
 }
+
+/**
+ * Persona de la lista de usuarios autorizados a la que se puede enviar la
+ * ubicación del estuche. Solo entra quien tiene teléfono o correo.
+ *
+ * @param phone teléfono para el SMS; vacío si no tiene.
+ * @param email correo si no tiene teléfono; vacío si no tiene.
+ */
+@Immutable
+data class CareContact(
+    val id: String,
+    val name: String,
+    val phone: String,
+    val email: String
+)
