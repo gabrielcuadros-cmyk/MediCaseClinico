@@ -163,6 +163,10 @@ dependencies {
     // --- MQTT (broker del estuche; ver hardware/mqtt-protocol.md) ---
     implementation(libs.hivemq.mqtt.client)
 
+    // --- Widget de pantalla de inicio (Jetpack Glance: Compose para widgets) ---
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
     // --- Firebase ---
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
