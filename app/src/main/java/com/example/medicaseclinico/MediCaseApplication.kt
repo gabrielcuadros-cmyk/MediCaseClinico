@@ -6,7 +6,8 @@ import com.example.medicaseclinico.di.AppContainer
 
 /**
  * Punto de arranque del proceso. Crea el contenedor de dependencias,
- * inicializa los canales de notificación y activa el monitoreo BLE + sincronización.
+ * inicializa los canales de notificación y activa el monitoreo BLE + sincronización
+ * y la actualización del widget de la pantalla de inicio.
  */
 class MediCaseApplication : Application() {
     lateinit var container: AppContainer
@@ -21,5 +22,6 @@ class MediCaseApplication : Application() {
 
         container.telemetrySynchronizer.start()
         container.caseDeviceRepository.startMonitoring()
+        container.caseWidgetRefresher.start()
     }
 }

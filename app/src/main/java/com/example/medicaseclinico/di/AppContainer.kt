@@ -36,6 +36,9 @@ import com.example.medicaseclinico.domain.repository.TemperatureRepository
 import com.example.medicaseclinico.domain.repository.UserProfileRepository
 import com.example.medicaseclinico.domain.usecase.EvaluateGeofencesUseCase
 import com.example.medicaseclinico.domain.usecase.ShouldSaveCaseLocationUseCase
+import com.example.medicaseclinico.ui.widget.CaseWidgetStateSource
+import com.example.medicaseclinico.ui.widget.MediCaseWidget
+import com.example.medicaseclinico.ui.widget.WidgetRefresher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -144,6 +147,16 @@ class AppContainer(context: Context) {
             alertPublisher = alertPublisher,
             shouldSaveLocation = ShouldSaveCaseLocationUseCase(),
             evaluateGeofences = EvaluateGeofencesUseCase(),
+            scope = applicationScope
+        )
+    }
+
+    /** Redibuja el widget "Estado de la insulina" con cada dato visible nuevo. */
+    val caseWidgetRefresher: WidgetRefresher by lazy {
+        WidgetRefresher(
+            context = appContext,
+            widget = MediCaseWidget(),
+            changes = CaseWidgetStateSource.from(container = this).visibleChanges(),
             scope = applicationScope
         )
     }
