@@ -221,7 +221,7 @@
 
     <!-- Alertas de Seguridad: estado vacío de cada filtro -->
     <string name="alerts_empty_all_title">Sin alertas registradas</string>
-    <string name="alerts_empty_all_message">Cuando el estuche emita una alerta de temperatura, batería o conexión, aparecerá aquí.</string>
+    <string name="alerts_empty_all_message">Cuando el estuche emita una alerta de temperatura, conexión, geocerca o acceso, aparecerá aquí.</string>
     <string name="alerts_empty_temperature_title">Sin alertas de temperatura</string>
     <string name="alerts_empty_temperature_message">No hay registros de que la insulina haya salido del rango seguro.</string>
     <string name="alerts_empty_location_title">Sin alertas de ubicación</string>
@@ -554,7 +554,7 @@
     <string name="user_permission_access_logs_title">Consultar registros de acceso</string>
     <string name="user_permission_access_logs_description">Ver accesos registrados con contraseña de 4 dígitos.</string>
     <string name="user_permission_alerts_title">Recibir alertas críticas</string>
-    <string name="user_permission_alerts_description">Avisos de picos térmicos y batería crítica.</string>
+    <string name="user_permission_alerts_description">Avisos de picos térmicos y desconexión del estuche.</string>
     <string name="user_permission_reports_title">Exportar reportes PDF</string>
     <string name="user_permission_reports_description">Descarga de reportes clínicos certificados.</string>
     <string name="user_permission_manage_users_title">Gestionar otros usuarios</string>
