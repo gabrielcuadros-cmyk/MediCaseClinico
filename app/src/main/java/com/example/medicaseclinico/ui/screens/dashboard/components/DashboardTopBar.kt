@@ -18,6 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.BluetoothSearching
 import androidx.compose.material.icons.filled.BluetoothConnected
 import androidx.compose.material.icons.filled.BluetoothDisabled
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,22 +44,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.medicaseclinico.R
+import com.example.medicaseclinico.domain.model.CaseTransport
 import com.example.medicaseclinico.domain.model.ConnectionStatus
 import com.example.medicaseclinico.ui.theme.MediCaseTheme
 
 /**
- * Cabecera del Dashboard: saludo, título y estado BLE del estuche.
+ * Cabecera del Dashboard: saludo, título y estado de conexión del estuche.
  *
- * Componente sin estado: recibe el ConnectionStatus ya calculated por el
+ * Componente sin estado: recibe el ConnectionStatus ya calculado por el
  * DashboardViewModel y solo decide cómo pintarlo.
  *
- * @param connectionStatus estado del enlace Bluetooth con el estuche.
+ * @param connectionStatus estado del enlace con el estuche.
+ * @param transport por dónde llegan los datos: decide el ícono de la insignia, para
+ * no mostrar un Bluetooth cuando el estuche habla por MQTT.
  * @param userName nombre del usuario autenticado. Si es null se omite el saludo.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardTopBar(
     connectionStatus: ConnectionStatus,
+    transport: CaseTransport,
     modifier: Modifier = Modifier,
     userName: String? = null
 ) {
@@ -82,6 +89,7 @@ fun DashboardTopBar(
         actions = {
             BleConnectionBadge(
                 status = connectionStatus,
+                transport = transport,
                 modifier = Modifier.padding(end = 16.dp)
             )
         },
@@ -93,17 +101,21 @@ fun DashboardTopBar(
 }
 
 /**
- * Insignia de conexión BLE: ícono Bluetooth + texto sobre fondo tenue.
+ * Insignia de conexión: ícono + texto sobre fondo tenue.
  *  - CONNECTED    → verde  · "Conectado"
  *  - CONNECTING   → ámbar  · "Conectando…" (ícono con pulso)
  *  - DISCONNECTED → rojo   · "Desconectado"
+ *
+ * El ícono es Bluetooth o nube según el [transport]: por MQTT el teléfono no usa
+ * el Bluetooth y el ícono no debe sugerirlo.
  */
 @Composable
 fun BleConnectionBadge(
     status: ConnectionStatus,
+    transport: CaseTransport,
     modifier: Modifier = Modifier
 ) {
-    val style = status.badgeStyle()
+    val style = status.badgeStyle(transport)
     val label = stringResource(style.labelRes)
     val description = stringResource(R.string.ble_status_content_description, label)
 
@@ -170,23 +182,24 @@ private data class BleBadgeStyle(
 )
 
 @Composable
-private fun ConnectionStatus.badgeStyle(): BleBadgeStyle {
+private fun ConnectionStatus.badgeStyle(transport: CaseTransport): BleBadgeStyle {
     val status = MediCaseTheme.statusColors
+    val mqtt = transport == CaseTransport.MQTT
     return when (this) {
         ConnectionStatus.CONNECTED -> BleBadgeStyle(
-            icon = Icons.Filled.BluetoothConnected,
+            icon = if (mqtt) Icons.Filled.CloudDone else Icons.Filled.BluetoothConnected,
             labelRes = R.string.ble_status_connected,
             contentColor = status.safe,
             containerColor = status.safeContainer
         )
         ConnectionStatus.CONNECTING -> BleBadgeStyle(
-            icon = Icons.AutoMirrored.Filled.BluetoothSearching,
+            icon = if (mqtt) Icons.Filled.CloudSync else Icons.AutoMirrored.Filled.BluetoothSearching,
             labelRes = R.string.ble_status_connecting,
             contentColor = status.warning,
             containerColor = status.warningContainer
         )
         ConnectionStatus.DISCONNECTED -> BleBadgeStyle(
-            icon = Icons.Filled.BluetoothDisabled,
+            icon = if (mqtt) Icons.Filled.CloudOff else Icons.Filled.BluetoothDisabled,
             labelRes = R.string.ble_status_disconnected,
             contentColor = status.critical,
             containerColor = status.criticalContainer
@@ -200,17 +213,31 @@ private fun ConnectionStatus.badgeStyle(): BleBadgeStyle {
 @Preview(showBackground = true, name = "TopBar - Conectado")
 @Composable
 private fun DashboardTopBarConnectedPreview() {
-    MediCaseTheme { DashboardTopBar(connectionStatus = ConnectionStatus.CONNECTED) }
+    MediCaseTheme {
+        DashboardTopBar(connectionStatus = ConnectionStatus.CONNECTED, transport = CaseTransport.BLUETOOTH)
+    }
+}
+
+@Preview(showBackground = true, name = "TopBar - Conectado por MQTT")
+@Composable
+private fun DashboardTopBarConnectedMqttPreview() {
+    MediCaseTheme {
+        DashboardTopBar(connectionStatus = ConnectionStatus.CONNECTED, transport = CaseTransport.MQTT)
+    }
 }
 
 @Preview(showBackground = true, name = "TopBar - Conectando")
 @Composable
 private fun DashboardTopBarConnectingPreview() {
-    MediCaseTheme { DashboardTopBar(connectionStatus = ConnectionStatus.CONNECTING) }
+    MediCaseTheme {
+        DashboardTopBar(connectionStatus = ConnectionStatus.CONNECTING, transport = CaseTransport.BLUETOOTH)
+    }
 }
 
 @Preview(showBackground = true, name = "TopBar - Desconectado")
 @Composable
 private fun DashboardTopBarDisconnectedPreview() {
-    MediCaseTheme { DashboardTopBar(connectionStatus = ConnectionStatus.DISCONNECTED) }
+    MediCaseTheme {
+        DashboardTopBar(connectionStatus = ConnectionStatus.DISCONNECTED, transport = CaseTransport.BLUETOOTH)
+    }
 }
